@@ -9,11 +9,12 @@
 
 const esbuild = require('esbuild');
 const path = require('path');
-
+const root = path.resolve(__dirname, "..");
 esbuild
   .build({
-    entryPoints: [path.join(__dirname, '..',"..",'VNLayer', 'standalone.ts')],
-    outfile: path.join(__dirname, '..', 'dist', 'vnlayer.js'),
+    absWorkingDir: root,
+    entryPoints: [path.join(root, 'standalone.ts')],
+    outfile: path.join(root, 'dist', 'vnlayer.js'),
     bundle: true,
     minify: true,
     format: 'iife',
