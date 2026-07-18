@@ -1,0 +1,222 @@
+'use client';
+import { createRoot, type Root } from 'react-dom/client';
+import { createElement } from 'react';
+import VNLayerOverlay, { type VNLayerMode, type VNLayerHandle } from './components/VNLayerOverlay';
+import type { UiAnchor } from './components/StageView';
+import { setCharacterSlots, type CharacterSlot } from './tags/characterSlots';
+import { setTagConfig } from './tags/index';
+import type { StepProvider } from './core/StepProvider';
+import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
+import { createStaticStepProvider } from './core/staticStepProvider';
+
+// フェーズ1のゴール: 「VNLayer.mount("#vn", {scenario, mode})」のような
+// 命令的APIを、既存のReactコンポーネント(VNLayerOverlay)の上に薄く被せて提供する。
+// 中身は今までと同じReactツリーなので、Next.js運用時の挙動は一切変わらない。
+//
+// フェーズ2(vnlayer.js化)では、このファイル+core/+tags/+components/一式を
+// inkjs・React・ReactDOMごとesbuild/rollupで1ファイルにバンドルし、
+// window.VNLayer = api としてグローバル公開する想定。
+
+type MountOptions = {
+  scenario?: string;
+  mode: VNLayerMode;
+  // mode:"overlay"を複数同時にmountする場合(例: 左キャラ用/右キャラ用)、
+  // バックログボタン・選択肢・ユーザー発言欄が同じ角に重ならないよう、
+  // 片方を'left'、もう片方を'right'(既定)にする。
+  uiAnchor?: UiAnchor;
+  // false にすると操作UI一式(バックログ/選択肢/発言欄)を出さない。
+  // 背景・キャラ・吹き出しの演出だけを行う「装飾専用インスタンス」向け。
+  showUi?: boolean;
+  // 省略時はその時点の既定StepProvider(Next.js版api.tsならserverStepProvider、
+  // vnlayer.js単体バンドルならstaticStepProvider)を使う。
+  // このmountインスタンスだけ「fetch経由」か「ブラウザ内で直接inkjs実行」かを
+  // 個別に指定したい場合はここに渡す。
+  //   例: VNLayer.mount("#vn", { scenario, mode, stepProvider: createStaticStepProvider() })
+  stepProvider?: StepProvider;
+};
+
+type Instance = {
+  root: Root;
+  container: Element;
+  handle: VNLayerHandle | null;
+  // notify()で「イベント名ごとに何回目の発火か」を数えるカウンタ。
+  // 同じ値を再度書き込んでも(setContextVarsは単純な変数書き込みなので)
+  // Ink側からは「変化した」と分からないため、seq値を毎回インクリメントして
+  // 一緒に書き込むことで「新しく発火した」ことをInk側で検知できるようにする。
+  eventSeq: Record<string, number>;
+};
+
+const instances = new Map<string, Instance>();
+
+function resolveElement(selector: string): Element {
+  const el = document.querySelector(selector);
+  if (!el) {
+    throw new Error(`[VNLayer] element not found for selector: ${selector}`);
+  }
+  return el;
+}
+
+function mount(selector: string, options: MountOptions): void {
+  if (instances.has(selector)) {
+    console.warn(`[VNLayer] "${selector}" is already mounted. Call unmount() first if you want to remount.`);
+    return;
+  }
+
+  const container = resolveElement(selector);
+  const root = createRoot(container);
+  const instance: Instance = { root, container, handle: null, eventSeq: {} };
+  instances.set(selector, instance);
+
+  root.render(
+    createElement(VNLayerOverlay, {
+      scenario: options.scenario ?? 'Scenario1',
+      mode: options.mode,
+      uiAnchor: options.uiAnchor,
+      showUi: options.showUi,
+      stepProvider: options.stepProvider,
+      onReady: (handle: VNLayerHandle) => {
+        instance.handle = handle;
+      },
+    })
+  );
+}
+
+function unmount(selector: string): void {
+  const instance = instances.get(selector);
+  if (!instance) return;
+  instance.root.unmount();
+  instances.delete(selector);
+}
+
+// setContext({ seconds }) : 引数のselectorを省略した場合、マウント中の全インスタンスに
+// 同じ値をブロードキャストする(通常は1ページ1インスタンスなのでこれで十分)。
+// 複数インスタンスを個別に制御したい場合は setContext(vars, selector) を使う。
+async function setContext(vars: Record<string, unknown>, selector?: string): Promise<void> {
+  const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+
+  if (targets.length === 0) {
+    console.warn('[VNLayer] setContext called but no instance is mounted yet.');
+    return;
+  }
+
+  await Promise.all(
+    targets.map((instance) => {
+      if (!instance?.handle) {
+        console.warn('[VNLayer] setContext called before the instance finished initializing; ignoring this call.');
+        return Promise.resolve();
+      }
+      return instance.handle.setContextVars(vars);
+    })
+  );
+}
+
+// VNLayer.notify("blink", payload?, selector?)
+// ホストページ側の実イベント(クリック、他のウィジェットの状態変化、任意のタイミング等)を
+// Inkに「今まさに起きたこと」として伝えるためのショートカット。
+// 中身はsetContextと同じ経路(StepProvider.idleの一方通行書き込み)を使うが、
+// 単に event_blink = payload と書くだけだと、Ink側は「値が変わったかどうか」でしか
+// 検知できず、同じpayloadを続けて送った場合に区別が付かない。そこで
+// event_blink_seq という単調増加のカウンタも一緒に書き込み、Ink側では
+// 「event_blink_seqが前回チェック時と違う値になっていたら、新しくnotifyされた」
+// という形で判定できるようにしてある。
+//
+// setContextとの役割分担:
+//   - setContext: 継続的なデータ(時刻、設定値、他ページの状態等)を反映する
+//   - notify:     「今この瞬間に何かが起きた」という単発の出来事を伝える
+// 内部的にはどちらも同じsetContextVars(=StepProvider.idle)を呼んでいるだけで、
+// notifyは「seq番号を自動で振ってくれるsetContext」という薄いラッパーに過ぎない。
+//
+// #tickとの違い: #tickはInk側が「このシーンで何秒待ったか」を自己完結で
+// 管理する内蔵タイマーで、ホストページの実イベントは一切見ない。
+// notifyは逆にホスト側の実イベントをInkに伝える経路であり、#tickを置き換えるものではない。
+// 必要なら両方を組み合わせて、「#tick:1(短い間隔)のノットでevent_xxx_seqをチェックする」
+// ような形で、ほぼリアルタイムにホストイベントへ反応するInk側の分岐を書ける。
+async function notify(eventName: string, payload: unknown = true, selector?: string): Promise<void> {
+  const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+
+  if (targets.length === 0) {
+    console.warn('[VNLayer] notify called but no instance is mounted yet.');
+    return;
+  }
+
+  await Promise.all(
+    targets.map((instance) => {
+      if (!instance?.handle) {
+        console.warn('[VNLayer] notify called before the instance finished initializing; ignoring this call.');
+        return Promise.resolve();
+      }
+      const nextSeq = (instance.eventSeq[eventName] ?? 0) + 1;
+      instance.eventSeq[eventName] = nextSeq;
+      return instance.handle.setContextVars({
+        [`event_${eventName}`]: payload,
+        [`event_${eventName}_seq`]: nextSeq,
+      });
+    })
+  );
+}
+
+// VNLayer.configure({ characterSlots: {...}, tags: { cam: {...}, wait: {...} } })
+// Next.js運用ではcontext/StoryContext.tsxが自動でcharacterSlotsを注入するので
+// 通常は呼ばなくてよいが、静的運用(vnlayer.js)や、タグの挙動を実行時に
+// 上書きしたい場合(例: 演出のテンポ調整)に使う。
+type ConfigureOptions = {
+  characterSlots?: Record<string, CharacterSlot>;
+  tags?: Record<string, Record<string, unknown>>;
+};
+
+// VNLayer.reset(selector?)
+// 進行状況を最初からやり直す。以前はvisibleChoices.length===0(=Inkが->ENDに
+// 到達した状態)の時にStageViewが自動で「はじめから」ボタンを描画していたが、
+// それだと文言もボタンの見た目もVNLayer側に固定されてしまう。
+// 今はJS側(ホストページの好きなボタン・好きなタイミング)から呼べるようにし、
+// 何を表示するか・いつ出すかは完全にホスト側またはInk側(本物の選択肢として
+// "+[はじめから] -> home" を書く等)に委ねる形にした。
+async function reset(selector?: string): Promise<void> {
+  const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+
+  if (targets.length === 0) {
+    console.warn('[VNLayer] reset called but no instance is mounted yet.');
+    return;
+  }
+
+  await Promise.all(
+    targets.map((instance) => {
+      if (!instance?.handle) {
+        console.warn('[VNLayer] reset called before the instance finished initializing; ignoring this call.');
+        return Promise.resolve();
+      }
+      return instance.handle.resetStory();
+    })
+  );
+}
+
+function configure(options: ConfigureOptions): void {
+  if (options.characterSlots) setCharacterSlots(options.characterSlots);
+  if (options.tags) {
+    for (const [key, partial] of Object.entries(options.tags)) {
+      setTagConfig(key, partial);
+    }
+  }
+}
+
+export const VNLayer = {
+  mount,
+  unmount,
+  setContext,
+  notify,
+  reset,
+  configure,
+  // 修正: 以前はこの2つを「モジュールの名前付きexport」としてだけ公開していたが、
+  // window.VNLayer = VNLayer で公開されるのはこのオブジェクトの中身だけなので、
+  // <script>から VNLayer.createStaticStepProvider(...) と呼んでも見えず
+  // "is not a function" になっていた。VNLayerオブジェクト自身のプロパティとして持たせる。
+  serverStepProvider,
+  createServerStepProvider,
+  createStaticStepProvider,
+};
+
+// ブラウザで素朴に <script> 読み込みする運用(将来のvnlayer.js)に備えて
+// window.VNLayer にも公開しておく。Next.jsのSSR中(windowが無い環境)では何もしない。
+if (typeof window !== 'undefined') {
+  (window as any).VNLayer = VNLayer;
+}
