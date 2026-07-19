@@ -13,6 +13,9 @@ export type CharacterState = {
   animSpeed?: number;
   // anim_reverse:で立てるフラグ。逆再生中かどうか
   animReverse?: boolean;
+  // gaze:で設定する「視線の先」の座標(originX/originY、%、ステージ全体基準)。
+  // 素材のキャラ絵が入るまでのモック段階で、視線の向き(矢印)を確認するためのもの。
+  gaze?: { x: number; y: number };
 };
 export type CamState = { target: string; scale: number; originX: number; originY: number };
 export type ShakeState = { nonce: number; amplitude: number; duration: number };

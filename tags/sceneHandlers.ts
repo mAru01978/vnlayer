@@ -14,6 +14,9 @@ export type SceneHandlers = {
   setAnimSpeed: (name: string, speed: number) => void;
   // anim_reverse:名前:モーション → そのモーションを逆再生する指定
   setAnimReverse: (name: string, motion: string) => void;
+  // gaze:名前:x:y → 視線の先の座標(originX/originY、%)。'reset'で正面向きに戻す。
+  // 素材が入る前のモック段階で、視線方向の矢印表示を確認するためのもの。
+  setGaze: (name: string, target: { x: number; y: number } | 'reset') => void;
   setSpeaker: (name: string) => void;
   onGoto: (path: string) => void;
   wait: (ms: number) => Promise<void>;

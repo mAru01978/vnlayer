@@ -130,6 +130,17 @@ export function useStoryEngine(
     }));
   }, []);
 
+  const setGaze = useCallback((name: string, target: { x: number; y: number } | 'reset') => {
+    setCharacters((prev) => {
+      if (!prev[name] && target === 'reset') return prev;
+      const { gaze: _drop, ...rest } = prev[name] ?? { expression: 'normal' };
+      return {
+        ...prev,
+        [name]: target === 'reset' ? rest : { ...rest, gaze: target },
+      };
+    });
+  }, []);
+
   const hideChar = useCallback((name: string) => {
     setCharacters((prev) => {
       const next = { ...prev };
@@ -213,6 +224,7 @@ export function useStoryEngine(
         setAnimStop: (name) => setAnimStop(name),
         setAnimSpeed: (name, speed) => setAnimSpeedHandler(name, speed),
         setAnimReverse: (name, motion) => setAnimReverse(name, motion),
+        setGaze: (name, target) => setGaze(name, target),
         setSpeaker: (name) => setSpeakerState(name),
         onGoto: (path) => {
           pendingGoto = path;
@@ -294,6 +306,7 @@ export function useStoryEngine(
       setAnimStop,
       setAnimSpeedHandler,
       setAnimReverse,
+      setGaze,
       hideChar,
       setChoicesVisible,
       setMessageWindowVisible,

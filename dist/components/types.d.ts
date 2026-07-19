@@ -5,6 +5,10 @@ export type CharacterState = {
     animLoop?: boolean;
     animSpeed?: number;
     animReverse?: boolean;
+    gaze?: {
+        x: number;
+        y: number;
+    };
 };
 export type Slot = {
     originX: number;
