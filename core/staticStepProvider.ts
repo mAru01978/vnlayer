@@ -44,8 +44,6 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
       story.onError = (message: string, type: unknown) => {
         console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
       };
-      story.variablesState['currentHour'] = new Date().getHours();
-      story.variablesState['dayOfWeek'] = new Date().getDay();
       handle = { story, visual: { bg: '', characters: {}, speaker: '' } };
       liveStories.set(scenario, handle);
     }
