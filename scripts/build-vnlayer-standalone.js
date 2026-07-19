@@ -3,13 +3,12 @@
 //   node scripts/build-vnlayer-standalone.js
 // 出力: dist/vnlayer.js (1ファイル、React/ReactDOM/inkjsを含む完全バンドル)
 //
-// 注意: このスクリプトはVNLayer/standalone.tsを入口にする。
+// 注意: このスクリプトはVNLayer自身のstandalone.tsを入口にする。
 // Next.js側(context/StoryContext.tsx等)はバンドル対象に含まれない
 // (standalone.tsがそちらをimportしていないので、そもそもツリーに乗らない)。
-
+const fs = require('fs');
 const esbuild = require('esbuild');
 const path = require('path');
-const fs = require('fs');
 const root = path.resolve(__dirname, "..");
 const entryFile = path.join(root, 'standalone.ts');
 const outFile = path.join(root, 'dist/vnlayer.js');
@@ -17,6 +16,7 @@ console.log('--- ビルド開始 ---');
 console.log('Entry Point:', entryFile);
 console.log('Output File:', outFile);
 console.log('distフォルダ存在:', fs.existsSync(path.join(root, 'dist')));
+
 esbuild
   .build({
     absWorkingDir: root,
@@ -28,7 +28,6 @@ esbuild
     globalName: '__vnlayerBundleInit', // window.VNLayerはapi.ts側で自分でwindowに生やす
     target: ['es2019'],
     loader: { '.tsx': 'tsx', '.ts': 'ts' },
-    external: [],
     define: {
       'process.env.NODE_ENV': '"production"',
     },

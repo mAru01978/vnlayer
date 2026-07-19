@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx"
+  },
+  "include": ["core", "tags", "components", "context", "api.ts", "standalone.ts", "global.d.ts"],
+  "exclude": ["node_modules", "dist", "vendor", "scripts"]
+}

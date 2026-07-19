@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// scripts/ 以下の各スクリプトを、矢印キー(↑↓)+Enterで選んで実行できる
+//  scripts/ 以下の各スクリプトを、矢印キー(↑↓)+Enterで選んで実行できる
 // 対話式メニュー。新しいnpmパッケージは使わず、Node標準機能だけで実装している。
 //
-// 使い方: node VNLayer/scripts/menu.js
+// 使い方: node  scripts/menu.js
 //   ↑↓キーで選択、Enterで実行、Ctrl+C または「終了」でメニューを抜ける。
 //   追加の入力(シーン名等)が必要な項目だけ、選んだ後にその場でタイプする。
 
@@ -55,6 +55,10 @@ const MENU_ITEMS = [
   {
     label: 'inkjs/inkjs-compilerをvendor/に固定・更新(update-vendor.js)',
     run: () => runDirect(['node', 'scripts/update-vendor.js']),
+  },
+  {
+    label: 'VNLayerのJSビルド、React等のランタイム全バンドル(build-vnlayer-standalone.js)',
+    run: () => runDirect(['node',"scripts/build-vnlayer-standalone.js"]),
   },
   {
     label: '終了',
