@@ -121,6 +121,12 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
         top: `${Math.max(slot.originY - 26, 4)}%`,
         transform: 'translate(-50%, -100%)',
         maxWidth: 220,
+        // 修正: 文字数が多い時、吹き出しは上方向(translate(-50%,-100%))に
+        // 伸び続けるため、ステージの上端(0%)を越えてoverflow:hiddenで
+        // 見えなくなることがあった。maxHeight+overflowYで、伸びすぎたら
+        // 吹き出し内部でスクロールする形にして、必ず画面内に収まるようにする。
+        maxHeight: '70%',
+        overflowY: 'auto',
         background: 'rgba(255,255,255,0.95)',
         color: '#111',
         borderRadius: 12,

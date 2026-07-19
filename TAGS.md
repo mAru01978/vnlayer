@@ -6,35 +6,59 @@
 
 ## `anim_loop`
 
-# anim_loop:名前:モーション → そのモーションをループ再生させる
-
 ## `anim_reverse`
 
-# anim_reverse:名前:モーション → そのモーションを逆再生させる
+## `anim_speed`
+
+使えるラベル: `slow`, `normal`, `fast`
 
 ## `anim_stop`
-
-# anim_stop:名前 → 再生中のモーションを止める(表情expressionはそのまま維持)
 
 ## `bg`
 
 ## `c`
 
+## `cam`
+
+使えるラベル: `zoom`, `zoomout`, `reset`
+
 ## `choices`
 
 ## `clear`
+
+## `flash`
+
+使えるラベル: `white`, `red`
+
+## `gaze`
 
 ## `goto`
 
 ## `hide`
 
-## `msg_fade`
+## `msg`
 
-# msg_fade:in
+## `msg_fade`
 
 ## `msg_window`
 
-# msg_window:hide / # msg_window:show / choices:hide/showと同じ考え方で、メッセージウィンドウ(吹き出し・ナレーション / キャプション)自体をこのシーンでは出さない、という「箱ごと消す」タグ。 / msg:hide/transient/persist は個々のメッセージの残り方の制御なので、役割が異なる。
+## `pos`
+
+使えるラベル: `center`
 
 ## `s`
+
+## `shake`
+
+使えるラベル: `short`, `long`
+
+## `type`
+
+使えるラベル: `super_slow`, `slow`, `normal`, `fast`, `off`
+
+## `type_wait`
+
+## `wait`
+
+使えるラベル: `short`, `long`, `serve`
 
