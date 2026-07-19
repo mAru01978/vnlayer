@@ -1,0 +1,28 @@
+import './defs/bg';
+import './defs/c';
+import './defs/anim';
+import './defs/anim_loop';
+import './defs/anim_stop';
+import './defs/anim_speed';
+import './defs/anim_reverse';
+import './defs/s';
+import './defs/goto';
+import './defs/hide';
+import './defs/choices';
+import './defs/msg_window';
+import './defs/clear';
+import './defs/msg_fade';
+import './defs/wait';
+import './defs/shake';
+import './defs/cam';
+import './defs/pos';
+import './defs/msg';
+import './defs/flash';
+import './defs/type';
+import './defs/type_wait';
+import type { SceneHandlers } from './sceneHandlers';
+export declare function dispatchTag(tag: string, handlers: SceneHandlers): Promise<void>;
+export { setTagConfig, getTagConfig, registerTag } from './registry';
+export type { SceneHandlers } from './sceneHandlers';
+export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
+//# sourceMappingURL=index.d.ts.map
