@@ -9,18 +9,26 @@
 
 const esbuild = require('esbuild');
 const path = require('path');
-
+const fs = require('fs');
 const root = path.resolve(__dirname, "..");
+const entryFile = path.join(root, 'standalone.ts');
+const outFile = path.join(root, 'dist/vnlayer.js');
+console.log('--- ビルド開始 ---');
+console.log('Entry Point:', entryFile);
+console.log('Output File:', outFile);
+console.log('distフォルダ存在:', fs.existsSync(path.join(root, 'dist')));
 esbuild
   .build({
     absWorkingDir: root,
-    entryPoints: [path.join(root, 'standalone.ts')],
+    entryPoints: [entryFile],
+    outfile: outFile,
     bundle: true,
     minify: true,
     format: 'iife',
     globalName: '__vnlayerBundleInit', // window.VNLayerはapi.ts側で自分でwindowに生やす
     target: ['es2019'],
     loader: { '.tsx': 'tsx', '.ts': 'ts' },
+    external: [],
     define: {
       'process.env.NODE_ENV': '"production"',
     },
