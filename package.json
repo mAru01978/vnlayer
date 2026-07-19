@@ -2,16 +2,35 @@
   "name": "vnlayer",
   "version": "0.1.0",
   "private": true,
-  "description": "Ink駆動の軽量VN演出レイヤー。Reactコンポーネントとしても、vnlayer.js(script読み込み+API経由)としても使える。",
    "scripts": {
-    "list:tags": "node scripts/list-tags.js",
+   "list:tags": "node scripts/list-tags.js",
     "compile-story": "node scripts/compile-story.js",
     "add:tag": "node scripts/new-tag.js",
     "add:char": "node scripts/new-character.js",
     "add:scene": "node scripts/new-scene.js",
     "add:scenario": "node scripts/new-scenario.js",
     "menu": "node scripts/menu.js",
+    "build": "tsc -p tsconfig.build.json",
     "build:vnlayer": "node scripts/build-vnlayer-standalone.js"
+    },
+  "description": "Ink駆動の軽量VN演出レイヤー。Reactコンポーネントとしても、vnlayer.js(script読み込み+API経由)としても使える。",
+  "main": "dist/api.js",
+  "types": "dist/api.d.ts",
+  "files": [
+    "dist",
+    "vendor",
+    "global.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    },
+    "./global": "./global.d.ts",
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
   },
   "peerDependencies": {
     "react": ">=18",
@@ -30,6 +49,7 @@
     "react-dom": "^19",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.24.0",
+    "next": "^15"
   }
 }

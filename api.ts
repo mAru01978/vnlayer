@@ -56,10 +56,18 @@ function resolveElement(selector: string): Element {
   return el;
 }
 
-function mount(selector: string, options: MountOptions): void {
+// mount()はPromiseを返す。resolveされるのは「そのインスタンスのStoryProviderが
+// マウントされ、setContext/notify/reset等を安全に呼べる状態になった」時点
+// (=EngineBridgeのonReadyが発火した時点)。Ink本文の初回ロード(fetch/inkjs実行)
+// 自体の完了までは待たない(それを待つと「表示はされているがまだ値を送れない」
+// 期間が無くなる代わりに、mount自体が遅く見えてしまうため)。
+// これにより、以下のように順序を保証しながら書ける:
+//   await VNLayer.mount("#vn", {...});
+//   await VNLayer.setContext({...}, "#vn"); // ← "instance not ready"警告が出ない
+function mount(selector: string, options: MountOptions): Promise<void> {
   if (instances.has(selector)) {
     console.warn(`[VNLayer] "${selector}" is already mounted. Call unmount() first if you want to remount.`);
-    return;
+    return Promise.resolve();
   }
 
   const container = resolveElement(selector);
@@ -67,25 +75,29 @@ function mount(selector: string, options: MountOptions): void {
   const instance: Instance = { root, container, handle: null, eventSeq: {} };
   instances.set(selector, instance);
 
-  root.render(
-    createElement(VNLayerOverlay, {
-      scenario: options.scenario ?? 'Scenario1',
-      mode: options.mode,
-      uiAnchor: options.uiAnchor,
-      showUi: options.showUi,
-      stepProvider: options.stepProvider,
-      onReady: (handle: VNLayerHandle) => {
-        instance.handle = handle;
-      },
-    })
-  );
+  return new Promise<void>((resolve) => {
+    root.render(
+      createElement(VNLayerOverlay, {
+        scenario: options.scenario ?? 'Scenario1',
+        mode: options.mode,
+        uiAnchor: options.uiAnchor,
+        showUi: options.showUi,
+        stepProvider: options.stepProvider,
+        onReady: (handle: VNLayerHandle) => {
+          instance.handle = handle;
+          resolve();
+        },
+      })
+    );
+  });
 }
 
-function unmount(selector: string): void {
+function unmount(selector: string): Promise<void> {
   const instance = instances.get(selector);
-  if (!instance) return;
+  if (!instance) return Promise.resolve();
   instance.root.unmount();
   instances.delete(selector);
+  return Promise.resolve();
 }
 
 // setContext({ seconds }) : 引数のselectorを省略した場合、マウント中の全インスタンスに
@@ -190,7 +202,7 @@ async function reset(selector?: string): Promise<void> {
   );
 }
 
-function configure(options: ConfigureOptions): void {
+async function configure(options: ConfigureOptions): Promise<void> {
   if (options.characterSlots) setCharacterSlots(options.characterSlots);
   if (options.tags) {
     for (const [key, partial] of Object.entries(options.tags)) {

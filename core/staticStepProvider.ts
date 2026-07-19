@@ -17,9 +17,8 @@ import type { RunResult, VisualState } from './types';
 type StoryHandle = { story: Story; visual: VisualState };
 
 const liveStories = new Map<string, StoryHandle>();
-type StoryJson = Record<string,any>;
 
-async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<StoryJson> {
+async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<Record<string, unknown>> {
   const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
   if (!res.ok) {
     throw new Error(`[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`);
@@ -44,6 +43,8 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
       story.onError = (message: string, type: unknown) => {
         console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
       };
+      story.variablesState['currentHour'] = new Date().getHours();
+      story.variablesState['dayOfWeek'] = new Date().getDay();
       handle = { story, visual: { bg: '', characters: {}, speaker: '' } };
       liveStories.set(scenario, handle);
     }
@@ -72,7 +73,9 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
     },
     async idle(scenario, varName, value) {
       const handle = await ensureStory(scenario);
-      handle.story.variablesState[varName] = value;
+      // idle()のvalueは呼び出し側(ホストページ)が任意の値を渡せる設計上unknown型。
+      // inkjsのvariablesStateは緩い型(実質any)で受け取る前提なので、ここで明示キャストする。
+      handle.story.variablesState[varName] = value as any;
     },
     async reset(scenario) {
       liveStories.delete(scenario);
