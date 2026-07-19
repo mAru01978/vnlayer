@@ -17,7 +17,7 @@ import type { RunResult, VisualState } from './types';
 type StoryHandle = { story: Story; visual: VisualState };
 
 const liveStories = new Map<string, StoryHandle>();
-const StoryJson = new Record<string,any>();
+type StoryJson = Record<string,any>;
 
 async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<StoryJson> {
   const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
