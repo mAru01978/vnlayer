@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useStory } from '../context/StoryContext';
 import { getCharacterSlot } from '../tags/characterSlots';
 import { mockRenderer } from './mockRenderer';
@@ -20,7 +20,7 @@ export type UiVisibility = {
   backlogButton?: boolean;
   // 選択肢欄(ink側のchoices:hide/showとはAND条件。どちらかがfalseなら非表示)
   choices?: boolean;
-  // 吹き出し・ナレーションキャプション(ink側のmsgwindow:hide/showとはAND条件)
+  // 吹き出し・ナレーションキャプション(ink側のmsg_window:hide/showとはAND条件)
   messageWindow?: boolean;
   // 「あなた: ...」欄
   userLine?: boolean;
@@ -35,7 +35,7 @@ export default function StageView({
   uiAnchor?: UiAnchor;
   // true/false で一括指定、または個別に真偽値を指定できる。
   // これはホスト側(mount側)が決める「表示できる上限」で、ink側のタグ
-  // (choices:hide/show, msgwindow:hide/show)はこの上限の内側でのみ効く
+  // (choices:hide/show, msg_window:hide/show)はこの上限の内側でのみ効く
   // (ホスト側でfalseにした要素は、ink側からは復活させられない)。
   showUi?: boolean | UiVisibility;
 }) {
@@ -143,7 +143,7 @@ export default function StageView({
     (c: any) => !c.tags?.some((t: string) => t.split(':')[0] === 'tick')
   );
 
-  const camStyle: React.CSSProperties = {
+  const camStyle: CSSProperties = {
     transform: `scale(${cam.scale})`,
     transformOrigin: `${cam.originX}% ${cam.originY}%`,
     transition: 'transform 500ms ease',
@@ -157,7 +157,7 @@ export default function StageView({
       : null;
 
   const isOverlay = mode === 'overlay';
-  const anchorSide: React.CSSProperties = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
+  const anchorSide: CSSProperties = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
 
   const uiVis: Required<UiVisibility> =
     typeof showUi === 'boolean'
@@ -169,11 +169,11 @@ export default function StageView({
           userLine: showUi.userLine ?? true,
         };
 
-  const outerStyle: React.CSSProperties = isOverlay
+  const outerStyle: CSSProperties = isOverlay
     ? { position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50, fontFamily: 'sans-serif' }
     : { maxWidth: 640, margin: '0 auto', fontFamily: 'sans-serif' };
 
-  const stageStyle: React.CSSProperties = isOverlay
+  const stageStyle: CSSProperties = isOverlay
     ? { position: 'absolute', inset: 0 }
     : {
         position: 'relative',

@@ -4,7 +4,13 @@
 
 import type { ReactNode } from 'react';
 
-export type CharacterState = { expression: string; motion?: string };
+export type CharacterState = {
+  expression: string;
+  motion?: string;
+  animLoop?: boolean;
+  animSpeed?: number;
+  animReverse?: boolean;
+};
 export type Slot = { originX: number; originY: number };
 
 export type BackgroundProps = {

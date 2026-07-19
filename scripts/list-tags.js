@@ -22,7 +22,7 @@ if (!fs.existsSync(tagsDefsDir)) {
 }
 
 // lint-tags.js と同じマッピング: タグ名 → defaultConfig内の対応表のネストしたキー名。
-// ラベル対応表を持たないタグ(bg/c/anim/s/hide/choices/goto/clear/msgfade/msgwindow等)は
+// ラベル対応表を持たないタグ(bg/c/anim/s/hide/choices/goto/clear/msg_fade/msg_window等)は
 // ここに載せない(ラベル一覧を出さない、という判断がそのまま反映される)。
 const TAG_LABEL_KEY = {
   wait: 'durations',
@@ -31,6 +31,7 @@ const TAG_LABEL_KEY = {
   pos: 'presets',
   flash: 'colors',
   type: 'speeds',
+  anim_speed: 'speeds',
 };
 
 function findMatchingBrace(text, openIndex) {
@@ -100,7 +101,7 @@ function extractTagInfo(filePath) {
   const registerLineIndex = lines.findIndex((l) => l.includes('registerTag('));
   if (registerLineIndex === -1) return null;
 
-  const keyMatch = source.match(/key:\s*'([a-zA-Z]+)'/);
+  const keyMatch = source.match(/key:\s*'([a-zA-Z_]+)'/);
   if (!keyMatch) return null;
   const tagName = keyMatch[1];
 

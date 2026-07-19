@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { useStoryEngine } from '../core/useStoryEngine';
 import type { StepProvider } from '../core/StepProvider';
 import { getDefaultOnNavigate } from '../core/defaultNavigate';
@@ -31,7 +31,7 @@ export const StoryProvider = ({
   stepProvider,
   onNavigate,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   scenario?: string;
   // 明示的に渡した場合のみそちらを使う(未指定ならcore側の既定Providerを使う)
   stepProvider?: StepProvider;

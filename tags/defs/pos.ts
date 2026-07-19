@@ -1,4 +1,5 @@
 import { registerTag } from '../registry';
+import { isNumeric } from '../numericOrLabel';
 
 export type PosConfig = { presets: Record<string, { originX: number; originY: number }> };
 
@@ -8,16 +9,22 @@ const defaultConfig: PosConfig = {
   },
 };
 
+// # pos:alice:center のようなラベルに加えて、# pos:alice:30:60 のように
+// 生の座標(originX:originY、%)を直接指定することもできる。
 registerTag<PosConfig>({
   key: 'pos',
   defaultConfig,
   run: ({ args, handlers, config }) => {
-    const [name, preset] = args;
-    if (preset === 'reset') {
+    const [name, a1, a2] = args;
+    if (a1 === 'reset') {
       handlers.setPos(name, 'reset');
       return;
     }
-    const coords = config.presets[preset];
+    if (isNumeric(a1) && isNumeric(a2)) {
+      handlers.setPos(name, { originX: Number(a1), originY: Number(a2) });
+      return;
+    }
+    const coords = config.presets[a1];
     if (coords) handlers.setPos(name, coords);
   },
 });

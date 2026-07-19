@@ -2,7 +2,8 @@
   "name": "vnlayer",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+  "description": "Ink駆動の軽量VN演出レイヤー。Reactコンポーネントとしても、vnlayer.js(script読み込み+API経由)としても使える。",
+   "scripts": {
     "list:tags": "node scripts/list-tags.js",
     "compile-story": "node scripts/compile-story.js",
     "add:tag": "node scripts/new-tag.js",
@@ -12,15 +13,23 @@
     "menu": "node scripts/menu.js",
     "build:vnlayer": "node scripts/build-vnlayer-standalone.js"
   },
-  "description": "Ink駆動の軽量VN演出レイヤー。Reactコンポーネントとしても、vnlayer.js(script読み込み+API経由)としても使える。",
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": false },
+    "react-dom": { "optional": false }
   },
   "dependencies": {
     "inkjs": "file:./vendor/inkjs"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "typescript": "^5",
+    "react": "^19",
+    "react-dom": "^19",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "esbuild": "^0.24.0"
   }
 }

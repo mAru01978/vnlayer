@@ -5,6 +5,15 @@ export type SceneHandlers = {
   setBg: (name: string) => void;
   setChar: (name: string, expression: string) => void;
   setAnim: (name: string, motion: string) => void;
+  // anim_loop:名前:モーション → そのモーションをループ再生する指定
+  setAnimLoop: (name: string, motion: string) => void;
+  // anim_stop:名前 → 再生中のモーションを止める(表情はそのまま)
+  setAnimStop: (name: string) => void;
+  // anim_speed:名前:速度 → 再生速度の倍率(1が通常速度)。ラベル/数値どちらも
+  // tags/defs/anim_speed.ts側で解決済みの数値としてここに渡ってくる。
+  setAnimSpeed: (name: string, speed: number) => void;
+  // anim_reverse:名前:モーション → そのモーションを逆再生する指定
+  setAnimReverse: (name: string, motion: string) => void;
   setSpeaker: (name: string) => void;
   onGoto: (path: string) => void;
   wait: (ms: number) => Promise<void>;
@@ -15,7 +24,7 @@ export type SceneHandlers = {
 
   hideChar: (name: string) => void;
   setChoicesVisible: (visible: boolean) => void;
-  // msgwindow:hide/show 用。choices:hide/showと対になる、メッセージウィンドウ
+  // msg_window:hide/show 用。choices:hide/showと対になる、メッセージウィンドウ
   // (吹き出し・ナレーションキャプション)全体のScene単位の表示/非表示切り替え。
   setMessageWindowVisible: (visible: boolean) => void;
   // 'reset' か、既に解決済みの座標

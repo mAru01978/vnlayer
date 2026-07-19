@@ -65,6 +65,9 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: Character
       <div style={{ fontSize: 10, opacity: 0.8 }}>
         {state.expression}
         {state.motion ? ` / ${state.motion}` : ''}
+        {state.animLoop ? ' 🔁' : ''}
+        {state.animReverse ? ' ⏪' : ''}
+        {state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''}
       </div>
     </div>
   );

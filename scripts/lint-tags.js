@@ -30,7 +30,7 @@ if (!fs.existsSync(tagsDefsDir)) {
 }
 
 // タグ名 → defaultConfig内の「ラベル→値」対応表が入っているネストしたキー名。
-// ラベル対応表を持たないタグ(bg/c/anim/s/hide/choices/goto/clear/msgfade/msgwindow等)は
+// ラベル対応表を持たないタグ(bg/c/anim/s/hide/choices/goto/clear/msg_fade/msg_window等)は
 // ここに載せない(=チェック対象外)。
 const TAG_LABEL_KEY = {
   wait: 'durations',
@@ -39,6 +39,7 @@ const TAG_LABEL_KEY = {
   pos: 'presets',
   flash: 'colors',
   type: 'speeds',
+  anim_speed: 'speeds',
 };
 
 function findMatchingBrace(text, openIndex) {
@@ -138,7 +139,7 @@ const inkFiles = listInkFiles(dataDir);
 let problemCount = 0;
 
 // "# タグ名:引数1:引数2" の形のタグ行を拾う(引数は無くてもOK)。
-const tagLinePattern = /^\s*#\s*([a-zA-Z]+):([a-zA-Z0-9_]+)(?::([a-zA-Z0-9_]+))?/;
+const tagLinePattern = /^\s*#\s*([a-zA-Z_]+):([a-zA-Z0-9_.]+)(?::([a-zA-Z0-9_.]+))?/;
 
 for (const file of inkFiles) {
   const rel = path.relative(root, file);
@@ -153,8 +154,9 @@ for (const file of inkFiles) {
     // タグごとに「どの引数がラベルか」の位置が違う。
     // cam:モーション:対象キャラ → 1番目がラベル
     // pos:キャラ名:プリセット名  → 2番目がラベル("reset"は特別なキーワードなので対象外)
+    // anim_speed:キャラ名:速度  → 2番目がラベル
     let label;
-    if (tag === 'pos') {
+    if (tag === 'pos' || tag === 'anim_speed') {
       if (arg2 === 'reset') return;
       label = arg2;
     } else {
@@ -162,6 +164,9 @@ for (const file of inkFiles) {
     }
 
     if (!label || label === '_ref') return; // _refは動的解決される特別な値なので対象外
+    // ラベルの代わりに生の数値(wait:1500、cam:1.8、shake:8:400等)を直接
+    // 書けるようになったタグがあるので、数値として解釈できる場合はチェック対象外にする。
+    if (!Number.isNaN(Number(label)) && label.trim() !== '') return;
     if (!validLabels.has(label)) {
       console.error(
         `✗ ${rel}:${i + 1}  "${tag}:${arg1}${arg2 ? ':' + arg2 : ''}" の "${label}" というラベルは tags/defs/${tag}.ts に存在しません`

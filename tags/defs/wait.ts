@@ -1,4 +1,5 @@
 import { registerTag } from '../registry';
+import { numericOrLabel } from '../numericOrLabel';
 
 export type WaitConfig = { durations: Record<string, number> };
 
@@ -11,11 +12,12 @@ const defaultConfig: WaitConfig = {
   },
 };
 
+// # wait:long のようなラベルに加えて、# wait:1500 のように生のms数値も直接指定できる。
 registerTag<WaitConfig>({
   key: 'wait',
   defaultConfig,
   run: async ({ args, handlers, config }) => {
-    const ms = config.durations[args[0]] ?? 500;
+    const ms = numericOrLabel(args[0], config.durations, 500);
     await handlers.wait(ms);
   },
 });

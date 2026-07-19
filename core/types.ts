@@ -4,7 +4,16 @@
 // (それらはcontext/StoryContext.tsxやapi.ts側の「つなぎ込み」に閉じ込める)。
 
 export type Choice = { text: string; index: number; tags: string[] };
-export type CharacterState = { expression: string; motion?: string };
+export type CharacterState = {
+  expression: string;
+  motion?: string;
+  // anim_loop:で立てるフラグ。ループ再生中かどうか
+  animLoop?: boolean;
+  // anim_speed:で設定する再生速度倍率(1が通常速度)
+  animSpeed?: number;
+  // anim_reverse:で立てるフラグ。逆再生中かどうか
+  animReverse?: boolean;
+};
 export type CamState = { target: string; scale: number; originX: number; originY: number };
 export type ShakeState = { nonce: number; amplitude: number; duration: number };
 export type LineEntry = { speaker: string; content: string };
@@ -33,7 +42,7 @@ export type StoryEngine = {
   isProcessing: boolean;
   choose: (index: number) => Promise<void>;
   choicesHidden: boolean;
-  // msgwindow:hide/show タグで切り替える、メッセージウィンドウ(吹き出し・ナレーション
+  // msg_window:hide/show タグで切り替える、メッセージウィンドウ(吹き出し・ナレーション
   // キャプション)全体のScene単位の表示/非表示。個々のmsg:transient等とは別の、
   // choicesHiddenと対になる「このシーンでは吹き出し自体を出さない」フラグ。
   messageWindowHidden: boolean;
