@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// VNLayer/scripts/ 以下の各スクリプトを、矢印キー(↑↓)+Enterで選んで実行できる
+// scripts/ 以下の各スクリプトを、矢印キー(↑↓)+Enterで選んで実行できる
 // 対話式メニュー。新しいnpmパッケージは使わず、Node標準機能だけで実装している。
 //
 // 使い方: node VNLayer/scripts/menu.js
@@ -13,7 +13,7 @@ const readline = require('readline');
 const MENU_ITEMS = [
   {
     label: '新しいシーンを追加(new-scene.js)',
-    run: () => runWithPrompt('シーン名を入力してください(例: sceneD): ', (name) => ['node', 'VNLayer/scripts/new-scene.js', name]),
+    run: () => runWithPrompt('シーン名を入力してください(例: sceneD): ', (name) => ['node', 'scripts/new-scene.js', name]),
   },
   {
     label: '新しいキャラクターを追加(new-character.js)',
@@ -24,37 +24,37 @@ const MENU_ITEMS = [
           { question: '立ち位置 originX(0-100の数値): ' },
           { question: '立ち位置 originY(0-100の数値): ' },
         ],
-        (answers) => ['node', 'VNLayer/scripts/new-character.js', ...answers]
+        (answers) => ['node', 'scripts/new-character.js', ...answers]
       ),
   },
   {
     label: '新しいタグの雛形を追加(new-tag.js)',
-    run: () => runWithPrompt('タグ名を入力してください(例: sfx): ', (name) => ['node', 'VNLayer/scripts/new-tag.js', name]),
+    run: () => runWithPrompt('タグ名を入力してください(例: sfx): ', (name) => ['node', 'scripts/new-tag.js', name]),
   },
   {
     label: '新しいシナリオを追加(new-scenario.js)',
     run: () =>
       runWithPrompt('シナリオ名を入力してください(例: Scenario2): ', (name) => [
         'node',
-        'VNLayer/scripts/new-scenario.js',
+        'scripts/new-scenario.js',
         name,
       ]),
   },
   {
     label: 'タグ一覧(TAGS.md)を生成(list-tags.js)',
-    run: () => runDirect(['node', 'VNLayer/scripts/list-tags.js']),
+    run: () => runDirect(['node', 'scripts/list-tags.js']),
   },
   {
     label: 'タグのラベルをチェック(lint-tags.js)',
-    run: () => runDirect(['node', 'VNLayer/scripts/lint-tags.js']),
+    run: () => runDirect(['node', 'scripts/lint-tags.js']),
   },
   {
     label: 'Inkを再コンパイル(compile-story.js)',
-    run: () => runDirect(['node', 'VNLayer/scripts/compile-story.js']),
+    run: () => runDirect(['node', 'scripts/compile-story.js']),
   },
   {
     label: 'inkjs/inkjs-compilerをvendor/に固定・更新(update-vendor.js)',
-    run: () => runDirect(['node', 'VNLayer/scripts/update-vendor.js']),
+    run: () => runDirect(['node', 'scripts/update-vendor.js']),
   },
   {
     label: '終了',
