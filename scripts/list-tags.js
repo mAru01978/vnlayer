@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = path.join(__dirname, '..', '..');
+const root = path.join(__dirname, '..');
 const tagsDefsDir = path.join(__dirname, '..', 'tags', 'defs');
 const outputPath = path.join(root, 'TAGS.md');
 
