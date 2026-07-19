@@ -43,6 +43,8 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
       story.onError = (message: string, type: unknown) => {
         console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
       };
+      story.variablesState['currentHour'] = new Date().getHours();
+      story.variablesState['dayOfWeek'] = new Date().getDay();
       handle = { story, visual: { bg: '', characters: {}, speaker: '' } };
       liveStories.set(scenario, handle);
     }
@@ -62,6 +64,19 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
     },
     async choose(scenario, index) {
       const handle = await ensureStory(scenario);
+      const validCount = handle.story.currentChoices.length;
+      if (index < 0 || index >= validCount) {
+        // #tick等で複数の選択肢に同時にタイマーを張っている場合、一番早く経過した
+        // ものが既にストーリーを先に進めた後で、後発のタイマーが古いindexのまま
+        // choose()を呼んでしまうことがある(競合状態)。実害は無い(古い呼び出しは
+        // 単に無視して現在の状態を返すだけ)が、inkjs内部の例外に頼らず、ここで
+        // 早期に弾いて分かりやすい警告にしておく。
+        console.warn(
+          `[VNLayer static] choose(${index}) ignored: only ${validCount} choice(s) are currently available ` +
+            `(likely a stale #tick timer firing after the story already advanced).`
+        );
+        return runAndCache(scenario, handle);
+      }
       try {
         handle.story.ChooseChoiceIndex(index);
       } catch (e) {

@@ -6,6 +6,10 @@ export type SceneHandlers = {
     setAnimStop: (name: string) => void;
     setAnimSpeed: (name: string, speed: number) => void;
     setAnimReverse: (name: string, motion: string) => void;
+    setGaze: (name: string, target: {
+        x: number;
+        y: number;
+    } | 'reset') => void;
     setSpeaker: (name: string) => void;
     onGoto: (path: string) => void;
     wait: (ms: number) => Promise<void>;

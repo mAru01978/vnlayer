@@ -20,6 +20,7 @@ import './defs/wait';
 import './defs/shake';
 import './defs/cam';
 import './defs/pos';
+import './defs/gaze';
 import './defs/msg';
 import './defs/flash';
 import './defs/type';

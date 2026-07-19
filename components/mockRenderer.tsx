@@ -19,6 +19,15 @@ const BG_COLORS: Record<string, string> = {
   izakaya_main_closed: '#4a4a4a',
 };
 
+// キャラの立ち位置(originX/originY、%)から視線ターゲット(gaze.x/gaze.y、%)への
+// 向きを角度(度)で返す。ステージが正方形でない場合の縦横比の歪みは無視した
+// 簡易計算(モック確認用としては十分)。
+function computeGazeAngleDeg(fromX: number, fromY: number, toX: number, toY: number): number {
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  return (Math.atan2(dy, dx) * 180) / Math.PI;
+}
+
 function resolveBgColor(bg: string): string {
   const key = bg.replace(':', '_');
   return BG_COLORS[`izakaya_main_${bg.split(':')[1] ?? bg}`] ?? BG_COLORS[key] ?? '#333';
@@ -39,37 +48,66 @@ function Background({ bg }: BackgroundProps) {
 }
 
 function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: CharacterSpriteProps) {
+  const gazeAngle = state.gaze
+    ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
+    : null;
+
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: `${slot.originX}%`,
-        top: `${slot.originY}%`,
-        transform: 'translate(-50%, -50%)',
-        width: 80,
-        height: 140,
-        borderRadius: 6,
-        background: '#8a8a8a',
-        opacity: hasSpeaker ? (isFocused ? 1 : 0.35) : 1,
-        transition: 'left 500ms ease, top 500ms ease, opacity 300ms ease',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        color: '#fff',
-        fontSize: 12,
-        paddingBottom: 4,
-      }}
-    >
-      <div>{name}</div>
-      <div style={{ fontSize: 10, opacity: 0.8 }}>
-        {state.expression}
-        {state.motion ? ` / ${state.motion}` : ''}
-        {state.animLoop ? ' 🔁' : ''}
-        {state.animReverse ? ' ⏪' : ''}
-        {state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''}
+    <>
+      <div
+        style={{
+          position: 'absolute',
+          left: `${slot.originX}%`,
+          top: `${slot.originY}%`,
+          transform: 'translate(-50%, -50%)',
+          width: 80,
+          height: 140,
+          borderRadius: 6,
+          background: '#8a8a8a',
+          opacity: hasSpeaker ? (isFocused ? 1 : 0.35) : 1,
+          transition: 'left 500ms ease, top 500ms ease, opacity 300ms ease',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          color: '#fff',
+          fontSize: 12,
+          paddingBottom: 4,
+        }}
+      >
+        <div>{name}</div>
+        <div style={{ fontSize: 10, opacity: 0.8 }}>
+          {state.expression}
+          {state.motion ? ` / ${state.motion}` : ''}
+          {state.animLoop ? ' 🔁' : ''}
+          {state.animReverse ? ' ⏪' : ''}
+          {state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''}
+        </div>
       </div>
-    </div>
+
+      {/* 視線矢印(モック専用)。頭の少し上に置き、gaze:で指定された座標の方向へ
+          回転させるだけの簡易表示。素材が入ったらrealRenderer側では実際の目線の
+          描き分け(瞳の位置、顔の向き等)に置き換わる想定で、ここではあくまで
+          「gazeタグの値が正しく反映されているか」を確認するための目印。 */}
+      {gazeAngle !== null && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${slot.originX}%`,
+            top: `${slot.originY}%`,
+            transform: `translate(-50%, -50%) translateY(-84px) rotate(${gazeAngle}deg)`,
+            width: 0,
+            height: 0,
+            borderTop: '6px solid transparent',
+            borderBottom: '6px solid transparent',
+            borderLeft: '14px solid #ffd54a',
+            transition: 'transform 150ms linear, left 500ms ease, top 500ms ease',
+            pointerEvents: 'none',
+            zIndex: 6,
+          }}
+        />
+      )}
+    </>
   );
 }
 

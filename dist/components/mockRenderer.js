@@ -5,6 +5,14 @@ const BG_COLORS = {
     izakaya_main_night: '#2b2440',
     izakaya_main_closed: '#4a4a4a',
 };
+// キャラの立ち位置(originX/originY、%)から視線ターゲット(gaze.x/gaze.y、%)への
+// 向きを角度(度)で返す。ステージが正方形でない場合の縦横比の歪みは無視した
+// 簡易計算(モック確認用としては十分)。
+function computeGazeAngleDeg(fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    return (Math.atan2(dy, dx) * 180) / Math.PI;
+}
 function resolveBgColor(bg) {
     const key = bg.replace(':', '_');
     return BG_COLORS[`izakaya_main_${bg.split(':')[1] ?? bg}`] ?? BG_COLORS[key] ?? '#333';
@@ -18,25 +26,41 @@ function Background({ bg }) {
         } }));
 }
 function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }) {
-    return (_jsxs("div", { style: {
-            position: 'absolute',
-            left: `${slot.originX}%`,
-            top: `${slot.originY}%`,
-            transform: 'translate(-50%, -50%)',
-            width: 80,
-            height: 140,
-            borderRadius: 6,
-            background: '#8a8a8a',
-            opacity: hasSpeaker ? (isFocused ? 1 : 0.35) : 1,
-            transition: 'left 500ms ease, top 500ms ease, opacity 300ms ease',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            color: '#fff',
-            fontSize: 12,
-            paddingBottom: 4,
-        }, children: [_jsx("div", { children: name }), _jsxs("div", { style: { fontSize: 10, opacity: 0.8 }, children: [state.expression, state.motion ? ` / ${state.motion}` : '', state.animLoop ? ' 🔁' : '', state.animReverse ? ' ⏪' : '', state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''] })] }));
+    const gazeAngle = state.gaze
+        ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
+        : null;
+    return (_jsxs(_Fragment, { children: [_jsxs("div", { style: {
+                    position: 'absolute',
+                    left: `${slot.originX}%`,
+                    top: `${slot.originY}%`,
+                    transform: 'translate(-50%, -50%)',
+                    width: 80,
+                    height: 140,
+                    borderRadius: 6,
+                    background: '#8a8a8a',
+                    opacity: hasSpeaker ? (isFocused ? 1 : 0.35) : 1,
+                    transition: 'left 500ms ease, top 500ms ease, opacity 300ms ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    color: '#fff',
+                    fontSize: 12,
+                    paddingBottom: 4,
+                }, children: [_jsx("div", { children: name }), _jsxs("div", { style: { fontSize: 10, opacity: 0.8 }, children: [state.expression, state.motion ? ` / ${state.motion}` : '', state.animLoop ? ' 🔁' : '', state.animReverse ? ' ⏪' : '', state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''] })] }), gazeAngle !== null && (_jsx("div", { style: {
+                    position: 'absolute',
+                    left: `${slot.originX}%`,
+                    top: `${slot.originY}%`,
+                    transform: `translate(-50%, -50%) translateY(-84px) rotate(${gazeAngle}deg)`,
+                    width: 0,
+                    height: 0,
+                    borderTop: '6px solid transparent',
+                    borderBottom: '6px solid transparent',
+                    borderLeft: '14px solid #ffd54a',
+                    transition: 'transform 150ms linear, left 500ms ease, top 500ms ease',
+                    pointerEvents: 'none',
+                    zIndex: 6,
+                } }))] }));
 }
 function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick }) {
     return (_jsxs("div", { onClick: onClick, style: {
