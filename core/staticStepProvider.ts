@@ -17,8 +17,9 @@ import type { RunResult, VisualState } from './types';
 type StoryHandle = { story: Story; visual: VisualState };
 
 const liveStories = new Map<string, StoryHandle>();
+const StoryJson = new Record<string,any>();
 
-async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<unknown> {
+async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<StoryJson> {
   const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
   if (!res.ok) {
     throw new Error(`[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`);
