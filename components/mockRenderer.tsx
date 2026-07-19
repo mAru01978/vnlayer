@@ -48,6 +48,11 @@ function Background({ bg }: BackgroundProps) {
 }
 
 function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: CharacterSpriteProps) {
+  console.log({
+  name,
+  slot,
+  gaze: state.gaze,
+});
   const gazeAngle = state.gaze
     ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
     : null;
