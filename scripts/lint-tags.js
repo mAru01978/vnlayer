@@ -81,9 +81,15 @@ function extractTopLevelKeys(objectText) {
   let depth = 0;
   let buffer = '';
   const flush = () => {
-    const trimmed = buffer.trim();
+    // list-tags.jsと同じ修正: 行コメントの直後に実キーが続く場合に
+    // セグメントごと捨てられていたバグに対応。
+    const cleaned = buffer
+      .split('\n')
+      .map((line) => line.replace(/\/\/.*$/, ''))
+      .join('\n');
+    const trimmed = cleaned.trim();
     buffer = '';
-    if (!trimmed || trimmed.startsWith('//')) return;
+    if (!trimmed) return;
     const m = trimmed.match(/^'?([a-zA-Z0-9_]+)'?\s*:/);
     if (m) keys.add(m[1]);
   };

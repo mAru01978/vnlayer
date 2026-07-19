@@ -17,7 +17,7 @@ const outputPath = path.join(root, 'TAGS.md');
 
 if (!fs.existsSync(tagsDefsDir)) {
   console.error(`見つかりません: ${tagsDefsDir}`);
-  console.error('このスクリプトはVNLayer/scripts/に置かれている前提です。');
+  console.error('このスクリプトはscripts/に置かれている前提です。');
   process.exit(1);
 }
 
@@ -72,9 +72,18 @@ function extractTopLevelKeys(objectText) {
   let depth = 0;
   let buffer = '';
   const flush = () => {
-    const trimmed = buffer.trim();
+    // 修正: 以前は「セグメント全体が//で始まるか」だけを見ていたため、
+    // 「// コメント行\nzoomout: 0.8,」のように行コメントの直後(同じカンマ区切り
+    // セグメント内)に実際のキーが続く場合、コメントごとキーも丸ごと捨てられて
+    // いた(cam.tsのzoomoutラベルがTAGS.mdから消えていたのはこれが原因)。
+    // 行ごとに"//"以降を取り除いてから判定する。
+    const cleaned = buffer
+      .split('\n')
+      .map((line) => line.replace(/\/\/.*$/, ''))
+      .join('\n');
+    const trimmed = cleaned.trim();
     buffer = '';
-    if (!trimmed || trimmed.startsWith('//')) return;
+    if (!trimmed) return;
     const m = trimmed.match(/^'?([a-zA-Z0-9_]+)'?\s*:/);
     if (m) keys.push(m[1]);
   };
@@ -98,7 +107,11 @@ function extractTagInfo(filePath) {
   const source = fs.readFileSync(filePath, 'utf8');
   const lines = source.split('\n');
 
-  const registerLineIndex = lines.findIndex((l) => l.includes('registerTag('));
+  // 修正: registerTag<WaitConfig>({...}) のようにジェネリック型引数を使っている
+  // タグ(defaultConfigを持つほぼ全てのタグ)は "registerTag(" という文字列に
+  // ならない(<...>が間に挟まる)ため、旧チェックだと検出漏れしてTAGS.mdから
+  // 抜け落ちていた(pos/wait/shake/cam/type/flash/type_wait/anim_speed/msg等)。
+  const registerLineIndex = lines.findIndex((l) => l.includes('registerTag'));
   if (registerLineIndex === -1) return null;
 
   const keyMatch = source.match(/key:\s*'([a-zA-Z_]+)'/);
