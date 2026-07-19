@@ -1,0 +1,1 @@
+{"version":3,"file":"staticStepProvider.d.ts","sourceRoot":"","sources":["../../core/staticStepProvider.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,gBAAgB,CAAC;AA0BnD,MAAM,MAAM,yBAAyB,GAAG;IAGtC,WAAW,CAAC,EAAE,MAAM,CAAC;CACtB,CAAC;AAEF,wBAAgB,wBAAwB,CAAC,OAAO,GAAE,yBAA8B,GAAG,YAAY,CAmD9F"}
