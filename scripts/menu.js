@@ -61,6 +61,10 @@ const MENU_ITEMS = [
     run: () => runDirect(['node',"scripts/build-vnlayer-standalone.js"]),
   },
   {
+    label: 'VNLayerのTypeScriptビルド(build-vnlayer-tsc.js)',
+    run: () => runDirect(['node',"scripts/build-vnlayer-tsc.js"]),
+  },
+  {
     label: '終了',
     run: () => {
       process.exit(0);
