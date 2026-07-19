@@ -14,7 +14,7 @@ export type TagRunContext<TConfig> = {
 
 export type TagDefinition<TConfig = any> = {
   key: string;
-  // 省略した場合、このタグは設定を持たない(bg/c/anim/s/goto/hide/choices/clear/msgfade等)
+  // 省略した場合、このタグは設定を持たない(bg/c/anim/s/goto/hide/choices/clear/msg_fade等)
   defaultConfig?: TConfig;
   run: (ctx: TagRunContext<TConfig>) => Promise<void> | void;
 };

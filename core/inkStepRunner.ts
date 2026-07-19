@@ -51,6 +51,7 @@ export function continueUntilChoice(story: Story, initialVisual: VisualState): R
           const [name, expression] = rest;
           if (name) {
             visual.characters[name] = {
+              ...visual.characters[name],
               expression: expression ?? 'normal',
               motion: visual.characters[name]?.motion,
             };
@@ -59,8 +60,58 @@ export function continueUntilChoice(story: Story, initialVisual: VisualState): R
           const [name, motion] = rest;
           if (name) {
             visual.characters[name] = {
+              ...visual.characters[name],
               expression: visual.characters[name]?.expression ?? 'normal',
               motion,
+              animLoop: false,
+              animReverse: false,
+            };
+          }
+        } else if (key === 'anim_loop') {
+          const [name, motion] = rest;
+          if (name) {
+            visual.characters[name] = {
+              ...visual.characters[name],
+              expression: visual.characters[name]?.expression ?? 'normal',
+              motion,
+              animLoop: true,
+              animReverse: false,
+            };
+          }
+        } else if (key === 'anim_stop') {
+          const [name] = rest;
+          if (name && visual.characters[name]) {
+            visual.characters[name] = {
+              ...visual.characters[name],
+              motion: undefined,
+              animLoop: false,
+              animReverse: false,
+            };
+          }
+        } else if (key === 'anim_speed') {
+          // ラベル(slow/normal/fast等)→倍率の解決はtags/defs/anim_speed.ts側の
+          // 責務なので、ここ(タグ設定を知らない共有ランナー)では生の数値で
+          // 書かれている場合だけ反映する。ラベルで指定された場合、この
+          // visualスナップショットには反映されない(実際のタグ処理
+          // (useStoryEngine側)では正しく解決されるので、影響があるのは
+          // リロード直後の一瞬だけの見た目に限られる)。
+          const [name, speedArg] = rest;
+          const speedNum = Number(speedArg);
+          if (name && Number.isFinite(speedNum)) {
+            visual.characters[name] = {
+              ...visual.characters[name],
+              expression: visual.characters[name]?.expression ?? 'normal',
+              animSpeed: speedNum,
+            };
+          }
+        } else if (key === 'anim_reverse') {
+          const [name, motion] = rest;
+          if (name) {
+            visual.characters[name] = {
+              ...visual.characters[name],
+              expression: visual.characters[name]?.expression ?? 'normal',
+              motion,
+              animReverse: true,
             };
           }
         } else if (key === 'hide') {

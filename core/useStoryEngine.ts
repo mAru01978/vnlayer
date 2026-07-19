@@ -67,7 +67,66 @@ export function useStoryEngine(
   const setAnimDirect = useCallback((name: string, motion: string) => {
     setCharacters((prev) => ({
       ...prev,
-      [name]: { expression: prev[name]?.expression ?? 'normal', motion },
+      [name]: {
+        expression: prev[name]?.expression ?? 'normal',
+        motion,
+        // 普通のanim:はループ/逆再生をリセットした「素の」モーション再生として扱う。
+        // 再生速度(animSpeed)はキャラ単位の持続設定なので維持する。
+        animLoop: false,
+        animReverse: false,
+        animSpeed: prev[name]?.animSpeed,
+      },
+    }));
+  }, []);
+
+  const setAnimLoop = useCallback((name: string, motion: string) => {
+    setCharacters((prev) => ({
+      ...prev,
+      [name]: {
+        expression: prev[name]?.expression ?? 'normal',
+        ...prev[name],
+        motion,
+        animLoop: true,
+        animReverse: false,
+      },
+    }));
+  }, []);
+
+  const setAnimStop = useCallback((name: string) => {
+    setCharacters((prev) => {
+      if (!prev[name]) return prev;
+      return {
+        ...prev,
+        [name]: {
+          ...prev[name],
+          motion: undefined,
+          animLoop: false,
+          animReverse: false,
+        },
+      };
+    });
+  }, []);
+
+  const setAnimSpeedHandler = useCallback((name: string, speed: number) => {
+    setCharacters((prev) => ({
+      ...prev,
+      [name]: {
+        expression: prev[name]?.expression ?? 'normal',
+        ...prev[name],
+        animSpeed: speed,
+      },
+    }));
+  }, []);
+
+  const setAnimReverse = useCallback((name: string, motion: string) => {
+    setCharacters((prev) => ({
+      ...prev,
+      [name]: {
+        expression: prev[name]?.expression ?? 'normal',
+        ...prev[name],
+        motion,
+        animReverse: true,
+      },
     }));
   }, []);
 
@@ -150,6 +209,10 @@ export function useStoryEngine(
         setChar: (name, expression) =>
           setCharacters((prev) => ({ ...prev, [name]: { expression } })),
         setAnim: (name, motion) => setAnimDirect(name, motion),
+        setAnimLoop: (name, motion) => setAnimLoop(name, motion),
+        setAnimStop: (name) => setAnimStop(name),
+        setAnimSpeed: (name, speed) => setAnimSpeedHandler(name, speed),
+        setAnimReverse: (name, motion) => setAnimReverse(name, motion),
         setSpeaker: (name) => setSpeakerState(name),
         onGoto: (path) => {
           pendingGoto = path;
@@ -224,7 +287,22 @@ export function useStoryEngine(
       setChoices(result.choices);
       setIsProcessing(false);
     },
-    [onNavigate, setAnimDirect, hideChar, setChoicesVisible, setMessageWindowVisible, setPos, setMessageMode, setCamera, shakeScreen, clearBubbleTimer]
+    [
+      onNavigate,
+      setAnimDirect,
+      setAnimLoop,
+      setAnimStop,
+      setAnimSpeedHandler,
+      setAnimReverse,
+      hideChar,
+      setChoicesVisible,
+      setMessageWindowVisible,
+      setPos,
+      setMessageMode,
+      setCamera,
+      shakeScreen,
+      clearBubbleTimer,
+    ]
   );
 
   const init = useCallback(async () => {

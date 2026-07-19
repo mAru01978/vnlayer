@@ -1,4 +1,5 @@
 import { registerTag } from '../registry';
+import { isNumeric } from '../numericOrLabel';
 
 export type TypeConfig = { speeds: Record<string, number> };
 
@@ -13,11 +14,12 @@ const defaultConfig: TypeConfig = {
   },
 };
 
+// # type:slow のようなラベルに加えて、# type:45 のように生のms数値も直接指定できる。
 registerTag<TypeConfig>({
   key: 'type',
   defaultConfig,
   run: ({ args, handlers, config }) => {
-    const ms = config.speeds[args[0]];
+    const ms = isNumeric(args[0]) ? Number(args[0]) : config.speeds[args[0]];
     if (ms !== undefined) handlers.setTypeSpeed(ms);
   },
 });

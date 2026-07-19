@@ -14,12 +14,11 @@ import type { RunResult, VisualState } from './types';
 // localStorageに保存する方式(lib/story/server/engine.tsと同じ考え方)を
 // 後で追加すればよい。
 
-type StoryJson = Record<string, any>;
 type StoryHandle = { story: Story; visual: VisualState };
 
 const liveStories = new Map<string, StoryHandle>();
 
-async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<StoryJson> {
+async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<unknown> {
   const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
   if (!res.ok) {
     throw new Error(`[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`);

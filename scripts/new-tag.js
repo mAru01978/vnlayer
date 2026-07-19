@@ -21,8 +21,8 @@ if (!tagName) {
   console.error('使い方: node VNLayer/scripts/new-tag.js タグ名');
   process.exit(1);
 }
-if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(tagName)) {
-  console.error('タグ名は英字始まりの英数字のみにしてください(例: sfx, fadeIn)');
+if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(tagName)) {
+  console.error('タグ名は英字始まりの英数字・アンダースコアのみにしてください(例: sfx, anim_bounce)');
   process.exit(1);
 }
 
