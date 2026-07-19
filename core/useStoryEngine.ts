@@ -122,8 +122,8 @@ export function useStoryEngine(
     setCharacters((prev) => ({
       ...prev,
       [name]: {
-        expression: prev[name]?.expression ?? 'normal',
         ...prev[name],
+        expression: prev[name]?.expression ?? 'normal',
         motion,
         animReverse: true,
       },
