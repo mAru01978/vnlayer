@@ -57,13 +57,14 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             typeIntervalRef.current = null;
         }
         setRevealedCount(displayedMessage?.content.length ?? 0);
-        // 文字送り演出の打ち切りと同時に、ink側の#wait:/type_wait待ちも
-        // 打ち切って良いという合図として扱う(event_loopパターン用)。
-        // event_${name}/_seq変数としても書き込まれるので、ink側で
-        // 「ステージがクリックされた」こと自体を条件分岐に使うこともできる。
-        // #interruptタグ付き選択肢が無いシーンでは単に無視されるだけなので、
-        // 通常のクリックスキップ動作に影響は無い。
-        story?.notify('click');
+        // 修正: 以前はここでstory.notify('click')も呼び、メッセージ欄クリックが
+        // 即座に#wait:/type_wait待ちを打ち切る(=notify/interrupt機構)ようにして
+        // いたが、これは「文字送りをスキップするだけの普通の操作」と「ホスト側の
+        // 任意イベント通知」を混同する設計ミスだった。会話を普通に読み進めるだけの
+        // クリックが、以降に来る演出的な#wait:long(確認の間・からかいの間 等)まで
+        // 巻き込んで打ち切ってしまい、物語のテンポが不安定になっていた。
+        // notify/interrupt機構は「メッセージ欄の外、ホストページ側の実イベント」用
+        // として使うものなので、ここでは呼ばない(見た目の文字送りスキップのみ)。
     };
     useEffect(() => {
         if (fadeOutTimerRef.current) {

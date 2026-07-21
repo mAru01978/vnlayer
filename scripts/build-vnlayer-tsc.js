@@ -1,8 +1,14 @@
 const { execSync } = require('child_process');
+
 try {
-  // tscコマンドを実行
-  const stdout = execSync('npx tsc -p tsconfig.build.json', { encoding: 'utf8' });
-  console.log('実行結果:\n', stdout);
+  console.log('tsc実行開始...');
+
+  execSync('npx tsc -p tsconfig.build.json', {
+    stdio: 'inherit'
+  });
+
+  console.log('tsc実行完了');
 } catch (error) {
   console.error('エラーが発生しました:', error.message);
+  process.exit(1);
 }
