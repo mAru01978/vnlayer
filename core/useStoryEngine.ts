@@ -354,7 +354,17 @@ export function useStoryEngine(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario, stepProvider]);
 
+  // React 18のStrictMode(Next.jsのdevサーバーでは既定で有効)は、マウント時に
+  // effectをわざと2回実行する(mount→cleanup→mountを1瞬でシミュレートする)。
+  // 今までinit()にガードが無かったため、同じシナリオに対してinit()→advance()が
+  // 実質2回並行して走り、2つのadvance()ループが同じReact stateやAbortController
+  // 用ref(abortControllerRef)を奪い合う形になっていた。これが「リロードすると
+  // たまに会話が二重に流れる」「たまに早送りになる」といった不安定さの主因。
+  // シナリオごとに1回だけ実行済みかを覚えておき、2回目の呼び出しは無視する。
+  const initedScenarioRef = useRef<string | null>(null);
   useEffect(() => {
+    if (initedScenarioRef.current === scenario) return;
+    initedScenarioRef.current = scenario;
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario]);
