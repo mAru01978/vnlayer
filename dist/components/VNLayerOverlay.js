@@ -19,6 +19,7 @@ function EngineBridge({ onReady }) {
         onReady({
             setContextVars: (vars) => engineRef.current.setContextVars(vars),
             resetStory: () => engineRef.current.resetStory(),
+            notify: (eventName, payload) => engineRef.current.notify(eventName, payload),
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

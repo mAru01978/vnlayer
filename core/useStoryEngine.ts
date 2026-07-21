@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { dispatchTag, getTagConfig, type SceneHandlers } from '../tags/index';
 import { getCharacterSlot } from '../tags/characterSlots';
 import { getDefaultStepProvider } from './defaultStepProvider';
+import { abortableSleep } from './abortableSleep';
 import type { StepProvider } from './StepProvider';
 import type {
   CamState,
@@ -56,6 +57,18 @@ export function useStoryEngine(
   const typeWaitBufferRef = useRef(1500);
   const positionOverridesRef = useRef<PositionOverrides>({});
   const transientTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // notify()の即時反応機構: advance()の1回の呼び出し(=タグ処理のバッチ)ごとに
+  // 新しいAbortControllerを張り直す。notify()が呼ばれるとabort()され、
+  // 実行中のwait/type_wait推定待ちが即resolveする。
+  const abortControllerRef = useRef<AbortController | null>(null);
+  // 待ちを打ち切った時点でまだ #interrupt 付き選択肢に辿り着いていない場合、
+  // 「即時反応の要求があった」ことだけを記録しておき、後でchoicesが更新される
+  // (=event_loop等に到達する)たびにチェックして消費する。
+  const pendingInterruptRef = useRef(false);
+  // notify()のevent_${name}_seq採番用。以前はapi.ts側(Instance.eventSeq)が
+  // 持っていたが、notifyをengine側の機能として一本化したのでここに移した。
+  const eventSeqRef = useRef<Record<string, number>>({});
 
   const clearBubbleTimer = useCallback(() => {
     if (transientTimerRef.current) {
@@ -211,6 +224,11 @@ export function useStoryEngine(
       setIsProcessing(true);
       let pendingGoto: string | null = null;
 
+      // このバッチ専用のAbortController。前のバッチのcontrollerが万一
+      // 残っていても、新しいバッチはこちらを見るので混線しない。
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const handlers: SceneHandlers = {
         handleFlash: (color, durationMs) => {
           setFlash({ color, durationMs });
@@ -229,7 +247,7 @@ export function useStoryEngine(
         onGoto: (path) => {
           pendingGoto = path;
         },
-        wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        wait: (ms) => abortableSleep(ms, controller.signal),
         setCamera,
         shakeScreen,
         onUnknownTag: (tag) => console.warn('unknown tag encountered:', tag),
@@ -277,7 +295,7 @@ export function useStoryEngine(
           if (typeWaitEnabledRef.current) {
             const typingMs = typeSpeedRef.current > 0 ? step.content.length * typeSpeedRef.current : 0;
             const estimatedMs = typingMs + typeWaitBufferRef.current;
-            await new Promise((resolve) => setTimeout(resolve, estimatedMs));
+            await abortableSleep(estimatedMs, controller.signal);
           }
         }
       }
@@ -358,6 +376,17 @@ export function useStoryEngine(
   // 張られる(=「一度終わったら止まり、次の場面でまた自然に再開する」という
   // 挙動がInkの構造だけで実現できている)。
   useEffect(() => {
+    // event_loopパターン: この選択肢群に #interrupt 付きの選択肢があり、
+    // かつ割り込み要求が保留中なら、tick待ちすら挟まず即座にそれを選ぶ。
+    // (要求が無ければ何もしない = 通常のシーンでは#interruptタグは
+    //  ただの無害なマーカーとして無視される)
+    const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
+    if (interruptChoice && pendingInterruptRef.current) {
+      pendingInterruptRef.current = false;
+      choose(interruptChoice.index);
+      return;
+    }
+
     const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(':')[0] === 'tick'));
     if (tickChoices.length === 0) return;
 
@@ -407,6 +436,34 @@ export function useStoryEngine(
     [scenario, stepProvider]
   );
 
+  // 内部専用: wait/type_wait待ちを即座に打ち切り、次に#interrupt付き
+  // 選択肢に到達した時点でそれを自動選択する「即時反応」トリガー。
+  // 単独では公開せず、notify()から常に呼ばれる形にする
+  // (「データを書く」と「即座に反応する」を分けて考える必要が無いなら
+  //  notifyだけ呼べば両方やってくれる、という形に統一)。
+  const wake = useCallback(() => {
+    pendingInterruptRef.current = true;
+    abortControllerRef.current?.abort();
+  }, []);
+
+  // VNLayer.notify("blink", payload) 等から呼ばれる、host→ink一方向イベント通知。
+  // 1. event_${name} / event_${name}_seq をink変数として書き込む(今まで通り)
+  // 2. 同時に wake() して、実行中の#wait:/type_wait待ちを打ち切り、
+  //    event_loop等の#interrupt付き選択肢に辿り着き次第それを即選択する
+  // これにより「notifyしたのにink側が#wait:の間ずっと気づかない」を防げる。
+  const notify = useCallback(
+    async (eventName: string, payload: unknown = true) => {
+      wake();
+      const nextSeq = (eventSeqRef.current[eventName] ?? 0) + 1;
+      eventSeqRef.current[eventName] = nextSeq;
+      await setContextVars({
+        [`event_${eventName}`]: payload,
+        [`event_${eventName}_seq`]: nextSeq,
+      });
+    },
+    [wake, setContextVars]
+  );
+
   return {
     lines,
     choices,
@@ -427,5 +484,6 @@ export function useStoryEngine(
     flash,
     typeSpeedMs,
     setContextVars,
+    notify,
   };
 }

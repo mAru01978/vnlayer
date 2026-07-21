@@ -29,7 +29,7 @@ function mount(selector, options) {
     }
     const container = resolveElement(selector);
     const root = createRoot(container);
-    const instance = { root, container, handle: null, eventSeq: {} };
+    const instance = { root, container, handle: null };
     instances.set(selector, instance);
     return new Promise((resolve) => {
         root.render(createElement(VNLayerOverlay, {
@@ -82,15 +82,18 @@ async function setContext(vars, selector) {
 //
 // setContextとの役割分担:
 //   - setContext: 継続的なデータ(時刻、設定値、他ページの状態等)を反映する
-//   - notify:     「今この瞬間に何かが起きた」という単発の出来事を伝える
-// 内部的にはどちらも同じsetContextVars(=StepProvider.idle)を呼んでいるだけで、
-// notifyは「seq番号を自動で振ってくれるsetContext」という薄いラッパーに過ぎない。
+//   - notify:     「今この瞬間に何かが起きた」という単発の出来事を伝える。
+//                 event_${name}/_seqの書き込みと同時に、実行中の
+//                 #wait:/type_wait待ちを即座に打ち切り、event_loop等の
+//                 #interrupt付き選択肢に辿り着き次第それを自動選択する
+//                 (=「データを送る」と「即座に反応させる」を分けずに
+//                  notify1回で両方やる)。seq採番自体はengine側
+//                 (core/useStoryEngine.ts)に一本化したので、ここは
+//                 handle.notify()への委譲のみ。
 //
 // #tickとの違い: #tickはInk側が「このシーンで何秒待ったか」を自己完結で
 // 管理する内蔵タイマーで、ホストページの実イベントは一切見ない。
 // notifyは逆にホスト側の実イベントをInkに伝える経路であり、#tickを置き換えるものではない。
-// 必要なら両方を組み合わせて、「#tick:1(短い間隔)のノットでevent_xxx_seqをチェックする」
-// ような形で、ほぼリアルタイムにホストイベントへ反応するInk側の分岐を書ける。
 async function notify(eventName, payload = true, selector) {
     const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
     if (targets.length === 0) {
@@ -102,12 +105,7 @@ async function notify(eventName, payload = true, selector) {
             console.warn('[VNLayer] notify called before the instance finished initializing; ignoring this call.');
             return Promise.resolve();
         }
-        const nextSeq = (instance.eventSeq[eventName] ?? 0) + 1;
-        instance.eventSeq[eventName] = nextSeq;
-        return instance.handle.setContextVars({
-            [`event_${eventName}`]: payload,
-            [`event_${eventName}_seq`]: nextSeq,
-        });
+        return instance.handle.notify(eventName, payload);
     }));
 }
 // VNLayer.reset(selector?)
