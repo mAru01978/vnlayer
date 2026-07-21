@@ -57,6 +57,13 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             typeIntervalRef.current = null;
         }
         setRevealedCount(displayedMessage?.content.length ?? 0);
+        // 文字送り演出の打ち切りと同時に、ink側の#wait:/type_wait待ちも
+        // 打ち切って良いという合図として扱う(event_loopパターン用)。
+        // event_${name}/_seq変数としても書き込まれるので、ink側で
+        // 「ステージがクリックされた」こと自体を条件分岐に使うこともできる。
+        // #interruptタグ付き選択肢が無いシーンでは単に無視されるだけなので、
+        // 通常のクリックスキップ動作に影響は無い。
+        story?.notify('click');
     };
     useEffect(() => {
         if (fadeOutTimerRef.current) {
@@ -81,7 +88,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     if (!story)
         return null;
     const { lines, choices, bg, characters, speaker, cam, shake, userLine, isProcessing, choose, choicesHidden, messageWindowHidden, positionOverrides, } = story;
-    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => t.split(':')[0] === 'tick'));
+    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => ['tick', 'interrupt'].includes(t.split(':')[0])));
     const camStyle = {
         transform: `scale(${cam.scale})`,
         transformOrigin: `${cam.originX}% ${cam.originY}%`,

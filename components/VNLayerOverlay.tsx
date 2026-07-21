@@ -10,6 +10,8 @@ export type VNLayerMode = StageMode;
 export type VNLayerHandle = {
   setContextVars: (vars: Record<string, unknown>) => Promise<void>;
   resetStory: () => Promise<void>;
+  // host→ink一方向イベント通知(即時反応込み)。api.tsのVNLayer.notify()が使う。
+  notify: (eventName: string, payload?: unknown) => Promise<void>;
 };
 
 export type VNLayerOverlayProps = {
@@ -45,6 +47,7 @@ function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }
     onReady({
       setContextVars: (vars) => engineRef.current!.setContextVars(vars),
       resetStory: () => engineRef.current!.resetStory(),
+      notify: (eventName, payload) => engineRef.current!.notify(eventName, payload),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

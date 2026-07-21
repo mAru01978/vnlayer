@@ -57,4 +57,10 @@ export type StoryEngine = {
   typeSpeedMs: number;
   // 外部(VNLayer.setContext等)から一方通行でInk変数へ値を反映するための口。
   setContextVars: (vars: Record<string, unknown>) => Promise<void>;
+  // host→ink一方向イベント通知(VNLayer.notify相当)。
+  // event_${name}/event_${name}_seqを書き込むと同時に、実行中の
+  // #wait:/type_wait推定待ちを即座に打ち切り、event_loop等の
+  // #interrupt付き選択肢に辿り着き次第それを自動選択する。
+  // 「データを送る」と「即座に反応させる」を分けずに、これ1つで両方やる。
+  notify: (eventName: string, payload?: unknown) => Promise<void>;
 };

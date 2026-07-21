@@ -5,6 +5,7 @@ export type VNLayerMode = StageMode;
 export type VNLayerHandle = {
     setContextVars: (vars: Record<string, unknown>) => Promise<void>;
     resetStory: () => Promise<void>;
+    notify: (eventName: string, payload?: unknown) => Promise<void>;
 };
 export type VNLayerOverlayProps = {
     scenario?: string;
