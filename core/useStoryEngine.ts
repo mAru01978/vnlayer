@@ -389,11 +389,20 @@ export function useStoryEngine(
   useEffect(() => {
     // event_loopパターン: この選択肢群に #interrupt 付きの選択肢があり、
     // かつ割り込み要求が保留中なら、tick待ちすら挟まず即座にそれを選ぶ。
-    // (要求が無ければ何もしない = 通常のシーンでは#interruptタグは
-    //  ただの無害なマーカーとして無視される)
+    //
+    // 重要: 保留フラグは「次に選択肢が提示されるこの1回」でしか有効ではない
+    // ことにする。以前は#interrupt付き選択肢に一致した時しかクリアして
+    // いなかったため、event_loopを経由しないシーン(からかう/世間話/注文等)
+    // で発生したクリックの保留要求がずっと残り続け、何ターンも後に
+    // たまたまsceneA_idle等の#interrupt付き選択肢に辿り着いた瞬間、
+    // ユーザーが何もしていないのに突然発火する不安定な挙動になっていた。
+    // ここで選択肢が更新されるたび無条件にフラグを消費/破棄することで、
+    // 「直後に#interrupt地点があれば即反応、無ければ諦める」という
+    // 意図通りの寿命に絞る。
     const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
-    if (interruptChoice && pendingInterruptRef.current) {
-      pendingInterruptRef.current = false;
+    const shouldFireInterrupt = Boolean(interruptChoice) && pendingInterruptRef.current;
+    pendingInterruptRef.current = false;
+    if (shouldFireInterrupt && interruptChoice) {
       choose(interruptChoice.index);
       return;
     }
