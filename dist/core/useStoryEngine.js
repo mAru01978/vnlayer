@@ -186,10 +186,6 @@ export function useStoryEngine(scenario, options = {}) {
     const advance = useCallback(async (result) => {
         setIsProcessing(true);
         let pendingGoto = null;
-        // このバッチ専用のAbortController。前のバッチのcontrollerが万一
-        // 残っていても、新しいバッチはこちらを見るので混線しない。
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
         const handlers = {
             handleFlash: (color, durationMs) => {
                 setFlash({ color, durationMs });
@@ -207,7 +203,20 @@ export function useStoryEngine(scenario, options = {}) {
             onGoto: (path) => {
                 pendingGoto = path;
             },
-            wait: (ms) => abortableSleep(ms, controller.signal),
+            wait: (ms) => {
+                // 重要: このwait呼び出し専用のControllerをここで新規発行する。
+                // 以前はadvance()バッチ全体で1つのcontrollerを使い回していたため、
+                // 「このwaitより前に来たクリック」がまだ発生してもいない後続の
+                // #wait:まで巻き込んで即座に打ち切ってしまうバグがあった
+                // (例: からかうシーンの「・・・」の文字送りをクリックでスキップ
+                //  しただけなのに、直後の# wait:longまで一緒に飛ばされていた)。
+                // waitごとに新しいcontrollerにすることで、abort()は「今まさに
+                // 実行中のwait」だけに効き、まだ始まっていない後続のwaitには
+                // 影響しなくなる。
+                const controller = new AbortController();
+                abortControllerRef.current = controller;
+                return abortableSleep(ms, controller.signal);
+            },
             setCamera,
             shakeScreen,
             onUnknownTag: (tag) => console.warn('unknown tag encountered:', tag),
@@ -253,6 +262,9 @@ export function useStoryEngine(scenario, options = {}) {
                 if (typeWaitEnabledRef.current) {
                     const typingMs = typeSpeedRef.current > 0 ? step.content.length * typeSpeedRef.current : 0;
                     const estimatedMs = typingMs + typeWaitBufferRef.current;
+                    // wait()と同じ理由でこの待ち専用のcontrollerを発行する。
+                    const controller = new AbortController();
+                    abortControllerRef.current = controller;
                     await abortableSleep(estimatedMs, controller.signal);
                 }
             }
