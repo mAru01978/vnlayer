@@ -16,7 +16,15 @@ import type { RunResult, VisualState } from './types';
 
 type StoryHandle = { story: Story; visual: VisualState };
 
-const liveStories = new Map<string, StoryHandle>();
+// 重要: ここはStoryHandleそのものではなく「作成中のPromise」をキャッシュする。
+// 以前はStoryHandle確定後にしかMapへ書き込んでいなかったため、
+// fetch(story.json)の完了を待っている間にensureStory()が2回目・3回目と
+// 呼ばれると、どちらも「まだキャッシュに無い」と判定してStoryインスタンスを
+// 別々に2つ作ってしまうことがあった(初期化が短時間に連続で走るケースで発生)。
+// Promiseを同期的に(fetchの前に)Mapへ入れておけば、後続の呼び出しは
+// fetch完了を待たずにその場で同じPromiseに相乗りするので、
+// Storyインスタンスは必ず1つしか作られない。
+const liveStoryPromises = new Map<string, Promise<StoryHandle>>();
 
 async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<Record<string, unknown>> {
   const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
@@ -24,6 +32,15 @@ async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<Rec
     throw new Error(`[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`);
   }
   return res.json();
+}
+
+async function createStoryHandle(scenario: string, dataBaseUrl: string): Promise<StoryHandle> {
+  const storyJson = await loadStoryJson(scenario, dataBaseUrl);
+  const story = new Story(storyJson);
+  story.onError = (message: string, type: unknown) => {
+    console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
+  };
+  return { story, visual: { bg: '', characters: {}, speaker: '' } };
 }
 
 export type StaticStepProviderOptions = {
@@ -35,18 +52,20 @@ export type StaticStepProviderOptions = {
 export function createStaticStepProvider(options: StaticStepProviderOptions = {}): StepProvider {
   const dataBaseUrl = options.dataBaseUrl ?? './data';
 
-  async function ensureStory(scenario: string): Promise<StoryHandle> {
-    let handle = liveStories.get(scenario);
-    if (!handle) {
-      const storyJson = await loadStoryJson(scenario, dataBaseUrl);
-      const story = new Story(storyJson);
-      story.onError = (message: string, type: unknown) => {
-        console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
-      };
-      handle = { story, visual: { bg: '', characters: {}, speaker: '' } };
-      liveStories.set(scenario, handle);
+  function ensureStory(scenario: string): Promise<StoryHandle> {
+    let handlePromise = liveStoryPromises.get(scenario);
+    if (!handlePromise) {
+      // fetchが完了する前に(同期的に)Mapへ登録するのがポイント。
+      // これでこの直後に来る2回目の呼び出しも、新しくStoryを作らず
+      // このPromiseを待つだけになる。
+      handlePromise = createStoryHandle(scenario, dataBaseUrl);
+      liveStoryPromises.set(scenario, handlePromise);
+      handlePromise.catch(() => {
+        // 初期化に失敗したら、次回リトライできるようキャッシュを解放する。
+        liveStoryPromises.delete(scenario);
+      });
     }
-    return handle;
+    return handlePromise;
   }
 
   function runAndCache(scenario: string, handle: StoryHandle): RunResult {
@@ -89,7 +108,7 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
       handle.story.variablesState[varName] = value as any;
     },
     async reset(scenario) {
-      liveStories.delete(scenario);
+      liveStoryPromises.delete(scenario);
       const handle = await ensureStory(scenario);
       return runAndCache(scenario, handle);
     },
