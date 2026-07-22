@@ -457,12 +457,24 @@ export function useStoryEngine(scenario, options = {}) {
             await stepProvider.idle(scenario, varName, value);
         }
     }, [scenario, stepProvider]);
+    // notify()が短時間(mousemove等)に大量連続で呼ばれた場合の保険。
+    // event_${name}/_seqの書き込み自体は毎回やる(データとしては欠けない)が、
+    // 「実行中のwait/type_waitを打ち切る」効果の方は一定間隔に間引く。
+    // 単発の本来の使い方(クリック等)ではこの間隔より間が空くのが普通なので
+    // 体感には影響しない。連続的なデータをうっかりnotify()に繋いでしまっても、
+    // 演出のテンポを壊す被害を最小限にするための保険。
+    const WAKE_THROTTLE_MS = 50;
+    const lastWakeAtRef = useRef(0);
     // 内部専用: wait/type_wait待ちを即座に打ち切り、次に#interrupt付き
     // 選択肢に到達した時点でそれを自動選択する「即時反応」トリガー。
     // 単独では公開せず、notify()から常に呼ばれる形にする
     // (「データを書く」と「即座に反応する」を分けて考える必要が無いなら
     //  notifyだけ呼べば両方やってくれる、という形に統一)。
     const wake = useCallback(() => {
+        const now = Date.now();
+        if (now - lastWakeAtRef.current < WAKE_THROTTLE_MS)
+            return;
+        lastWakeAtRef.current = now;
         pendingInterruptRef.current = true;
         abortControllerRef.current?.abort();
     }, []);
