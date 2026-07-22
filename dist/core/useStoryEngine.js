@@ -319,7 +319,21 @@ export function useStoryEngine(scenario, options = {}) {
         }
         if (result.visual) {
             setBg(result.visual.bg);
-            setCharacters(result.visual.characters);
+            // 重要: result.visual.characters は inkStepRunner.ts側が独自に
+            // 追跡してる「bg/表情/モーション等の永続化用スナップショット」で、
+            // gazeはそもそも追跡対象に含まれていない(モック確認用の一時的な
+            // 見た目情報として扱われていたため)。ここでそのまま丸ごと
+            // setCharactersすると、直前にgazeタグで設定したばかりの視線が
+            // 同じバッチの中で即座に上書き・消去されてしまっていた
+            // (「一瞬表示されてすぐ消える」の正体)。gazeだけは現在のstateから
+            // 引き継ぐようにする。
+            setCharacters((prev) => {
+                const merged = {};
+                for (const [name, charState] of Object.entries(result.visual.characters)) {
+                    merged[name] = { ...charState, gaze: prev[name]?.gaze };
+                }
+                return merged;
+            });
             setSpeakerState(result.visual.speaker);
         }
         setChoices(result.choices);
