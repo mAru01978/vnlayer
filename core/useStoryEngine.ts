@@ -70,6 +70,21 @@ export function useStoryEngine(
   // 持っていたが、notifyをengine側の機能として一本化したのでここに移した。
   const eventSeqRef = useRef<Record<string, number>>({});
 
+  // isProcessing(React state)は非同期にしかコミットされないため、
+  // 「短時間に連続でinit()/choose()が呼ばれる」ケース(StrictModeの二重
+  // effect実行、素早い連打、event_loopの自動choose()との競合等)で
+  // 古い値を読んですり抜けてしまうことがあった。同期的に読み書きできる
+  // ref側を「本物のロック」として使い、setIsProcessing(state)の方は
+  // 画面表示(ボタンのdisabled等)用の見た目の値として残す。
+  const isProcessingRef = useRef(false);
+  // advance()が呼ばれるたびにインクリメントする世代カウンタ。
+  // 途中で新しいadvance()が始まった場合、古い方はここを見て自分が
+  // 「もう用済み(stale)」だと気づき、それ以上State更新をせずに
+  // 静かに引き下がる。これにより、何らかの理由でadvance()が
+  // 二重に走ってしまっても(原因不明でも)最新の1本だけが結果を
+  // 反映する、という形で表示の破綻を防ぐ。
+  const advanceGenerationRef = useRef(0);
+
   const clearBubbleTimer = useCallback(() => {
     if (transientTimerRef.current) {
       clearTimeout(transientTimerRef.current);
@@ -221,6 +236,13 @@ export function useStoryEngine(
 
   const advance = useCallback(
     async (result: RunResult) => {
+      // このバッチの世代番号。以後、他のadvance()がこれより新しい世代を
+      // 発行していたら(myGeneration !== advanceGenerationRef.current)、
+      // このバッチは「もう古い」と判断してState更新を止める。
+      const myGeneration = ++advanceGenerationRef.current;
+      const isStale = () => myGeneration !== advanceGenerationRef.current;
+
+      isProcessingRef.current = true;
       setIsProcessing(true);
       let pendingGoto: string | null = null;
 
@@ -252,6 +274,7 @@ export function useStoryEngine(
           // waitごとに新しいcontrollerにすることで、abort()は「今まさに
           // 実行中のwait」だけに効き、まだ始まっていない後続のwaitには
           // 影響しなくなる。
+          if (isStale()) return Promise.resolve();
           const controller = new AbortController();
           abortControllerRef.current = controller;
           return abortableSleep(ms, controller.signal);
@@ -283,9 +306,17 @@ export function useStoryEngine(
       };
 
       for (const step of result.steps) {
+        // より新しいadvance()が既に始まっていたら、ここで静かに打ち切る。
+        // (このバッチの残りのタグ処理・タイプライター表示はもう画面に
+        //  反映する意味が無い = 破棄する)
+        if (isStale()) return;
+
         for (const tag of step.tags) {
+          if (isStale()) return;
           await dispatchTag(tag, handlers);
         }
+
+        if (isStale()) return;
 
         if (step.content) {
           setSpeakerState(step.speaker);
@@ -304,12 +335,20 @@ export function useStoryEngine(
             const typingMs = typeSpeedRef.current > 0 ? step.content.length * typeSpeedRef.current : 0;
             const estimatedMs = typingMs + typeWaitBufferRef.current;
             // wait()と同じ理由でこの待ち専用のcontrollerを発行する。
+            if (isStale()) return;
             const controller = new AbortController();
             abortControllerRef.current = controller;
             await abortableSleep(estimatedMs, controller.signal);
           }
         }
       }
+
+      // ここに到達した時点でstaleなら(ループ中は問題無くても、直前の
+      // await中に新しいadvance()が始まっているかもしれないので念のため
+      // 再チェック)、pendingGoto/visual/choicesの反映を一切せず引き返す。
+      // isProcessingRef/isProcessing stateもここでは触らない
+      // (それは新しい世代のadvance()が責任を持って最後に false にする)。
+      if (isStale()) return;
 
       if (pendingGoto) {
         if (onNavigate) {
@@ -326,6 +365,7 @@ export function useStoryEngine(
       }
 
       setChoices(result.choices);
+      isProcessingRef.current = false;
       setIsProcessing(false);
     },
     [
@@ -348,6 +388,7 @@ export function useStoryEngine(
   );
 
   const init = useCallback(async () => {
+    if (isProcessingRef.current) return;
     const result = await stepProvider.init(scenario);
     await advance(result);
     setHasLoadedOnce(true);
@@ -371,14 +412,18 @@ export function useStoryEngine(
 
   const choose = useCallback(
     async (index: number) => {
-      if (isProcessing) return;
+      // isProcessing(State)ではなくisProcessingRefを見る。Stateは
+      // コミットが非同期なので、短時間に連続でchoose()が呼ばれるケース
+      // (連打、event_loopの自動choose()との競合等)では古い値のまま
+      // すり抜けてしまうことがあったため、同期的に読めるref側を正とする。
+      if (isProcessingRef.current) return;
       const chosen = choices.find((c) => c.index === index);
       if (chosen) setUserLine(chosen.text);
 
       const result = await stepProvider.choose(scenario, index);
       await advance(result);
     },
-    [isProcessing, choices, advance, scenario, stepProvider]
+    [choices, advance, scenario, stepProvider]
   );
 
   // 修正メモ: 以前は choices.find(...) で「最初に見つかった1件」のtick付き
@@ -439,6 +484,12 @@ export function useStoryEngine(
   }, [choices, choose]);
 
   const resetStory = useCallback(async () => {
+    // 進行中の古いadvance()が万一あっても、これでstale扱いにして
+    // 結果を捨てさせる(reset後の内容に上書きされるのを防ぐ)。
+    advanceGenerationRef.current += 1;
+    abortControllerRef.current?.abort();
+    pendingInterruptRef.current = false;
+
     setLines([]);
     setChoices([]);
     setBg('');
