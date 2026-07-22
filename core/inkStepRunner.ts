@@ -24,6 +24,16 @@ export function continueUntilChoice(story: Story, initialVisual: VisualState): R
       ? String(story.variablesState['ref_speaker'] ?? '')
       : String(story.variablesState['ref_target'] ?? '');
 
+  // _ref は「s(話者)/cam等、タグごとに決まった1つの変数」を指す専用の解決だが、
+  // gazeのように1つのタグで複数の異なる変数(mouse_x, mouse_y)を都度差し込みたい
+  // 場合には使えない。そこで任意の変数名を指定できる汎用の記法として
+  // _var_<変数名> を追加する(例: gaze:alice:_var_mouse_x:_var_mouse_y)。
+  // inkのタグは{変数}のような実行時展開をしない(このファイル冒頭のコメント、
+  // および_ref自体がその制約を避けるための仕組みであることからも分かる通り)ため、
+  // タグの中で動的な値を使いたい場合は必ずこの手の明示的な解決が必要になる。
+  const VAR_TAG_PREFIX = '_var_';
+  const resolveVar = (arg: string) => String(story.variablesState[arg.slice(VAR_TAG_PREFIX.length)] ?? '');
+
   try {
     while (story.canContinue) {
       const line = story.Continue();
@@ -39,7 +49,11 @@ export function continueUntilChoice(story: Story, initialVisual: VisualState): R
         .filter((t) => t.split(':')[0] !== 's')
         .map((t) => {
           const [key, ...rest] = t.split(':');
-          const resolvedRest = rest.map((a) => (a === '_ref' ? resolveRef(key) : a));
+          const resolvedRest = rest.map((a) => {
+            if (a === '_ref') return resolveRef(key);
+            if (a.startsWith(VAR_TAG_PREFIX)) return resolveVar(a);
+            return a;
+          });
           return [key, ...resolvedRest].join(':');
         });
 
