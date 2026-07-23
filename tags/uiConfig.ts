@@ -10,13 +10,15 @@ export type BacklogMode = 'perInstance' | 'global';
 
 export type UiConfig = {
   messageWindow: { skin?: string };
-  choice: { skin?: string; spacing?: number };
+  // anchor: 指定するとキャラのスロット位置基準で選択肢を表示する(#ui:choice:anchor:alice)。
+  // 未指定(既定)なら今まで通りuiAnchor(ステージの角)に固定表示する。
+  choice: { skin?: string; spacing?: number; anchor?: string };
   backlog: { skin?: string; mode: BacklogMode };
 };
 
 const defaultUiConfig: UiConfig = {
   messageWindow: {},
-  choice: { spacing: 8 },
+  choice: { spacing: 8, anchor: undefined },
   backlog: { mode: 'perInstance' },
 };
 

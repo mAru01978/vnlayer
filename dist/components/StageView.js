@@ -94,6 +94,13 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
         : null;
     const isOverlay = mode === 'overlay';
     const anchorSide = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
+    // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
+    // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
+    const uiConfig = getUiConfig();
+    const choiceAnchorName = uiConfig.choice.anchor;
+    const choiceAnchorSlot = choiceAnchorName
+        ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
+        : null;
     const uiVis = typeof showUi === 'boolean'
         ? { backlogButton: showUi, choices: showUi, messageWindow: showUi, userLine: showUi }
         : {
@@ -166,14 +173,28 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                     borderRadius: 8,
                     fontSize: 14,
                     zIndex: 51,
-                }, children: ["\u3042\u306A\u305F: ", userLine] })), uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (_jsx("div", { style: {
-                    position: isOverlay ? 'fixed' : 'static',
-                    ...(isOverlay ? anchorSide : {}),
-                    bottom: isOverlay ? 130 : undefined,
-                    width: isOverlay ? 280 : undefined,
-                    pointerEvents: 'auto',
-                    marginTop: isOverlay ? 0 : 10,
-                    zIndex: 51,
-                }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: getUiConfig().choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing }, c.index))) }) }))] }));
+                }, children: ["\u3042\u306A\u305F: ", userLine] })), uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (_jsx("div", { style: choiceAnchorSlot
+                    ? {
+                        // キャラのスロット位置基準(#ui:choice:anchor:name指定時)。
+                        // メッセージ吹き出しと同じ座標系(ステージ全体基準%、カメラズームの
+                        // 影響を受けない)に合わせてある。
+                        position: 'absolute',
+                        left: `${choiceAnchorSlot.originX}%`,
+                        top: `${Math.min(choiceAnchorSlot.originY + 14, 92)}%`,
+                        transform: 'translateX(-50%)',
+                        width: isOverlay ? 220 : 200,
+                        pointerEvents: 'auto',
+                        zIndex: 51,
+                    }
+                    : {
+                        // 既定: ステージの角(uiAnchor)に固定表示。
+                        position: isOverlay ? 'fixed' : 'static',
+                        ...(isOverlay ? anchorSide : {}),
+                        bottom: isOverlay ? 130 : undefined,
+                        width: isOverlay ? 280 : undefined,
+                        pointerEvents: 'auto',
+                        marginTop: isOverlay ? 0 : 10,
+                        zIndex: 51,
+                    }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing }, c.index))) }) }))] }));
 }
 //# sourceMappingURL=StageView.js.map

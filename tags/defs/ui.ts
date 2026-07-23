@@ -20,6 +20,8 @@ import { setUiConfig } from '../uiConfig';
 //   # ui:choice:visible:true            → 選択肢を再び出す(旧#choices:show)
 //   # ui:choice:spacing:16              → 選択肢ボタン間の余白(px、新規)
 //   # ui:choice:skin:fancy              → ボタンの見た目セット(新規、本番用)
+//   # ui:choice:anchor:alice            → 選択肢をaliceのスロット位置基準で表示(新規)
+//   # ui:choice:anchor:reset            → 位置基準を解除し、既定のuiAnchor(角)に戻す
 //
 //   [backlog]
 //   # ui:backlog:clear                  → 会話ログをクリア(旧#clear)
@@ -58,6 +60,7 @@ registerTag<UiTagConfig>({
         return;
       }
       if (key === 'skin') return setUiConfig({ choice: { skin: value } });
+      if (key === 'anchor') return setUiConfig({ choice: { anchor: value === 'reset' ? undefined : value } });
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     }
 

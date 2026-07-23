@@ -35,6 +35,8 @@ registerTag({
             }
             if (key === 'skin')
                 return setUiConfig({ choice: { skin: value } });
+            if (key === 'anchor')
+                return setUiConfig({ choice: { anchor: value === 'reset' ? undefined : value } });
             return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
         }
         if (section === 'backlog') {

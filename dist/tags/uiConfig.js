@@ -7,7 +7,7 @@
 // 持つ想定。mockRendererはskin名を無視して今まで通りの見た目のままでよい。
 const defaultUiConfig = {
     messageWindow: {},
-    choice: { spacing: 8 },
+    choice: { spacing: 8, anchor: undefined },
     backlog: { mode: 'perInstance' },
 };
 let config = {
