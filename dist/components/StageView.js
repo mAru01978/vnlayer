@@ -82,7 +82,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     if (!story)
         return null;
     const { lines, choices, bg, characters, speaker, cam, shake, userLine, isProcessing, choose, choicesHidden, messageWindowHidden, positionOverrides, } = story;
-    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => t.split(':')[0] === 'tick'));
+    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => ['tick', 'interrupt'].includes(t.split(':')[0])));
     const camStyle = {
         transform: `scale(${cam.scale})`,
         transformOrigin: `${cam.originX}% ${cam.originY}%`,
