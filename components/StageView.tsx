@@ -160,6 +160,14 @@ export default function StageView({
   const isOverlay = mode === 'overlay';
   const anchorSide: CSSProperties = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
 
+  // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
+  // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
+  const uiConfig = getUiConfig();
+  const choiceAnchorName = uiConfig.choice.anchor;
+  const choiceAnchorSlot = choiceAnchorName
+    ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
+    : null;
+
   const uiVis: Required<UiVisibility> =
     typeof showUi === 'boolean'
       ? { backlogButton: showUi, choices: showUi, messageWindow: showUi, userLine: showUi }
@@ -333,17 +341,33 @@ export default function StageView({
           場合は VNLayer.reset(selector) を呼べる(api.ts参照)。 */}
       {uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (
         <div
-          style={{
-            position: isOverlay ? 'fixed' : 'static',
-            ...(isOverlay ? anchorSide : {}),
-            bottom: isOverlay ? 130 : undefined,
-            width: isOverlay ? 280 : undefined,
-            pointerEvents: 'auto',
-            marginTop: isOverlay ? 0 : 10,
-            zIndex: 51,
-          }}
+          style={
+            choiceAnchorSlot
+              ? {
+                  // キャラのスロット位置基準(#ui:choice:anchor:name指定時)。
+                  // メッセージ吹き出しと同じ座標系(ステージ全体基準%、カメラズームの
+                  // 影響を受けない)に合わせてある。
+                  position: 'absolute',
+                  left: `${choiceAnchorSlot.originX}%`,
+                  top: `${Math.min(choiceAnchorSlot.originY + 14, 92)}%`,
+                  transform: 'translateX(-50%)',
+                  width: isOverlay ? 220 : 200,
+                  pointerEvents: 'auto',
+                  zIndex: 51,
+                }
+              : {
+                  // 既定: ステージの角(uiAnchor)に固定表示。
+                  position: isOverlay ? 'fixed' : 'static',
+                  ...(isOverlay ? anchorSide : {}),
+                  bottom: isOverlay ? 130 : undefined,
+                  width: isOverlay ? 280 : undefined,
+                  pointerEvents: 'auto',
+                  marginTop: isOverlay ? 0 : 10,
+                  zIndex: 51,
+                }
+          }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: getUiConfig().choice.spacing ?? 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }}>
             {visibleChoices.map((c: any) => (
               <renderer.ChoiceButton
                 key={c.index}
