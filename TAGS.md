@@ -4,47 +4,17 @@
 
 ## `anim`
 
-## `anim_loop`
-
-## `anim_reverse`
-
-## `anim_speed`
-
-使えるラベル: `slow`, `normal`, `fast`
-
-## `anim_stop`
-
 ## `bg`
-
-## `c`
 
 ## `cam`
 
 使えるラベル: `zoom`, `zoomout`, `reset`
-
-## `choices`
-
-## `clear`
 
 ## `flash`
 
 使えるラベル: `white`, `red`
 
 ## `gaze`
-
-## `goto`
-
-## `hide`
-
-## `msg`
-
-## `msg_fade`
-
-## `msg_window`
-
-## `pos`
-
-使えるラベル: `center`
 
 ## `s`
 
@@ -56,9 +26,11 @@
 
 使えるラベル: `super_slow`, `slow`, `normal`, `fast`, `off`
 
-## `type_wait`
+## `ui`
 
 ## `wait`
 
 使えるラベル: `short`, `long`, `serve`
+
+## `web`
 

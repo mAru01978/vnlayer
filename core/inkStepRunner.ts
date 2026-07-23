@@ -8,7 +8,10 @@ import type { RunResult, StepEntry, VisualState } from './types';
 // の両方から同じ関数をimportして使う。ロジックを二重管理するとバグ修正が
 // 片方にしか反映されない事故が起きるため(実際に過去そうなった)、必ずここを共有すること。
 
-// s タグは話者に解決済みなので結果のtagsには含めない。
+// #s は「話者+表情+位置+表示/非表示」の統合タグ。話者抽出(currentSpeakerForLine)
+// のためだけに特別扱いしていた以前と違い、今はremainingTagsからも除外しない
+// (表情/pos/hideの反映はtags/defs/s.tsのrun()側で行うため、dispatchTagにも
+// 渡す必要がある)。
 // _ref を使っていたタグ(cam:zoom:_ref 等)は、呼び出し側が解決済みの値で渡すこと。
 export function continueUntilChoice(story: Story, initialVisual: VisualState): RunResult {
   const steps: StepEntry[] = [];
@@ -39,98 +42,96 @@ export function continueUntilChoice(story: Story, initialVisual: VisualState): R
       const line = story.Continue();
       const rawTags = story.currentTags ?? [];
 
-      const sTag = rawTags.find((t) => t.split(':')[0] === 's');
-      if (sTag) {
-        const rawTarget = sTag.split(':')[1];
-        currentSpeakerForLine = rawTarget === '_ref' ? resolveRef('s') : rawTarget;
-      }
-
-      const remainingTags = rawTags
-        .filter((t) => t.split(':')[0] !== 's')
-        .map((t) => {
-          const [key, ...rest] = t.split(':');
-          const resolvedRest = rest.map((a) => {
-            if (a === '_ref') return resolveRef(key);
-            if (a.startsWith(VAR_TAG_PREFIX)) return resolveVar(a);
-            return a;
-          });
-          return [key, ...resolvedRest].join(':');
+      // 先に全タグの_ref/_var_解決を済ませてしまう(sタグも含む)。
+      const remainingTags = rawTags.map((t) => {
+        const [key, ...rest] = t.split(':');
+        const resolvedRest = rest.map((a) => {
+          if (a === '_ref') return resolveRef(key);
+          if (a.startsWith(VAR_TAG_PREFIX)) return resolveVar(a);
+          return a;
         });
+        return [key, ...resolvedRest].join(':');
+      });
+
+      // 話者抽出は解決済みのsタグから行う(2番目のセグメントが話者名)。
+      const sTag = remainingTags.find((t) => t.split(':')[0] === 's');
+      if (sTag) {
+        currentSpeakerForLine = sTag.split(':')[1];
+      }
 
       for (const tag of remainingTags) {
         const [key, ...rest] = tag.split(':');
         if (key === 'bg') {
           visual.bg = rest[0] ?? '';
-        } else if (key === 'c') {
-          const [name, expression] = rest;
-          if (name) {
+        } else if (key === 's') {
+          // # s:name / # s:name:hide / # s:name:pos:... / # s:name:<表情>
+          const [name, mode] = rest;
+          if (!name || mode === undefined) continue; // 話者だけの指定は見た目に影響しない
+          if (mode === 'hide') {
+            delete visual.characters[name];
+          } else if (mode === 'pos') {
+            // 位置はStageView側がpositionOverrides経由で別管理してるので、
+            // このvisualスナップショット(bg/表情/モーション用)には含めない。
+          } else {
+            // hide/pos以外 = 表情指定
             visual.characters[name] = {
               ...visual.characters[name],
-              expression: expression ?? 'normal',
+              expression: mode,
               motion: visual.characters[name]?.motion,
             };
           }
         } else if (key === 'anim') {
-          const [name, motion] = rest;
-          if (name) {
+          // # anim:name:motion:xxx / loop:xxx / stop / speed:xxx / reverse:xxx
+          const [name, mode, value] = rest;
+          if (!name || !mode) continue;
+          if (mode === 'motion') {
             visual.characters[name] = {
               ...visual.characters[name],
               expression: visual.characters[name]?.expression ?? 'normal',
-              motion,
+              motion: value,
               animLoop: false,
               animReverse: false,
             };
-          }
-        } else if (key === 'anim_loop') {
-          const [name, motion] = rest;
-          if (name) {
+          } else if (mode === 'loop') {
             visual.characters[name] = {
               ...visual.characters[name],
               expression: visual.characters[name]?.expression ?? 'normal',
-              motion,
+              motion: value,
               animLoop: true,
               animReverse: false,
             };
-          }
-        } else if (key === 'anim_stop') {
-          const [name] = rest;
-          if (name && visual.characters[name]) {
-            visual.characters[name] = {
-              ...visual.characters[name],
-              motion: undefined,
-              animLoop: false,
-              animReverse: false,
-            };
-          }
-        } else if (key === 'anim_speed') {
-          // ラベル(slow/normal/fast等)→倍率の解決はtags/defs/anim_speed.ts側の
-          // 責務なので、ここ(タグ設定を知らない共有ランナー)では生の数値で
-          // 書かれている場合だけ反映する。ラベルで指定された場合、この
-          // visualスナップショットには反映されない(実際のタグ処理
-          // (useStoryEngine側)では正しく解決されるので、影響があるのは
-          // リロード直後の一瞬だけの見た目に限られる)。
-          const [name, speedArg] = rest;
-          const speedNum = Number(speedArg);
-          if (name && Number.isFinite(speedNum)) {
-            visual.characters[name] = {
-              ...visual.characters[name],
-              expression: visual.characters[name]?.expression ?? 'normal',
-              animSpeed: speedNum,
-            };
-          }
-        } else if (key === 'anim_reverse') {
-          const [name, motion] = rest;
-          if (name) {
+          } else if (mode === 'stop') {
+            if (visual.characters[name]) {
+              visual.characters[name] = {
+                ...visual.characters[name],
+                motion: undefined,
+                animLoop: false,
+                animReverse: false,
+              };
+            }
+          } else if (mode === 'speed') {
+            // ラベル(slow/normal/fast等)→倍率の解決はtags/defs/anim.ts側の
+            // 責務なので、ここ(タグ設定を知らない共有ランナー)では生の数値で
+            // 書かれている場合だけ反映する。ラベルで指定された場合、この
+            // visualスナップショットには反映されない(実際のタグ処理
+            // (useStoryEngine側)では正しく解決されるので、影響があるのは
+            // リロード直後の一瞬だけの見た目に限られる)。
+            const speedNum = Number(value);
+            if (Number.isFinite(speedNum)) {
+              visual.characters[name] = {
+                ...visual.characters[name],
+                expression: visual.characters[name]?.expression ?? 'normal',
+                animSpeed: speedNum,
+              };
+            }
+          } else if (mode === 'reverse') {
             visual.characters[name] = {
               ...visual.characters[name],
               expression: visual.characters[name]?.expression ?? 'normal',
-              motion,
+              motion: value,
               animReverse: true,
             };
           }
-        } else if (key === 'hide') {
-          const [name] = rest;
-          if (name) delete visual.characters[name];
         }
       }
       visual.speaker = currentSpeakerForLine;

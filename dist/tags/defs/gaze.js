@@ -1,4 +1,4 @@
-import { registerTag } from '../registry';
+import { registerTag, registerAlias } from '../registry';
 import { isNumeric } from '../numericOrLabel';
 // # gaze:alice:30:60 → aliceの視線を(originX=30, originY=60)へ向ける(%、ステージ全体基準)
 // # gaze:alice:reset → 正面向きに戻す(矢印を消す)
@@ -19,4 +19,5 @@ registerTag({
         }
     },
 });
+registerAlias('g', 'gaze');
 //# sourceMappingURL=gaze.js.map

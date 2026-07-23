@@ -1,4 +1,4 @@
-import { registerTag } from '../registry';
+import { registerTag, registerAlias } from '../registry';
 import { isNumeric } from '../numericOrLabel';
 
 // # gaze:alice:30:60 → aliceの視線を(originX=30, originY=60)へ向ける(%、ステージ全体基準)
@@ -20,3 +20,5 @@ registerTag({
     }
   },
 });
+
+registerAlias('g', 'gaze');

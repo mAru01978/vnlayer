@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useStory } from '../context/StoryContext';
 import { getCharacterSlot } from '../tags/characterSlots';
+import { getUiConfig } from '../tags/uiConfig';
 import { mockRenderer } from './mockRenderer';
 
 // フェーズ1での整理点: 従来のStage.tsxとVNLayer.tsx(VNLayerInner)は
@@ -98,14 +99,6 @@ export default function StageView({
       typeIntervalRef.current = null;
     }
     setRevealedCount(displayedMessage?.content.length ?? 0);
-    // 修正: 以前はここでstory.notify('click')も呼び、メッセージ欄クリックが
-    // 即座に#wait:/type_wait待ちを打ち切る(=notify/interrupt機構)ようにして
-    // いたが、これは「文字送りをスキップするだけの普通の操作」と「ホスト側の
-    // 任意イベント通知」を混同する設計ミスだった。会話を普通に読み進めるだけの
-    // クリックが、以降に来る演出的な#wait:long(確認の間・からかいの間 等)まで
-    // 巻き込んで打ち切ってしまい、物語のテンポが不安定になっていた。
-    // notify/interrupt機構は「メッセージ欄の外、ホストページ側の実イベント」用
-    // として使うものなので、ここでは呼ばない(見た目の文字送りスキップのみ)。
   };
 
   useEffect(() => {
@@ -148,7 +141,7 @@ export default function StageView({
   } = story;
 
   const visibleChoices = choices.filter(
-    (c: any) => !c.tags?.some((t: string) => ['tick', 'interrupt'].includes(t.split(':')[0]))
+    (c: any) => !c.tags?.some((t: string) => t.split(':')[0] === 'tick')
   );
 
   const camStyle: CSSProperties = {
@@ -181,14 +174,16 @@ export default function StageView({
     ? { position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50, fontFamily: 'sans-serif' }
     : { maxWidth: 640, margin: '0 auto', fontFamily: 'sans-serif' };
 
+  const shakeAnimation = shake.nonce > 0 ? `izakaya-shake-${shake.nonce} ${shake.duration}ms ease` : undefined;
+
   const stageStyle: CSSProperties = isOverlay
-    ? { position: 'absolute', inset: 0 }
+    ? { position: 'absolute', inset: 0, animation: shakeAnimation }
     : {
         position: 'relative',
         height: 360,
         overflow: 'hidden',
         borderRadius: 8,
-        animation: shake.nonce > 0 ? `izakaya-shake-${shake.nonce} ${shake.duration}ms ease` : undefined,
+        animation: shakeAnimation,
       };
 
   return (
@@ -228,7 +223,7 @@ export default function StageView({
         </div>
       )}
 
-      <div style={{ ...stageStyle, animation: isOverlay ? undefined : stageStyle.animation }}>
+      <div style={stageStyle}>
         {!isOverlay && <renderer.Background bg={bg} />}
 
         <div style={{ position: 'absolute', inset: 0, ...camStyle, pointerEvents: isOverlay ? 'none' : undefined }}>
@@ -243,6 +238,7 @@ export default function StageView({
                 slot={slot}
                 isFocused={isFocused}
                 hasSpeaker={!!speaker}
+                onClick={() => story.notify('char_click', name)}
               />
             );
           })}
@@ -347,7 +343,7 @@ export default function StageView({
             zIndex: 51,
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: getUiConfig().choice.spacing ?? 8 }}>
             {visibleChoices.map((c: any) => (
               <renderer.ChoiceButton
                 key={c.index}

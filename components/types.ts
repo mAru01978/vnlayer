@@ -24,6 +24,12 @@ export type CharacterSpriteProps = {
   slot: Slot;
   isFocused: boolean;
   hasSpeaker: boolean;
+  // キャラをクリックされた時のコールバック(任意)。VNLayerOverlay側から渡された
+  // 場合のみ呼ばれる。realRenderer側でも同じprops形状のままクリック領域を
+  // 広げたりできる。onClickが渡された場合、実装側はoverlayモードでも
+  // クリックが拾えるようpointerEvents:'auto'を自分自身に設定すること
+  // (親のステージ全体はoverlayモードでpointerEvents:'none'になっているため)。
+  onClick?: () => void;
 };
 
 export type MessageBubbleProps = {

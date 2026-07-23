@@ -1,4 +1,4 @@
-import { registerTag } from '../registry';
+import { registerTag, registerAlias } from '../registry';
 const defaultConfig = {
     colors: {
         white: { color: 'rgba(255,255,255,0.8)', durationMs: 400 },
@@ -13,4 +13,5 @@ registerTag({
         handlers.handleFlash(c.color, c.durationMs);
     },
 });
+registerAlias('f', 'flash');
 //# sourceMappingURL=flash.js.map

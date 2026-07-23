@@ -47,7 +47,7 @@ function Background({ bg }: BackgroundProps) {
   );
 }
 
-function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: CharacterSpriteProps) {
+function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }: CharacterSpriteProps) {
   const gazeAngle = state.gaze
     ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
     : null;
@@ -55,6 +55,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: Character
   return (
     <>
       <div
+        onClick={onClick}
         style={{
           position: 'absolute',
           left: `${slot.originX}%`,
@@ -73,6 +74,12 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: Character
           color: '#fff',
           fontSize: 12,
           paddingBottom: 4,
+          // 親のステージ全体はoverlayモードでpointerEvents:'none'になっている
+          // ことがあるが、キャラ個別のクリック(#anim等と組み合わせた反応演出)は
+          // overlay/full どちらでも拾えてほしいので、onClickがある時は
+          // 自分自身だけpointerEvents:'auto'に戻す。
+          pointerEvents: onClick ? 'auto' : undefined,
+          cursor: onClick ? 'pointer' : undefined,
         }}
       >
         <div>{name}</div>
@@ -113,18 +120,31 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }: Character
 
 function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick }: MessageBubbleProps) {
   return (
-    <div
-      onClick={onClick}
-      style={{
+    <>
+      <style>{`
+        .vnlayer-scroll-hidden {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* 旧Edge/IE */
+        }
+        .vnlayer-scroll-hidden::-webkit-scrollbar {
+          display: none; /* Chrome/Safari */
+        }
+      `}</style>
+      <div
+        onClick={onClick}
+        className="vnlayer-scroll-hidden"
+        style={{
         position: 'absolute',
         left: `${slot.originX}%`,
         top: `${Math.max(slot.originY - 26, 4)}%`,
         transform: 'translate(-50%, -100%)',
         maxWidth: 220,
-        // 修正: 文字数が多い時、吹き出しは上方向(translate(-50%,-100%))に
-        // 伸び続けるため、ステージの上端(0%)を越えてoverflow:hiddenで
-        // 見えなくなることがあった。maxHeight+overflowYで、伸びすぎたら
-        // 吹き出し内部でスクロールする形にして、必ず画面内に収まるようにする。
+        // 文字数が多い時、吹き出しは上方向(translate(-50%,-100%))に伸び続けるため、
+        // ステージの上端を越えてしまうことがある。maxHeight+overflowYで、
+        // 伸びすぎたら吹き出し内部でスクロールする形にして必ず画面内に収まるようにする
+        // (はみ出し防止自体はfullモードの高さ固定ステージで特に起きやすい)。
+        // スクロールバー自体の見た目は below の <style> で非表示にしている
+        // (機能(はみ出し時にスクロールできること)はそのまま、見た目だけ消す)。
         maxHeight: '70%',
         overflowY: 'auto',
         background: 'rgba(255,255,255,0.95)',
@@ -155,7 +175,8 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
           borderTop: '8px solid rgba(255,255,255,0.95)',
         }}
       />
-    </div>
+      </div>
+    </>
   );
 }
 

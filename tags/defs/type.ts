@@ -1,7 +1,17 @@
-import { registerTag } from '../registry';
+import { registerTag, registerAlias } from '../registry';
 import { isNumeric } from '../numericOrLabel';
 
-export type TypeConfig = { speeds: Record<string, number> };
+// #type は以前分かれていた type / type_wait を1つにまとめた統合タグ。
+// 一番よく使う「速度指定」は今まで通り2番目の引数をそのまま書けばよく、
+// (旧type_wait分の)読み終わり待ちのON/OFFだけ明示的なmode指定にする:
+//
+//   # type:slow       → 速度指定(旧#type:slow、ラベルまたは生のms数値)
+//   # type:wait:on    → 読み終わり待ちON(旧#type_wait:on)
+//   # type:wait:off   → 読み終わり待ちOFF(旧#type_wait:off)
+export type TypeConfig = {
+  speeds: Record<string, number>;
+  readingBufferMs: number;
+};
 
 const defaultConfig: TypeConfig = {
   speeds: {
@@ -12,14 +22,21 @@ const defaultConfig: TypeConfig = {
     // 停止/切り替え用: タイプライターを止めて即時表示に戻したい時
     off: 0,
   },
+  // 文字を出し切った後、次の行に進むまでの「読み終わるための余韻」(ms)
+  readingBufferMs: 1500,
 };
 
-// # type:slow のようなラベルに加えて、# type:45 のように生のms数値も直接指定できる。
 registerTag<TypeConfig>({
   key: 'type',
   defaultConfig,
   run: ({ args, handlers, config }) => {
+    if (args[0] === 'wait') {
+      handlers.setTypeWaitMode(args[1] === 'on', config.readingBufferMs);
+      return;
+    }
     const ms = isNumeric(args[0]) ? Number(args[0]) : config.speeds[args[0]];
     if (ms !== undefined) handlers.setTypeSpeed(ms);
   },
 });
+
+registerAlias('t', 'type');

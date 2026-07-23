@@ -223,6 +223,23 @@ export function useStoryEngine(scenario, options = {}) {
             onGoto: (path) => {
                 pendingGoto = path;
             },
+            onOpen: (url) => {
+                if (typeof window !== 'undefined') {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                }
+            },
+            onScroll: (target) => {
+                if (typeof window === 'undefined' || typeof document === 'undefined')
+                    return;
+                const n = Number(target);
+                if (Number.isFinite(n) && target.trim() !== '') {
+                    window.scrollTo({ top: n, behavior: 'smooth' });
+                    return;
+                }
+                // id/セレクタ/アンカー名として解決を試みる(#付きセレクタ、素のid名どちらもOK)
+                const el = document.getElementById(target) ?? document.querySelector(target);
+                el?.scrollIntoView({ behavior: 'smooth' });
+            },
             wait: (ms) => {
                 // 重要: このwait呼び出し専用のControllerをここで新規発行する。
                 // 以前はadvance()バッチ全体で1つのcontrollerを使い回していたため、
