@@ -10,7 +10,7 @@ export type SceneHandlers = {
   // anim_stop:名前 → 再生中のモーションを止める(表情はそのまま)
   setAnimStop: (name: string) => void;
   // anim_speed:名前:速度 → 再生速度の倍率(1が通常速度)。ラベル/数値どちらも
-  // tags/defs/anim_speed.ts側で解決済みの数値としてここに渡ってくる。
+  // tags/defs/anim.ts(speed:サブモード)側で解決済みの数値としてここに渡ってくる。
   setAnimSpeed: (name: string, speed: number) => void;
   // anim_reverse:名前:モーション → そのモーションを逆再生する指定
   setAnimReverse: (name: string, motion: string) => void;
@@ -19,6 +19,11 @@ export type SceneHandlers = {
   setGaze: (name: string, target: { x: number; y: number } | 'reset') => void;
   setSpeaker: (name: string) => void;
   onGoto: (path: string) => void;
+  // web:open:url → 新しいタブでURLを開く
+  onOpen: (url: string) => void;
+  // web:scroll:target → ページ内スクロール。数値ならY座標(px)へ、
+  // それ以外はCSSセレクタ/id/アンカー名として scrollIntoView する。
+  onScroll: (target: string) => void;
   wait: (ms: number) => Promise<void>;
   // scale/durationは既にcam.tsが解決済みの値
   setCamera: (scale: number, target: string | undefined, durationMs: number) => void;

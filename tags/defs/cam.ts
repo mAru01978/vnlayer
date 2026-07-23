@@ -1,4 +1,4 @@
-import { registerTag } from '../registry';
+import { registerTag, registerAlias } from '../registry';
 import { isNumeric } from '../numericOrLabel';
 
 export type CamConfig = {
@@ -38,3 +38,7 @@ registerTag<CamConfig>({
     if (duration) await sleep(duration);
   },
 });
+
+// 旧#c(キャラ表情タグ)は#sに統合されて廃止されたため、頭文字'c'が
+// 空いている。#camの短縮形として使えるようにする(# c:zoom:alice)。
+registerAlias('c', 'cam');

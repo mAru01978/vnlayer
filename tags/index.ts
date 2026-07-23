@@ -4,28 +4,16 @@
 // (scripts/new-tag.js もこの形でひな形を生成する想定)。
 
 import './defs/bg';
-import './defs/c';
-import './defs/anim';
-import './defs/anim_loop';
-import './defs/anim_stop';
-import './defs/anim_speed';
-import './defs/anim_reverse';
 import './defs/s';
-import './defs/goto';
-import './defs/hide';
-import './defs/choices';
-import './defs/msg_window';
-import './defs/clear';
-import './defs/msg_fade';
-import './defs/wait';
-import './defs/shake';
+import './defs/anim';
 import './defs/cam';
-import './defs/pos';
 import './defs/gaze';
-import './defs/msg';
+import './defs/wait';
 import './defs/flash';
+import './defs/shake';
 import './defs/type';
-import './defs/type_wait';
+import './defs/ui';
+import './defs/web';
 
 import { runTag } from './registry';
 import type { SceneHandlers } from './sceneHandlers';
@@ -40,6 +28,8 @@ export async function dispatchTag(tag: string, handlers: SceneHandlers): Promise
   await runTag(key, args, handlers);
 }
 
-export { setTagConfig, getTagConfig, registerTag } from './registry';
+export { setTagConfig, getTagConfig, registerTag, registerAlias } from './registry';
 export type { SceneHandlers } from './sceneHandlers';
 export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
+export { setUiConfig, getUiConfig } from './uiConfig';
+export type { UiConfig, UiConfigPatch, BacklogMode } from './uiConfig';

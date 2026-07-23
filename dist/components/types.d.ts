@@ -23,6 +23,7 @@ export type CharacterSpriteProps = {
     slot: Slot;
     isFocused: boolean;
     hasSpeaker: boolean;
+    onClick?: () => void;
 };
 export type MessageBubbleProps = {
     speaker: string;

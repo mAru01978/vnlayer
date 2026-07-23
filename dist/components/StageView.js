@@ -3,6 +3,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from 'react';
 import { useStory } from '../context/StoryContext';
 import { getCharacterSlot } from '../tags/characterSlots';
+import { getUiConfig } from '../tags/uiConfig';
 import { mockRenderer } from './mockRenderer';
 // フェーズ1での整理点: 従来のStage.tsxとVNLayer.tsx(VNLayerInner)は
 // 「mode(full/overlay)によって外枠のCSSが違うだけ」で描画ロジック自体はほぼ完全に
@@ -57,14 +58,6 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             typeIntervalRef.current = null;
         }
         setRevealedCount(displayedMessage?.content.length ?? 0);
-        // 修正: 以前はここでstory.notify('click')も呼び、メッセージ欄クリックが
-        // 即座に#wait:/type_wait待ちを打ち切る(=notify/interrupt機構)ようにして
-        // いたが、これは「文字送りをスキップするだけの普通の操作」と「ホスト側の
-        // 任意イベント通知」を混同する設計ミスだった。会話を普通に読み進めるだけの
-        // クリックが、以降に来る演出的な#wait:long(確認の間・からかいの間 等)まで
-        // 巻き込んで打ち切ってしまい、物語のテンポが不安定になっていた。
-        // notify/interrupt機構は「メッセージ欄の外、ホストページ側の実イベント」用
-        // として使うものなので、ここでは呼ばない(見た目の文字送りスキップのみ)。
     };
     useEffect(() => {
         if (fadeOutTimerRef.current) {
@@ -89,7 +82,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     if (!story)
         return null;
     const { lines, choices, bg, characters, speaker, cam, shake, userLine, isProcessing, choose, choicesHidden, messageWindowHidden, positionOverrides, } = story;
-    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => ['tick', 'interrupt'].includes(t.split(':')[0])));
+    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => t.split(':')[0] === 'tick'));
     const camStyle = {
         transform: `scale(${cam.scale})`,
         transformOrigin: `${cam.originX}% ${cam.originY}%`,
@@ -112,14 +105,15 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     const outerStyle = isOverlay
         ? { position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50, fontFamily: 'sans-serif' }
         : { maxWidth: 640, margin: '0 auto', fontFamily: 'sans-serif' };
+    const shakeAnimation = shake.nonce > 0 ? `izakaya-shake-${shake.nonce} ${shake.duration}ms ease` : undefined;
     const stageStyle = isOverlay
-        ? { position: 'absolute', inset: 0 }
+        ? { position: 'absolute', inset: 0, animation: shakeAnimation }
         : {
             position: 'relative',
             height: 360,
             overflow: 'hidden',
             borderRadius: 8,
-            animation: shake.nonce > 0 ? `izakaya-shake-${shake.nonce} ${shake.duration}ms ease` : undefined,
+            animation: shakeAnimation,
         };
     return (_jsxs("div", { style: outerStyle, children: [_jsx("style", { children: `
         @keyframes izakaya-shake-${shake.nonce} {
@@ -139,10 +133,10 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         color: '#111',
                         fontSize: 12,
                         cursor: 'pointer',
-                    }, children: backlogOpen ? 'バックログを閉じる' : 'バックログ' }) })), _jsxs("div", { style: { ...stageStyle, animation: isOverlay ? undefined : stageStyle.animation }, children: [!isOverlay && _jsx(renderer.Background, { bg: bg }), _jsxs("div", { style: { position: 'absolute', inset: 0, ...camStyle, pointerEvents: isOverlay ? 'none' : undefined }, children: [Object.entries(characters).map(([name, state]) => {
+                    }, children: backlogOpen ? 'バックログを閉じる' : 'バックログ' }) })), _jsxs("div", { style: stageStyle, children: [!isOverlay && _jsx(renderer.Background, { bg: bg }), _jsxs("div", { style: { position: 'absolute', inset: 0, ...camStyle, pointerEvents: isOverlay ? 'none' : undefined }, children: [Object.entries(characters).map(([name, state]) => {
                                 const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 60 };
                                 const isFocused = speaker === name;
-                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker }, name));
+                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, onClick: () => story.notify('char_click', name) }, name));
                             }), story.flash && _jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs })] }), uiVis.messageWindow && !messageWindowHidden && displayedMessage && !isNarratorMessage && bubbleSlot && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.MessageBubble, { speaker: displayedMessage.speaker, content: displayedMessage.content, slot: bubbleSlot, revealedCount: revealedCount, visible: bubbleShown, onClick: skipTyping }) })), displayedMessage && isNarratorMessage && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.NarratorCaption, { content: displayedMessage.content, revealedCount: revealedCount, visible: bubbleShown, onClick: skipTyping }) }))] }), uiVis.backlogButton && backlogOpen && (_jsxs("div", { style: {
                     position: isOverlay ? 'fixed' : 'static',
                     ...(isOverlay ? anchorSide : {}),
@@ -180,6 +174,6 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                     pointerEvents: 'auto',
                     marginTop: isOverlay ? 0 : 10,
                     zIndex: 51,
-                }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing }, c.index))) }) }))] }));
+                }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: getUiConfig().choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing }, c.index))) }) }))] }));
 }
 //# sourceMappingURL=StageView.js.map

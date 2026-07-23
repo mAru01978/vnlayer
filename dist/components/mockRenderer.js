@@ -25,11 +25,11 @@ function Background({ bg }) {
             background: resolveBgColor(bg),
         } }));
 }
-function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }) {
+function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }) {
     const gazeAngle = state.gaze
         ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
         : null;
-    return (_jsxs(_Fragment, { children: [_jsxs("div", { style: {
+    return (_jsxs(_Fragment, { children: [_jsxs("div", { onClick: onClick, style: {
                     position: 'absolute',
                     left: `${slot.originX}%`,
                     top: `${slot.originY}%`,
@@ -47,6 +47,12 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }) {
                     color: '#fff',
                     fontSize: 12,
                     paddingBottom: 4,
+                    // 親のステージ全体はoverlayモードでpointerEvents:'none'になっている
+                    // ことがあるが、キャラ個別のクリック(#anim等と組み合わせた反応演出)は
+                    // overlay/full どちらでも拾えてほしいので、onClickがある時は
+                    // 自分自身だけpointerEvents:'auto'に戻す。
+                    pointerEvents: onClick ? 'auto' : undefined,
+                    cursor: onClick ? 'pointer' : undefined,
                 }, children: [_jsx("div", { children: name }), _jsxs("div", { style: { fontSize: 10, opacity: 0.8 }, children: [state.expression, state.motion ? ` / ${state.motion}` : '', state.animLoop ? ' 🔁' : '', state.animReverse ? ' ⏪' : '', state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''] })] }), gazeAngle !== null && (_jsx("div", { style: {
                     position: 'absolute',
                     left: `${slot.originX}%`,
@@ -63,40 +69,50 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker }) {
                 } }))] }));
 }
 function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick }) {
-    return (_jsxs("div", { onClick: onClick, style: {
-            position: 'absolute',
-            left: `${slot.originX}%`,
-            top: `${Math.max(slot.originY - 26, 4)}%`,
-            transform: 'translate(-50%, -100%)',
-            maxWidth: 220,
-            // 修正: 文字数が多い時、吹き出しは上方向(translate(-50%,-100%))に
-            // 伸び続けるため、ステージの上端(0%)を越えてoverflow:hiddenで
-            // 見えなくなることがあった。maxHeight+overflowYで、伸びすぎたら
-            // 吹き出し内部でスクロールする形にして、必ず画面内に収まるようにする。
-            maxHeight: '70%',
-            overflowY: 'auto',
-            background: 'rgba(255,255,255,0.95)',
-            color: '#111',
-            borderRadius: 12,
-            padding: '10px 14px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-            fontSize: 13,
-            lineHeight: 1.5,
-            cursor: revealedCount < content.length ? 'pointer' : 'default',
-            opacity: visible ? 1 : 0,
-            transition: `opacity ${BUBBLE_FADE_MS}ms ease, left 500ms ease, top 500ms ease`,
-            zIndex: 5,
-        }, children: [speaker && _jsx("div", { style: { fontSize: 11, opacity: 0.6, marginBottom: 2 }, children: speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap' }, children: content.slice(0, revealedCount) }), _jsx("div", { style: {
+    return (_jsxs(_Fragment, { children: [_jsx("style", { children: `
+        .vnlayer-scroll-hidden {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* 旧Edge/IE */
+        }
+        .vnlayer-scroll-hidden::-webkit-scrollbar {
+          display: none; /* Chrome/Safari */
+        }
+      ` }), _jsxs("div", { onClick: onClick, className: "vnlayer-scroll-hidden", style: {
                     position: 'absolute',
-                    left: '50%',
-                    bottom: -8,
-                    transform: 'translateX(-50%)',
-                    width: 0,
-                    height: 0,
-                    borderLeft: '8px solid transparent',
-                    borderRight: '8px solid transparent',
-                    borderTop: '8px solid rgba(255,255,255,0.95)',
-                } })] }));
+                    left: `${slot.originX}%`,
+                    top: `${Math.max(slot.originY - 26, 4)}%`,
+                    transform: 'translate(-50%, -100%)',
+                    maxWidth: 220,
+                    // 文字数が多い時、吹き出しは上方向(translate(-50%,-100%))に伸び続けるため、
+                    // ステージの上端を越えてしまうことがある。maxHeight+overflowYで、
+                    // 伸びすぎたら吹き出し内部でスクロールする形にして必ず画面内に収まるようにする
+                    // (はみ出し防止自体はfullモードの高さ固定ステージで特に起きやすい)。
+                    // スクロールバー自体の見た目は below の <style> で非表示にしている
+                    // (機能(はみ出し時にスクロールできること)はそのまま、見た目だけ消す)。
+                    maxHeight: '70%',
+                    overflowY: 'auto',
+                    background: 'rgba(255,255,255,0.95)',
+                    color: '#111',
+                    borderRadius: 12,
+                    padding: '10px 14px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    cursor: revealedCount < content.length ? 'pointer' : 'default',
+                    opacity: visible ? 1 : 0,
+                    transition: `opacity ${BUBBLE_FADE_MS}ms ease, left 500ms ease, top 500ms ease`,
+                    zIndex: 5,
+                }, children: [speaker && _jsx("div", { style: { fontSize: 11, opacity: 0.6, marginBottom: 2 }, children: speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap' }, children: content.slice(0, revealedCount) }), _jsx("div", { style: {
+                            position: 'absolute',
+                            left: '50%',
+                            bottom: -8,
+                            transform: 'translateX(-50%)',
+                            width: 0,
+                            height: 0,
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderTop: '8px solid rgba(255,255,255,0.95)',
+                        } })] })] }));
 }
 function NarratorCaption({ content, revealedCount, visible, onClick }) {
     return (_jsx("div", { onClick: onClick, style: {

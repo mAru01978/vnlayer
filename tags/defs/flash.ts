@@ -1,4 +1,4 @@
-import { registerTag } from '../registry';
+import { registerTag, registerAlias } from '../registry';
 
 export type FlashConfig = { colors: Record<string, { color: string; durationMs: number }> };
 
@@ -17,3 +17,5 @@ registerTag<FlashConfig>({
     handlers.handleFlash(c.color, c.durationMs);
   },
 });
+
+registerAlias('f', 'flash');

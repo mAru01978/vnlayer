@@ -14,7 +14,7 @@ export type TagRunContext<TConfig> = {
 
 export type TagDefinition<TConfig = any> = {
   key: string;
-  // 省略した場合、このタグは設定を持たない(bg/c/anim/s/goto/hide/choices/clear/msg_fade等)
+  // 省略した場合、このタグは設定を持たない(bg/gaze/shake/web等)
   defaultConfig?: TConfig;
   run: (ctx: TagRunContext<TConfig>) => Promise<void> | void;
 };
@@ -28,6 +28,24 @@ export function registerTag<TConfig>(def: TagDefinition<TConfig>): void {
     def,
     config: def.defaultConfig !== undefined ? { ...def.defaultConfig } : undefined,
   });
+}
+
+// タグの短縮エイリアスを登録する(例: registerAlias('c', 'cam'))。
+// エイリアス側もsetTagConfig/getTagConfigで同じ実体(RegistryEntry)を
+// 共有するので、設定の上書きはどちらの名前でアクセスしても一致する。
+// 頭文字が他のタグと衝突する場合は登録しない(例: #s は既にspeaker/sprite用
+// タグそのものなので、他のタグに's'エイリアスを与えることはできない)。
+export function registerAlias(alias: string, canonicalKey: string): void {
+  const entry = registry.get(canonicalKey);
+  if (!entry) {
+    console.warn(`[VNLayer] registerAlias: unknown canonical tag "${canonicalKey}" for alias "${alias}"`);
+    return;
+  }
+  if (registry.has(alias)) {
+    console.warn(`[VNLayer] registerAlias: alias "${alias}" is already taken, skipping`);
+    return;
+  }
+  registry.set(alias, entry);
 }
 
 // 既存タグの設定を部分的に上書きする(浅いマージ)。
