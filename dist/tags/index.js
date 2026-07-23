@@ -25,4 +25,5 @@ export async function dispatchTag(tag, handlers) {
 export { setTagConfig, getTagConfig, registerTag, registerAlias } from './registry';
 export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
 export { setUiConfig, getUiConfig } from './uiConfig';
+export { setWebLinks, getWebLink } from './webLinks';
 //# sourceMappingURL=index.js.map

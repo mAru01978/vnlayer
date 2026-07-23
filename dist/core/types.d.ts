@@ -32,6 +32,7 @@ export type LineEntry = {
 export type PositionOverrides = Record<string, {
     originX: number;
     originY: number;
+    durationMs?: number;
 }>;
 export type ActiveMessage = {
     speaker: string;

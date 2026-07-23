@@ -9,7 +9,7 @@ registerTag({
     key: 's',
     defaultConfig,
     run: ({ args, handlers, config }) => {
-        const [name, mode, a1, a2] = args;
+        const [name, mode, ...rest] = args;
         if (!name || mode === undefined)
             return; // 話者だけの指定(# s:alice)は何もしない
         if (mode === 'hide') {
@@ -17,17 +17,23 @@ registerTag({
             return;
         }
         if (mode === 'pos') {
-            if (a1 === 'reset') {
+            const [p1, p2, p3] = rest;
+            if (p1 === 'reset') {
                 handlers.setPos(name, 'reset');
                 return;
             }
-            if (isNumeric(a1) && isNumeric(a2)) {
-                handlers.setPos(name, { originX: Number(a1), originY: Number(a2) });
+            if (isNumeric(p1) && isNumeric(p2)) {
+                // pos:x:y か pos:x:y:durationMs か
+                const durationMs = isNumeric(p3) ? Number(p3) : undefined;
+                handlers.setPos(name, { originX: Number(p1), originY: Number(p2) }, durationMs);
                 return;
             }
-            const coords = config.posPresets[a1];
-            if (coords)
-                handlers.setPos(name, coords);
+            // pos:プリセット名 か pos:プリセット名:durationMs か
+            const coords = config.posPresets[p1];
+            if (coords) {
+                const durationMs = isNumeric(p2) ? Number(p2) : undefined;
+                handlers.setPos(name, coords, durationMs);
+            }
             return;
         }
         // それ以外(hide/pos以外の単語)は表情指定として扱う

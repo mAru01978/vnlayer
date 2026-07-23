@@ -185,22 +185,25 @@ export function useStoryEngine(
     setMessageWindowHiddenState(!visible);
   }, []);
 
-  const setPos = useCallback((name: string, coords: { originX: number; originY: number } | 'reset') => {
-    if (coords === 'reset') {
+  const setPos = useCallback(
+    (name: string, coords: { originX: number; originY: number } | 'reset', durationMs?: number) => {
+      if (coords === 'reset') {
+        setPositionOverrides((prev) => {
+          const next = { ...prev };
+          delete next[name];
+          positionOverridesRef.current = next;
+          return next;
+        });
+        return;
+      }
       setPositionOverrides((prev) => {
-        const next = { ...prev };
-        delete next[name];
+        const next = { ...prev, [name]: { ...coords, durationMs } };
         positionOverridesRef.current = next;
         return next;
       });
-      return;
-    }
-    setPositionOverrides((prev) => {
-      const next = { ...prev, [name]: coords };
-      positionOverridesRef.current = next;
-      return next;
-    });
-  }, []);
+    },
+    []
+  );
 
   const setMessageMode = useCallback(
     (mode: 'transient' | 'persist' | 'hide', transientDurationMs?: number) => {

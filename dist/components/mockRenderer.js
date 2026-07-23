@@ -39,7 +39,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }) 
                     borderRadius: 6,
                     background: '#8a8a8a',
                     opacity: hasSpeaker ? (isFocused ? 1 : 0.35) : 1,
-                    transition: 'left 500ms ease, top 500ms ease, opacity 300ms ease',
+                    transition: `left ${slot.durationMs ?? 500}ms ease, top ${slot.durationMs ?? 500}ms ease, opacity 300ms ease`,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -63,7 +63,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }) 
                     borderTop: '6px solid transparent',
                     borderBottom: '6px solid transparent',
                     borderLeft: '14px solid #ffd54a',
-                    transition: 'transform 150ms linear, left 500ms ease, top 500ms ease',
+                    transition: `transform 150ms linear, left ${slot.durationMs ?? 500}ms ease, top ${slot.durationMs ?? 500}ms ease`,
                     pointerEvents: 'none',
                     zIndex: 6,
                 } }))] }));
@@ -100,7 +100,7 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
                     lineHeight: 1.5,
                     cursor: revealedCount < content.length ? 'pointer' : 'default',
                     opacity: visible ? 1 : 0,
-                    transition: `opacity ${BUBBLE_FADE_MS}ms ease, left 500ms ease, top 500ms ease`,
+                    transition: `opacity ${BUBBLE_FADE_MS}ms ease, left ${slot.durationMs ?? 500}ms ease, top ${slot.durationMs ?? 500}ms ease`,
                     zIndex: 5,
                 }, children: [speaker && _jsx("div", { style: { fontSize: 11, opacity: 0.6, marginBottom: 2 }, children: speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap' }, children: content.slice(0, revealedCount) }), _jsx("div", { style: {
                             position: 'absolute',

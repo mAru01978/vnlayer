@@ -1,6 +1,7 @@
 import { type VNLayerMode } from './components/VNLayerOverlay';
 import type { UiAnchor } from './components/StageView';
 import { type CharacterSlot } from './tags/characterSlots';
+import { type UiConfigPatch } from './tags/index';
 import type { StepProvider } from './core/StepProvider';
 import { createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
@@ -18,6 +19,8 @@ declare function notify(eventName: string, payload?: unknown, selector?: string)
 type ConfigureOptions = {
     characterSlots?: Record<string, CharacterSlot>;
     tags?: Record<string, Record<string, unknown>>;
+    ui?: UiConfigPatch;
+    webLinks?: Record<string, string>;
 };
 declare function reset(selector?: string): Promise<void>;
 declare function configure(options: ConfigureOptions): Promise<void>;

@@ -12,7 +12,7 @@ export type CharacterState = {
   animReverse?: boolean;
   gaze?: { x: number; y: number };
 };
-export type Slot = { originX: number; originY: number };
+export type Slot = { originX: number; originY: number; durationMs?: number };
 
 export type BackgroundProps = {
   bg: string;

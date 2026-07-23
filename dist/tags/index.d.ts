@@ -16,4 +16,5 @@ export type { SceneHandlers } from './sceneHandlers';
 export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
 export { setUiConfig, getUiConfig } from './uiConfig';
 export type { UiConfig, UiConfigPatch, BacklogMode } from './uiConfig';
+export { setWebLinks, getWebLink } from './webLinks';
 //# sourceMappingURL=index.d.ts.map

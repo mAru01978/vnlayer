@@ -36,7 +36,9 @@ export type SceneHandlers = {
   // (吹き出し・ナレーションキャプション)全体のScene単位の表示/非表示切り替え。
   setMessageWindowVisible: (visible: boolean) => void;
   // 'reset' か、既に解決済みの座標
-  setPos: (name: string, coords: { originX: number; originY: number } | 'reset') => void;
+  // durationMsを省略すると既定の移動時間(500ms)。歩き演出等でゆっくり
+  // 動かしたい場合に長めの値を指定できる。
+  setPos: (name: string, coords: { originX: number; originY: number } | 'reset', durationMs?: number) => void;
   clearLines: () => void;
   // transientDurationMsはtransient指定時のみ意味を持つ
   setMessageMode: (mode: 'transient' | 'persist' | 'hide', transientDurationMs?: number) => void;
