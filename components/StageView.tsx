@@ -141,7 +141,7 @@ export default function StageView({
   } = story;
 
   const visibleChoices = choices.filter(
-    (c: any) => !c.tags?.some((t: string) => t.split(':')[0] === 'tick')
+    (c: any) => !c.tags?.some((t: string) => ['tick', 'interrupt'].includes(t.split(':')[0]))
   );
 
   const camStyle: CSSProperties = {
