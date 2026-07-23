@@ -13,6 +13,7 @@ export type CharacterState = {
 export type Slot = {
     originX: number;
     originY: number;
+    durationMs?: number;
 };
 export type BackgroundProps = {
     bg: string;

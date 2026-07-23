@@ -20,7 +20,7 @@ export type CharacterState = {
 export type CamState = { target: string; scale: number; originX: number; originY: number };
 export type ShakeState = { nonce: number; amplitude: number; duration: number };
 export type LineEntry = { speaker: string; content: string };
-export type PositionOverrides = Record<string, { originX: number; originY: number }>;
+export type PositionOverrides = Record<string, { originX: number; originY: number; durationMs?: number }>;
 export type ActiveMessage =
   | { speaker: string; content: string; fadeIn: boolean; typeSpeedMs: number }
   | null;

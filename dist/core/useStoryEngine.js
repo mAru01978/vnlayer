@@ -155,7 +155,7 @@ export function useStoryEngine(scenario, options = {}) {
     const setMessageWindowVisible = useCallback((visible) => {
         setMessageWindowHiddenState(!visible);
     }, []);
-    const setPos = useCallback((name, coords) => {
+    const setPos = useCallback((name, coords, durationMs) => {
         if (coords === 'reset') {
             setPositionOverrides((prev) => {
                 const next = { ...prev };
@@ -166,7 +166,7 @@ export function useStoryEngine(scenario, options = {}) {
             return;
         }
         setPositionOverrides((prev) => {
-            const next = { ...prev, [name]: coords };
+            const next = { ...prev, [name]: { ...coords, durationMs } };
             positionOverridesRef.current = next;
             return next;
         });

@@ -24,7 +24,7 @@ export type SceneHandlers = {
     setPos: (name: string, coords: {
         originX: number;
         originY: number;
-    } | 'reset') => void;
+    } | 'reset', durationMs?: number) => void;
     clearLines: () => void;
     setMessageMode: (mode: 'transient' | 'persist' | 'hide', transientDurationMs?: number) => void;
     handleFlash: (color: string, durationMs: number) => void;

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import VNLayerOverlay from './components/VNLayerOverlay';
 import { setCharacterSlots } from './tags/characterSlots';
-import { setTagConfig } from './tags/index';
+import { setTagConfig, setUiConfig, setWebLinks } from './tags/index';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
 const instances = new Map();
@@ -137,6 +137,10 @@ async function configure(options) {
             setTagConfig(key, partial);
         }
     }
+    if (options.ui)
+        setUiConfig(options.ui);
+    if (options.webLinks)
+        setWebLinks(options.webLinks);
 }
 export const VNLayer = {
     mount,

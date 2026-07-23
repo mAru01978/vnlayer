@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import VNLayerOverlay, { type VNLayerMode, type VNLayerHandle } from './components/VNLayerOverlay';
 import type { UiAnchor } from './components/StageView';
 import { setCharacterSlots, type CharacterSlot } from './tags/characterSlots';
-import { setTagConfig } from './tags/index';
+import { setTagConfig, setUiConfig, type UiConfigPatch, setWebLinks } from './tags/index';
 import type { StepProvider } from './core/StepProvider';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
@@ -160,13 +160,20 @@ async function notify(eventName: string, payload: unknown = true, selector?: str
   );
 }
 
-// VNLayer.configure({ characterSlots: {...}, tags: { cam: {...}, wait: {...} } })
+// VNLayer.configure({ characterSlots: {...}, tags: { cam: {...}, wait: {...} },
+//                      ui: { choice: { spacing: 16 } }, webLinks: { blogHome: "https://..." } })
 // Next.js運用ではcontext/StoryContext.tsxが自動でcharacterSlotsを注入するので
 // 通常は呼ばなくてよいが、静的運用(vnlayer.js)や、タグの挙動を実行時に
 // 上書きしたい場合(例: 演出のテンポ調整)に使う。
+// ui/tagsはink側の#ui:.../タグ設定と同じ実体を共有するので、どちらから
+// 上書きしても「後勝ち」で反映される(優先度判定は無い)。
+// webLinksは#web:open/#web:gotoが「完全に別サイトへ行く」時に参照する
+// 許可済みリンクのホワイトリスト(inkのソース上に生URLを書けない制約の回避も兼ねる)。
 type ConfigureOptions = {
   characterSlots?: Record<string, CharacterSlot>;
   tags?: Record<string, Record<string, unknown>>;
+  ui?: UiConfigPatch;
+  webLinks?: Record<string, string>;
 };
 
 // VNLayer.reset(selector?)
@@ -202,6 +209,8 @@ async function configure(options: ConfigureOptions): Promise<void> {
       setTagConfig(key, partial);
     }
   }
+  if (options.ui) setUiConfig(options.ui);
+  if (options.webLinks) setWebLinks(options.webLinks);
 }
 
 export const VNLayer = {
