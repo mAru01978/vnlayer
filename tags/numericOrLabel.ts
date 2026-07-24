@@ -23,3 +23,14 @@ export function isNumeric(raw: string | undefined): boolean {
   if (raw === undefined || raw.trim() === '') return false;
   return Number.isFinite(Number(raw));
 }
+
+// タグの真偽値引数は true/false ではなく on/off で統一する(値の種類を
+// 「数値・小数・意味のあるラベル」だけに絞る、というタグ設計方針のため。
+// true/falseは実装都合の値であって人が読むラベルとしては据わりが悪いので、
+// 採用しない)。on/off以外が来た場合はundefinedを返す(呼び出し側で
+// 無視するか警告するかを決める)。
+export function parseOnOff(raw: string | undefined): boolean | undefined {
+  if (raw === 'on') return true;
+  if (raw === 'off') return false;
+  return undefined;
+}
