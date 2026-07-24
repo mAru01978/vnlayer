@@ -168,6 +168,12 @@ export default function StageView({
     ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
     : null;
 
+  // バックログの開閉ボタン/パネルも選択肢と同じ考え方でキャラ位置基準にできる。
+  const backlogAnchorName = uiConfig.backlog.anchor;
+  const backlogAnchorSlot = backlogAnchorName
+    ? positionOverrides[backlogAnchorName] ?? getCharacterSlot(backlogAnchorName) ?? null
+    : null;
+
   const uiVis: Required<UiVisibility> =
     typeof showUi === 'boolean'
       ? { backlogButton: showUi, choices: showUi, messageWindow: showUi, userLine: showUi }
@@ -179,8 +185,20 @@ export default function StageView({
         };
 
   const outerStyle: CSSProperties = isOverlay
-    ? { position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50, fontFamily: 'sans-serif' }
-    : { maxWidth: 640, margin: '0 auto', fontFamily: 'sans-serif' };
+    ? {
+        position: 'fixed',
+        inset: 0,
+        pointerEvents: 'none',
+        zIndex: 50,
+        fontFamily: uiConfig.font.family ?? 'sans-serif',
+        fontSize: uiConfig.font.sizePx,
+      }
+    : {
+        maxWidth: 640,
+        margin: '0 auto',
+        fontFamily: uiConfig.font.family ?? 'sans-serif',
+        fontSize: uiConfig.font.sizePx,
+      };
 
   const shakeAnimation = shake.nonce > 0 ? `izakaya-shake-${shake.nonce} ${shake.duration}ms ease` : undefined;
 
@@ -215,11 +233,20 @@ export default function StageView({
         }
       `}</style>
 
-      {uiVis.backlogButton && (
+      {uiVis.backlogButton && uiConfig.backlog.show && (
         <div
           style={
-            isOverlay
-              ? { position: 'fixed', ...anchorSide, bottom: 12, pointerEvents: 'auto', zIndex: 51 }
+            backlogAnchorSlot
+              ? {
+                  position: 'absolute',
+                  left: `${backlogAnchorSlot.originX}%`,
+                  top: `calc(${backlogAnchorSlot.originY}% + ${uiConfig.backlog.offset ?? 20}px)`,
+                  transform: 'translateX(-50%)',
+                  pointerEvents: 'auto',
+                  zIndex: 51,
+                }
+              : isOverlay
+              ? { position: 'fixed', ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
               : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }
           }
         >
@@ -255,7 +282,7 @@ export default function StageView({
                 slot={slot}
                 isFocused={isFocused}
                 hasSpeaker={!!speaker}
-                onClick={() => story.notify('char_click', name)}
+                onClick={uiConfig.character.clickable ? () => story.notify('char_click', name) : undefined}
               />
             );
           })}
@@ -271,7 +298,7 @@ export default function StageView({
               slot={bubbleSlot}
               revealedCount={revealedCount}
               visible={bubbleShown}
-              onClick={skipTyping}
+              onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
             />
           </div>
         )}
@@ -282,32 +309,54 @@ export default function StageView({
               content={displayedMessage.content}
               revealedCount={revealedCount}
               visible={bubbleShown}
-              onClick={skipTyping}
+              onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
             />
           </div>
         )}
       </div>
 
-      {uiVis.backlogButton && backlogOpen && (
+      {uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (
         <div
-          style={{
-            position: isOverlay ? 'fixed' : 'static',
-            ...(isOverlay ? anchorSide : {}),
-            bottom: isOverlay ? 56 : undefined,
-            width: isOverlay ? 320 : undefined,
-            pointerEvents: 'auto',
-            marginTop: isOverlay ? 0 : 12,
-            padding: '12px 16px',
-            background: '#1e1e1e',
-            color: '#fff',
-            borderRadius: 8,
-            maxHeight: 240,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            zIndex: 51,
-          }}
+          className="vnlayer-scroll-hidden"
+          style={
+            backlogAnchorSlot
+              ? {
+                  position: 'absolute',
+                  left: `${backlogAnchorSlot.originX}%`,
+                  top: `calc(${backlogAnchorSlot.originY}% + ${(uiConfig.backlog.offset ?? 20) + 36}px)`,
+                  transform: 'translateX(-50%)',
+                  width: 280,
+                  maxHeight: `calc(100% - ${backlogAnchorSlot.originY}% - ${(uiConfig.backlog.offset ?? 20) + 36}px - 8px)`,
+                  overflowY: 'auto',
+                  pointerEvents: 'auto',
+                  padding: '12px 16px',
+                  background: '#1e1e1e',
+                  color: '#fff',
+                  borderRadius: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  zIndex: 51,
+                }
+              : {
+                  position: isOverlay ? 'fixed' : 'static',
+                  ...(isOverlay ? anchorSide : {}),
+                  bottom: isOverlay ? (uiConfig.backlog.offset ?? 12) + 44 : undefined,
+                  width: isOverlay ? 320 : undefined,
+                  pointerEvents: 'auto',
+                  marginTop: isOverlay ? 0 : 12,
+                  padding: '12px 16px',
+                  background: '#1e1e1e',
+                  color: '#fff',
+                  borderRadius: 8,
+                  maxHeight: 240,
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  zIndex: 51,
+                }
+          }
         >
           {lines.length === 0 && <div style={{ opacity: 0.5, fontSize: 12 }}>まだ会話がありません</div>}
           {lines.map((line: any, i: number) => (
@@ -395,7 +444,7 @@ export default function StageView({
                 key={c.index}
                 text={c.text}
                 onClick={() => choose(c.index)}
-                disabled={isProcessing}
+                disabled={isProcessing || !uiConfig.choice.interactive}
               />
             ))}
           </div>

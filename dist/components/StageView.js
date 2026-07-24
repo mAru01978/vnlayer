@@ -101,6 +101,11 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     const choiceAnchorSlot = choiceAnchorName
         ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
         : null;
+    // バックログの開閉ボタン/パネルも選択肢と同じ考え方でキャラ位置基準にできる。
+    const backlogAnchorName = uiConfig.backlog.anchor;
+    const backlogAnchorSlot = backlogAnchorName
+        ? positionOverrides[backlogAnchorName] ?? getCharacterSlot(backlogAnchorName) ?? null
+        : null;
     const uiVis = typeof showUi === 'boolean'
         ? { backlogButton: showUi, choices: showUi, messageWindow: showUi, userLine: showUi }
         : {
@@ -110,8 +115,20 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             userLine: showUi.userLine ?? true,
         };
     const outerStyle = isOverlay
-        ? { position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50, fontFamily: 'sans-serif' }
-        : { maxWidth: 640, margin: '0 auto', fontFamily: 'sans-serif' };
+        ? {
+            position: 'fixed',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 50,
+            fontFamily: uiConfig.font.family ?? 'sans-serif',
+            fontSize: uiConfig.font.sizePx,
+        }
+        : {
+            maxWidth: 640,
+            margin: '0 auto',
+            fontFamily: uiConfig.font.family ?? 'sans-serif',
+            fontSize: uiConfig.font.sizePx,
+        };
     const shakeAnimation = shake.nonce > 0 ? `izakaya-shake-${shake.nonce} ${shake.duration}ms ease` : undefined;
     const stageStyle = isOverlay
         ? { position: 'absolute', inset: 0, animation: shakeAnimation }
@@ -138,9 +155,18 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
         .vnlayer-scroll-hidden::-webkit-scrollbar {
           display: none; /* Chrome/Safari */
         }
-      ` }), uiVis.backlogButton && (_jsx("div", { style: isOverlay
-                    ? { position: 'fixed', ...anchorSide, bottom: 12, pointerEvents: 'auto', zIndex: 51 }
-                    : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
+      ` }), uiVis.backlogButton && uiConfig.backlog.show && (_jsx("div", { style: backlogAnchorSlot
+                    ? {
+                        position: 'absolute',
+                        left: `${backlogAnchorSlot.originX}%`,
+                        top: `calc(${backlogAnchorSlot.originY}% + ${uiConfig.backlog.offset ?? 20}px)`,
+                        transform: 'translateX(-50%)',
+                        pointerEvents: 'auto',
+                        zIndex: 51,
+                    }
+                    : isOverlay
+                        ? { position: 'fixed', ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
+                        : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
                         padding: '4px 10px',
                         borderRadius: 6,
                         border: '1px solid #999',
@@ -151,25 +177,44 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                     }, children: backlogOpen ? 'バックログを閉じる' : 'バックログ' }) })), _jsxs("div", { style: stageStyle, children: [!isOverlay && _jsx(renderer.Background, { bg: bg }), _jsxs("div", { style: { position: 'absolute', inset: 0, ...camStyle, pointerEvents: isOverlay ? 'none' : undefined }, children: [Object.entries(characters).map(([name, state]) => {
                                 const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 60 };
                                 const isFocused = speaker === name;
-                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, onClick: () => story.notify('char_click', name) }, name));
-                            }), story.flash && _jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs })] }), uiVis.messageWindow && !messageWindowHidden && displayedMessage && !isNarratorMessage && bubbleSlot && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.MessageBubble, { speaker: displayedMessage.speaker, content: displayedMessage.content, slot: bubbleSlot, revealedCount: revealedCount, visible: bubbleShown, onClick: skipTyping }) })), displayedMessage && isNarratorMessage && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.NarratorCaption, { content: displayedMessage.content, revealedCount: revealedCount, visible: bubbleShown, onClick: skipTyping }) }))] }), uiVis.backlogButton && backlogOpen && (_jsxs("div", { style: {
-                    position: isOverlay ? 'fixed' : 'static',
-                    ...(isOverlay ? anchorSide : {}),
-                    bottom: isOverlay ? 56 : undefined,
-                    width: isOverlay ? 320 : undefined,
-                    pointerEvents: 'auto',
-                    marginTop: isOverlay ? 0 : 12,
-                    padding: '12px 16px',
-                    background: '#1e1e1e',
-                    color: '#fff',
-                    borderRadius: 8,
-                    maxHeight: 240,
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    zIndex: 51,
-                }, children: [lines.length === 0 && _jsx("div", { style: { opacity: 0.5, fontSize: 12 }, children: "\u307E\u3060\u4F1A\u8A71\u304C\u3042\u308A\u307E\u305B\u3093" }), lines.map((line, i) => (_jsxs("div", { children: [line.speaker && _jsx("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: line.speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 }, children: line.content })] }, i)))] })), uiVis.userLine && userLine && (_jsxs("div", { style: {
+                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, onClick: uiConfig.character.clickable ? () => story.notify('char_click', name) : undefined }, name));
+                            }), story.flash && _jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs })] }), uiVis.messageWindow && !messageWindowHidden && displayedMessage && !isNarratorMessage && bubbleSlot && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.MessageBubble, { speaker: displayedMessage.speaker, content: displayedMessage.content, slot: bubbleSlot, revealedCount: revealedCount, visible: bubbleShown, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined }) })), displayedMessage && isNarratorMessage && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.NarratorCaption, { content: displayedMessage.content, revealedCount: revealedCount, visible: bubbleShown, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", style: backlogAnchorSlot
+                    ? {
+                        position: 'absolute',
+                        left: `${backlogAnchorSlot.originX}%`,
+                        top: `calc(${backlogAnchorSlot.originY}% + ${(uiConfig.backlog.offset ?? 20) + 36}px)`,
+                        transform: 'translateX(-50%)',
+                        width: 280,
+                        maxHeight: `calc(100% - ${backlogAnchorSlot.originY}% - ${(uiConfig.backlog.offset ?? 20) + 36}px - 8px)`,
+                        overflowY: 'auto',
+                        pointerEvents: 'auto',
+                        padding: '12px 16px',
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        borderRadius: 8,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        zIndex: 51,
+                    }
+                    : {
+                        position: isOverlay ? 'fixed' : 'static',
+                        ...(isOverlay ? anchorSide : {}),
+                        bottom: isOverlay ? (uiConfig.backlog.offset ?? 12) + 44 : undefined,
+                        width: isOverlay ? 320 : undefined,
+                        pointerEvents: 'auto',
+                        marginTop: isOverlay ? 0 : 12,
+                        padding: '12px 16px',
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        borderRadius: 8,
+                        maxHeight: 240,
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        zIndex: 51,
+                    }, children: [lines.length === 0 && _jsx("div", { style: { opacity: 0.5, fontSize: 12 }, children: "\u307E\u3060\u4F1A\u8A71\u304C\u3042\u308A\u307E\u305B\u3093" }), lines.map((line, i) => (_jsxs("div", { children: [line.speaker && _jsx("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: line.speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 }, children: line.content })] }, i)))] })), uiVis.userLine && userLine && (_jsxs("div", { style: {
                     position: isOverlay ? 'fixed' : 'static',
                     ...(isOverlay ? anchorSide : {}),
                     bottom: isOverlay ? 100 : undefined,
@@ -215,6 +260,6 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         pointerEvents: 'auto',
                         marginTop: isOverlay ? 0 : 10,
                         zIndex: 51,
-                    }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing }, c.index))) }) }))] }));
+                    }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive }, c.index))) }) }))] }));
 }
 //# sourceMappingURL=StageView.js.map
