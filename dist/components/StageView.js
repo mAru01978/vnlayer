@@ -130,7 +130,15 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
           75% { transform: translateX(-${shake.amplitude}px); }
           100% { transform: translateX(0); }
         }
-      ` }, shake.nonce), uiVis.backlogButton && (_jsx("div", { style: isOverlay
+      ` }, shake.nonce), _jsx("style", { children: `
+        .vnlayer-scroll-hidden {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* 旧Edge/IE */
+        }
+        .vnlayer-scroll-hidden::-webkit-scrollbar {
+          display: none; /* Chrome/Safari */
+        }
+      ` }), uiVis.backlogButton && (_jsx("div", { style: isOverlay
                     ? { position: 'fixed', ...anchorSide, bottom: 12, pointerEvents: 'auto', zIndex: 51 }
                     : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
                         padding: '4px 10px',
@@ -173,16 +181,26 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                     borderRadius: 8,
                     fontSize: 14,
                     zIndex: 51,
-                }, children: ["\u3042\u306A\u305F: ", userLine] })), uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (_jsx("div", { style: choiceAnchorSlot
+                }, children: ["\u3042\u306A\u305F: ", userLine] })), uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (_jsx("div", { className: "vnlayer-scroll-hidden", style: choiceAnchorSlot
                     ? {
                         // キャラのスロット位置基準(#ui:choice:anchor:name指定時)。
                         // メッセージ吹き出しと同じ座標系(ステージ全体基準%、カメラズームの
                         // 影響を受けない)に合わせてある。
+                        // offsetはanchor時にも効く: 「キャラの位置から何pxの余白を
+                        // 空けて選択肢を出すか」として共用する(既定表示時は
+                        // 「画面端からの距離」、anchor時は「キャラ位置からの距離」)。
                         position: 'absolute',
                         left: `${choiceAnchorSlot.originX}%`,
-                        top: `${Math.min(choiceAnchorSlot.originY + 14, 92)}%`,
+                        top: `calc(${choiceAnchorSlot.originY}% + ${uiConfig.choice.offset ?? 20}px)`,
                         transform: 'translateX(-50%)',
                         width: isOverlay ? 220 : 200,
+                        // 選択肢の数が多いと画面外まではみ出すことがあるため、
+                        // topの位置に応じて残りスペースぶんだけしか高さを取らない
+                        // ようcalc()で連動させる(どこにanchorしても必ず画面内に収まる)。
+                        // 超えた分は内部スクロールにする(スクロールバー自体は
+                        // 下のvnlayer-scroll-hidden CSSで見た目だけ非表示にしている)。
+                        maxHeight: `calc(100% - ${choiceAnchorSlot.originY}% - ${uiConfig.choice.offset ?? 20}px - 8px)`,
+                        overflowY: 'auto',
                         pointerEvents: 'auto',
                         zIndex: 51,
                     }
@@ -190,8 +208,10 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         // 既定: ステージの角(uiAnchor)に固定表示。
                         position: isOverlay ? 'fixed' : 'static',
                         ...(isOverlay ? anchorSide : {}),
-                        bottom: isOverlay ? 130 : undefined,
+                        bottom: isOverlay ? uiConfig.choice.offset ?? 130 : undefined,
                         width: isOverlay ? 280 : undefined,
+                        maxHeight: isOverlay ? '60vh' : 220,
+                        overflowY: 'auto',
                         pointerEvents: 'auto',
                         marginTop: isOverlay ? 0 : 10,
                         zIndex: 51,

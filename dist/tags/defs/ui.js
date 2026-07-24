@@ -37,6 +37,12 @@ registerTag({
                 return setUiConfig({ choice: { skin: value } });
             if (key === 'anchor')
                 return setUiConfig({ choice: { anchor: value === 'reset' ? undefined : value } });
+            if (key === 'offset') {
+                const n = Number(value);
+                if (Number.isFinite(n))
+                    return setUiConfig({ choice: { offset: n } });
+                return;
+            }
             return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
         }
         if (section === 'backlog') {

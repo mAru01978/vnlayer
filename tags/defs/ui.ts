@@ -22,6 +22,11 @@ import { setUiConfig } from '../uiConfig';
 //   # ui:choice:skin:fancy              → ボタンの見た目セット(新規、本番用)
 //   # ui:choice:anchor:alice            → 選択肢をaliceのスロット位置基準で表示(新規)
 //   # ui:choice:anchor:reset            → 位置基準を解除し、既定のuiAnchor(角)に戻す
+//   # ui:choice:offset:200              → 選択肢の余白(px)。anchor未指定なら
+//                                          「画面端からの距離」、anchor指定時は
+//                                          「キャラ位置からの距離」として使われる
+//                                          (どちらのモードでも画面内に収まる
+//                                          よう自動でスクロール枠になる)
 //
 //   [backlog]
 //   # ui:backlog:clear                  → 会話ログをクリア(旧#clear)
@@ -61,6 +66,11 @@ registerTag<UiTagConfig>({
       }
       if (key === 'skin') return setUiConfig({ choice: { skin: value } });
       if (key === 'anchor') return setUiConfig({ choice: { anchor: value === 'reset' ? undefined : value } });
+      if (key === 'offset') {
+        const n = Number(value);
+        if (Number.isFinite(n)) return setUiConfig({ choice: { offset: n } });
+        return;
+      }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     }
 

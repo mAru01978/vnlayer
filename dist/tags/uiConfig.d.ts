@@ -7,6 +7,7 @@ export type UiConfig = {
         skin?: string;
         spacing?: number;
         anchor?: string;
+        offset?: number;
     };
     backlog: {
         skin?: string;

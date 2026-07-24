@@ -12,13 +12,14 @@ export type UiConfig = {
   messageWindow: { skin?: string };
   // anchor: 指定するとキャラのスロット位置基準で選択肢を表示する(#ui:choice:anchor:alice)。
   // 未指定(既定)なら今まで通りuiAnchor(ステージの角)に固定表示する。
-  choice: { skin?: string; spacing?: number; anchor?: string };
+  // offset: 既定(角固定)表示の時の、角からの距離(px)。既定値130。
+  choice: { skin?: string; spacing?: number; anchor?: string; offset?: number };
   backlog: { skin?: string; mode: BacklogMode };
 };
 
 const defaultUiConfig: UiConfig = {
   messageWindow: {},
-  choice: { spacing: 8, anchor: undefined },
+  choice: { spacing: 8, anchor: undefined, offset: 130 },
   backlog: { mode: 'perInstance' },
 };
 
