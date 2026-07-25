@@ -78,6 +78,7 @@ function mount(selector: string, options: MountOptions): Promise<void> {
         uiAnchor: options.uiAnchor,
         showUi: options.showUi,
         stepProvider: options.stepProvider,
+        instanceId: selector,
         onReady: (handle: VNLayerHandle) => {
           instance.handle = handle;
           resolve();
@@ -202,14 +203,19 @@ async function reset(selector?: string): Promise<void> {
   );
 }
 
-async function configure(options: ConfigureOptions): Promise<void> {
+// VNLayer.configure(options, selector?)
+// characterSlots/tags/webLinksは常に全VN共通(グローバル)。
+// uiだけは notify/setContext と同じ考え方でselectorを渡せる:
+//   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
+//   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
+async function configure(options: ConfigureOptions, selector?: string): Promise<void> {
   if (options.characterSlots) setCharacterSlots(options.characterSlots);
   if (options.tags) {
     for (const [key, partial] of Object.entries(options.tags)) {
       setTagConfig(key, partial);
     }
   }
-  if (options.ui) setUiConfig(options.ui);
+  if (options.ui) setUiConfig(options.ui, selector);
   if (options.webLinks) setWebLinks(options.webLinks);
 }
 

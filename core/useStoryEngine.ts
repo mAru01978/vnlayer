@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dispatchTag, getTagConfig, type SceneHandlers } from '../tags/index';
 import { getCharacterSlot } from '../tags/characterSlots';
+import { setUiConfig as setUiConfigStore } from '../tags/uiConfig';
 import { getDefaultStepProvider } from './defaultStepProvider';
 import { abortableSleep } from './abortableSleep';
 import type { StepProvider } from './StepProvider';
@@ -25,12 +26,20 @@ import type { TypeConfig } from '../tags/defs/type';
 //   起動時にも注入できる)。
 // - stepProviderを渡さなかった場合は getDefaultStepProvider() (通常は
 //   serverStepProvider、静的バンドルではstaticStepProviderに差し替え済み)を使う。
+// - instanceIdは、このVNインスタンス自身を指す識別子(通常はmount()時の
+//   selector、例: "#vn")。#ui:...タグの設定がこのインスタンスだけに
+//   スコープされるようにするために使う(tags/uiConfig.ts参照)。
 export function useStoryEngine(
   scenario: string,
-  options: { stepProvider?: StepProvider; onNavigate?: (path: string) => void } = {}
+  options: {
+    stepProvider?: StepProvider;
+    onNavigate?: (path: string) => void;
+    instanceId?: string;
+  } = {}
 ): StoryEngine {
   const stepProvider = options.stepProvider ?? getDefaultStepProvider();
   const onNavigate = options.onNavigate;
+  const instanceId = options.instanceId;
 
   const [lines, setLines] = useState<LineEntry[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
@@ -243,7 +252,31 @@ export function useStoryEngine(
       // 発行していたら(myGeneration !== advanceGenerationRef.current)、
       // このバッチは「もう古い」と判断してState更新を止める。
       const myGeneration = ++advanceGenerationRef.current;
-      const isStale = () => myGeneration !== advanceGenerationRef.current;
+      const startedAt = Date.now();
+      let hasWarnedStale = false;
+      const isStale = () => {
+        const stale = myGeneration !== advanceGenerationRef.current;
+        // 診断用ログ: staleと判定された「最初の瞬間」だけ警告を出す
+        // (何度もチェックが走るので、同じバッチにつき1回だけに絞る)。
+        // これが出た場合、このバッチの残りの結果(setChoices/setCharacters等)は
+        // 一切画面に反映されない(=バックログにはテキストが残るのに選択肢や
+        // 見た目が更新されない、という現象の直接の原因がここ)。
+        // どのタイミングで、このバッチが始まってから何ms後に、世代がいくつ
+        // 進んだ状態で古くなったかが分かるので、何が新しいadvance()/resetStory()
+        // を引き起こしたか(直前の操作)を照らし合わせて調べられる。
+        if (stale && !hasWarnedStale) {
+          hasWarnedStale = true;
+          console.warn(
+            `[VNLayer] advance() batch (generation ${myGeneration}) becoming stale after ${
+              Date.now() - startedAt
+            }ms — a newer advance()/resetStory() (generation ${advanceGenerationRef.current}) has started. ` +
+              `This batch's remaining tag/text processing already happened (visible in backlog), but its final ` +
+              `choices/visual state will NOT be applied. If this is unexpected, check what triggered a second ` +
+              `advance() (choose() call, tick timer, resetStory()) during this scene.`
+          );
+        }
+        return stale;
+      };
 
       isProcessingRef.current = true;
       setIsProcessing(true);
@@ -266,6 +299,9 @@ export function useStoryEngine(
         setSpeaker: (name) => setSpeakerState(name),
         onGoto: (path) => {
           pendingGoto = path;
+        },
+        setUiConfig: (patch) => {
+          setUiConfigStore(patch, instanceId);
         },
         onOpen: (url) => {
           if (typeof window !== 'undefined') {
@@ -449,7 +485,13 @@ export function useStoryEngine(
       // コミットが非同期なので、短時間に連続でchoose()が呼ばれるケース
       // (連打、event_loopの自動choose()との競合等)では古い値のまま
       // すり抜けてしまうことがあったため、同期的に読めるref側を正とする。
-      if (isProcessingRef.current) return;
+      if (isProcessingRef.current) {
+        console.warn(
+          `[VNLayer] choose(${index}) ignored: a previous advance() (generation ${advanceGenerationRef.current}) is still in progress.`
+        );
+        return;
+      }
+      console.warn(`[VNLayer] choose(${index}) called (will start generation ${advanceGenerationRef.current + 1})`);
       const chosen = choices.find((c) => c.index === index);
       if (chosen) setUserLine(chosen.text);
 
@@ -611,5 +653,6 @@ export function useStoryEngine(
     typeSpeedMs,
     setContextVars,
     notify,
+    instanceId,
   };
 }

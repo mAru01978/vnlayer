@@ -1,6 +1,6 @@
 import { registerTag, registerAlias } from '../registry';
 import { parseOnOff } from '../numericOrLabel';
-import { setUiConfig } from '../uiConfig';
+
 
 // #ui はUI制御系(メッセージウィンドウ/選択肢/バックログ/キャラ)をまとめた
 // 統合タグ。真偽値は全てon/offで統一する(true/falseは使わない、タグの値は
@@ -72,10 +72,10 @@ registerTag<UiTagConfig>({
       }
       if (key === 'interactive') {
         const on = parseOnOff(value);
-        if (on !== undefined) setUiConfig({ messageWindow: { interactive: on } });
+        if (on !== undefined) handlers.setUiConfig({ messageWindow: { interactive: on } });
         return;
       }
-      if (key === 'skin') return setUiConfig({ messageWindow: { skin: value } });
+      if (key === 'skin') return handlers.setUiConfig({ messageWindow: { skin: value } });
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     }
 
@@ -87,19 +87,19 @@ registerTag<UiTagConfig>({
       }
       if (key === 'interactive') {
         const on = parseOnOff(value);
-        if (on !== undefined) setUiConfig({ choice: { interactive: on } });
+        if (on !== undefined) handlers.setUiConfig({ choice: { interactive: on } });
         return;
       }
       if (key === 'spacing') {
         const n = Number(value);
-        if (Number.isFinite(n)) return setUiConfig({ choice: { spacing: n } });
+        if (Number.isFinite(n)) return handlers.setUiConfig({ choice: { spacing: n } });
         return;
       }
-      if (key === 'skin') return setUiConfig({ choice: { skin: value } });
-      if (key === 'anchor') return setUiConfig({ choice: { anchor: value === 'reset' ? undefined : value } });
+      if (key === 'skin') return handlers.setUiConfig({ choice: { skin: value } });
+      if (key === 'anchor') return handlers.setUiConfig({ choice: { anchor: value === 'reset' ? undefined : value } });
       if (key === 'offset') {
         const n = Number(value);
-        if (Number.isFinite(n)) return setUiConfig({ choice: { offset: n } });
+        if (Number.isFinite(n)) return handlers.setUiConfig({ choice: { offset: n } });
         return;
       }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
@@ -109,17 +109,17 @@ registerTag<UiTagConfig>({
       if (key === 'clear') return handlers.clearLines();
       if (key === 'show') {
         const on = parseOnOff(value);
-        if (on !== undefined) setUiConfig({ backlog: { show: on } });
+        if (on !== undefined) handlers.setUiConfig({ backlog: { show: on } });
         return;
       }
-      if (key === 'skin') return setUiConfig({ backlog: { skin: value } });
+      if (key === 'skin') return handlers.setUiConfig({ backlog: { skin: value } });
       if (key === 'mode' && (value === 'global' || value === 'perInstance')) {
-        return setUiConfig({ backlog: { mode: value } });
+        return handlers.setUiConfig({ backlog: { mode: value } });
       }
-      if (key === 'anchor') return setUiConfig({ backlog: { anchor: value === 'reset' ? undefined : value } });
+      if (key === 'anchor') return handlers.setUiConfig({ backlog: { anchor: value === 'reset' ? undefined : value } });
       if (key === 'offset') {
         const n = Number(value);
-        if (Number.isFinite(n)) return setUiConfig({ backlog: { offset: n } });
+        if (Number.isFinite(n)) return handlers.setUiConfig({ backlog: { offset: n } });
         return;
       }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
@@ -128,17 +128,17 @@ registerTag<UiTagConfig>({
     if (section === 'character') {
       if (key === 'clickable') {
         const on = parseOnOff(value);
-        if (on !== undefined) setUiConfig({ character: { clickable: on } });
+        if (on !== undefined) handlers.setUiConfig({ character: { clickable: on } });
         return;
       }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     }
 
     if (section === 'font') {
-      if (key === 'family') return setUiConfig({ font: { family: value } });
+      if (key === 'family') return handlers.setUiConfig({ font: { family: value } });
       if (key === 'size') {
         const n = Number(value);
-        if (Number.isFinite(n)) return setUiConfig({ font: { sizePx: n } });
+        if (Number.isFinite(n)) return handlers.setUiConfig({ font: { sizePx: n } });
         return;
       }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));

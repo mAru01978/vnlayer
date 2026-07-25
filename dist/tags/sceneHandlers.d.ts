@@ -1,3 +1,4 @@
+import type { UiConfigPatch } from './uiConfig';
 export type SceneHandlers = {
     setBg: (name: string) => void;
     setChar: (name: string, expression: string) => void;
@@ -14,6 +15,7 @@ export type SceneHandlers = {
     onGoto: (path: string) => void;
     onOpen: (url: string) => void;
     onScroll: (target: string) => void;
+    setUiConfig: (patch: UiConfigPatch) => void;
     wait: (ms: number) => Promise<void>;
     setCamera: (scale: number, target: string | undefined, durationMs: number) => void;
     shakeScreen: (amplitude: number, durationMs: number) => void;

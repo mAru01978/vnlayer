@@ -1,11 +1,16 @@
 // メッセージウィンドウ/選択肢/バックログ/キャラの見た目・挙動をVNごとに
-// 差し替えるための共有ストア。characterSlots.tsと同じ考え方: 実行時に
-// JS(VNLayer.configure)からもInk(#ui:...タグ)からも同じsetUiConfig()経由で
-// 上書きできるようにしておき、どちらが後に書き込んでも「後勝ち」で反映される
-// (優先度判定ロジックは持たない)。
+// 差し替えるための共有ストア。
 //
-// skin(見た目の素材セット名)自体の実体(実際のCSS/画像)はrealRenderer側が
-// 持つ想定。mockRendererはskin名を無視して今まで通りの見た目のままでよい。
+// notify()/setContext()と同じ考え方でスコープ指定できるようにしてある:
+//   setUiConfig(patch)              → 全VN共通(グローバル)に適用
+//   setUiConfig(patch, "#vn")       → "#vn"のVNだけに適用(グローバル設定の上に重なる)
+// 未指定(グローバル)がまず土台になり、スコープ指定した値だけがその
+// インスタンスの表示に追加で反映される、という「グローバルが既定、
+// 個別指定は上書き」の関係。
+//
+// characterSlots.tsと同じく、JS(VNLayer.configure)からもInk(#ui:...タグ、
+// 内部的にはhandlers.setUiConfig経由)からも同じ関数を共有していて、
+// 後から書いた方が「そのスコープの中では」勝つ(優先度判定は無い)。
 //
 // 真偽値は全てon/off(boolean)で統一している。true/falseという値そのものは
 // タグの引数としては使わない(タグ設計方針: 数値・小数・意味のあるラベルのみ)。
@@ -16,25 +21,51 @@ const defaultUiConfig = {
     character: { clickable: true },
     font: {},
 };
-let config = {
-    messageWindow: { ...defaultUiConfig.messageWindow },
-    choice: { ...defaultUiConfig.choice },
-    backlog: { ...defaultUiConfig.backlog },
-    character: { ...defaultUiConfig.character },
-    font: { ...defaultUiConfig.font },
-};
-// 浅いマージ(セクション単位)。VNLayer.configure({ ui: { choice: { spacing: 16 } } })
-// のように部分的に渡せばよく、他のセクションの値・同セクション内の他キーも保持される。
-export function setUiConfig(partial) {
-    config = {
-        messageWindow: { ...config.messageWindow, ...partial.messageWindow },
-        choice: { ...config.choice, ...partial.choice },
-        backlog: { ...config.backlog, ...partial.backlog },
-        character: { ...config.character, ...partial.character },
-        font: { ...config.font, ...partial.font },
+const GLOBAL_SCOPE = '__global__';
+// スコープ(グローバルは特別なキー、インスタンス別は選択肢文字列そのまま)ごとに
+// 「差分(patch)」だけを保持する。フルの設定値ではなく差分で持つことで、
+// 「そのスコープで明示的に設定した項目だけ」がグローバルの上に重なるようにする。
+const patchesByScope = new Map();
+function mergeSection(base, patch) {
+    return patch ? { ...base, ...patch } : base;
+}
+function mergePatch(base, patch) {
+    if (!patch)
+        return base;
+    return {
+        messageWindow: mergeSection(base.messageWindow, patch.messageWindow),
+        choice: mergeSection(base.choice, patch.choice),
+        backlog: mergeSection(base.backlog, patch.backlog),
+        character: mergeSection(base.character, patch.character),
+        font: mergeSection(base.font, patch.font),
     };
 }
-export function getUiConfig() {
-    return config;
+function computeGlobal() {
+    return mergePatch(defaultUiConfig, patchesByScope.get(GLOBAL_SCOPE));
+}
+// scopeを省略(またはundefined)するとグローバル設定を更新する
+// (=すべてのVNインスタンスに影響する既定値)。
+// scopeにセレクタ文字列("#vn"等)を渡すと、そのインスタンスだけの
+// 上書き設定として記録される(グローバル設定はそのまま、他のVNには影響しない)。
+export function setUiConfig(patch, scope) {
+    const key = scope ?? GLOBAL_SCOPE;
+    const existing = patchesByScope.get(key) ?? {};
+    patchesByScope.set(key, {
+        messageWindow: { ...existing.messageWindow, ...patch.messageWindow },
+        choice: { ...existing.choice, ...patch.choice },
+        backlog: { ...existing.backlog, ...patch.backlog },
+        character: { ...existing.character, ...patch.character },
+        font: { ...existing.font, ...patch.font },
+    });
+}
+// scopeを省略するとグローバル設定(全VN共通の既定値)を返す。
+// scopeを指定すると、グローバル設定の上にそのインスタンス専用の上書きを
+// 重ねた「実効設定」を返す(そのインスタンス専用の上書きが無い項目は
+// グローバルの値がそのまま使われる)。
+export function getUiConfig(scope) {
+    const global = computeGlobal();
+    if (!scope)
+        return global;
+    return mergePatch(global, patchesByScope.get(scope));
 }
 //# sourceMappingURL=uiConfig.js.map

@@ -38,6 +38,7 @@ function mount(selector, options) {
             uiAnchor: options.uiAnchor,
             showUi: options.showUi,
             stepProvider: options.stepProvider,
+            instanceId: selector,
             onReady: (handle) => {
                 instance.handle = handle;
                 resolve();
@@ -129,7 +130,12 @@ async function reset(selector) {
         return instance.handle.resetStory();
     }));
 }
-async function configure(options) {
+// VNLayer.configure(options, selector?)
+// characterSlots/tags/webLinksは常に全VN共通(グローバル)。
+// uiだけは notify/setContext と同じ考え方でselectorを渡せる:
+//   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
+//   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
+async function configure(options, selector) {
     if (options.characterSlots)
         setCharacterSlots(options.characterSlots);
     if (options.tags) {
@@ -138,7 +144,7 @@ async function configure(options) {
         }
     }
     if (options.ui)
-        setUiConfig(options.ui);
+        setUiConfig(options.ui, selector);
     if (options.webLinks)
         setWebLinks(options.webLinks);
 }

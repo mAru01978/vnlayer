@@ -79,5 +79,6 @@ export type StoryEngine = {
     typeSpeedMs: number;
     setContextVars: (vars: Record<string, unknown>) => Promise<void>;
     notify: (eventName: string, payload?: unknown) => Promise<void>;
+    instanceId?: string;
 };
 //# sourceMappingURL=types.d.ts.map

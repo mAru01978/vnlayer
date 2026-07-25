@@ -30,16 +30,21 @@ export const StoryProvider = ({
   scenario = 'Scenario1',
   stepProvider,
   onNavigate,
+  instanceId,
 }: {
   children: ReactNode;
   scenario?: string;
   // 明示的に渡した場合のみそちらを使う(未指定ならcore側の既定Providerを使う)
   stepProvider?: StepProvider;
   onNavigate?: (path: string) => void;
+  // このVNインスタンス自身の識別子(通常はmount()時のselector)。
+  // #ui:...タグの設定をこのインスタンスだけにスコープするために使う。
+  instanceId?: string;
 }) => {
   const engine = useStoryEngine(scenario, {
     stepProvider,
     onNavigate: onNavigate ?? getDefaultOnNavigate(),
+    instanceId,
   });
 
   return <StoryContext.Provider value={engine}>{children}</StoryContext.Provider>;

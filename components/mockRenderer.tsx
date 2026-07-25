@@ -118,7 +118,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }: 
   );
 }
 
-function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick }: MessageBubbleProps) {
+function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx }: MessageBubbleProps) {
   return (
     <>
       <style>{`
@@ -152,7 +152,8 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
         borderRadius: 12,
         padding: '10px 14px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-        fontSize: 13,
+        fontSize: fontSizePx ?? 13,
+        fontFamily,
         lineHeight: 1.5,
         cursor: revealedCount < content.length ? 'pointer' : 'default',
         opacity: visible ? 1 : 0,
@@ -180,7 +181,7 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
   );
 }
 
-function NarratorCaption({ content, revealedCount, visible, onClick }: NarratorCaptionProps) {
+function NarratorCaption({ content, revealedCount, visible, onClick, fontFamily, fontSizePx }: NarratorCaptionProps) {
   return (
     <div
       onClick={onClick}
@@ -194,7 +195,8 @@ function NarratorCaption({ content, revealedCount, visible, onClick }: NarratorC
         color: '#fff',
         borderRadius: 8,
         padding: '8px 16px',
-        fontSize: 13,
+        fontSize: fontSizePx ?? 13,
+        fontFamily,
         lineHeight: 1.5,
         textAlign: 'center',
         cursor: revealedCount < content.length ? 'pointer' : 'default',
@@ -208,7 +210,7 @@ function NarratorCaption({ content, revealedCount, visible, onClick }: NarratorC
   );
 }
 
-function ChoiceButton({ text, onClick, disabled }: ChoiceButtonProps) {
+function ChoiceButton({ text, onClick, disabled, fontFamily, fontSizePx }: ChoiceButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -222,6 +224,8 @@ function ChoiceButton({ text, onClick, disabled }: ChoiceButtonProps) {
         cursor: disabled ? 'not-allowed' : 'pointer',
         textAlign: 'left',
         width: '100%',
+        fontSize: fontSizePx,
+        fontFamily,
       }}
     >
       {text}

@@ -39,6 +39,9 @@ export type MessageBubbleProps = {
   revealedCount: number;
   visible: boolean;
   onClick: () => void;
+  // #ui:font:family/size で設定されたフォント(未指定ならrenderer側の既定値を使う)
+  fontFamily?: string;
+  fontSizePx?: number;
 };
 
 export type NarratorCaptionProps = {
@@ -46,12 +49,16 @@ export type NarratorCaptionProps = {
   revealedCount: number;
   visible: boolean;
   onClick: () => void;
+  fontFamily?: string;
+  fontSizePx?: number;
 };
 
 export type ChoiceButtonProps = {
   text: string;
   onClick: () => void;
   disabled: boolean;
+  fontFamily?: string;
+  fontSizePx?: number;
 };
 
 export type FlashOverlayProps = {

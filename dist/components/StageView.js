@@ -81,7 +81,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     }, [activeMessage]);
     if (!story)
         return null;
-    const { lines, choices, bg, characters, speaker, cam, shake, userLine, isProcessing, choose, choicesHidden, messageWindowHidden, positionOverrides, } = story;
+    const { lines, choices, bg, characters, speaker, cam, shake, userLine, isProcessing, choose, choicesHidden, messageWindowHidden, positionOverrides, instanceId, } = story;
     const visibleChoices = choices.filter((c) => !c.tags?.some((t) => ['tick', 'interrupt'].includes(t.split(':')[0])));
     const camStyle = {
         transform: `scale(${cam.scale})`,
@@ -96,7 +96,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     const anchorSide = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
     // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
     // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
-    const uiConfig = getUiConfig();
+    const uiConfig = getUiConfig(instanceId);
     const choiceAnchorName = uiConfig.choice.anchor;
     const choiceAnchorSlot = choiceAnchorName
         ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
@@ -178,7 +178,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                                 const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 60 };
                                 const isFocused = speaker === name;
                                 return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, onClick: uiConfig.character.clickable ? () => story.notify('char_click', name) : undefined }, name));
-                            }), story.flash && _jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs })] }), uiVis.messageWindow && !messageWindowHidden && displayedMessage && !isNarratorMessage && bubbleSlot && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.MessageBubble, { speaker: displayedMessage.speaker, content: displayedMessage.content, slot: bubbleSlot, revealedCount: revealedCount, visible: bubbleShown, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined }) })), displayedMessage && isNarratorMessage && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.NarratorCaption, { content: displayedMessage.content, revealedCount: revealedCount, visible: bubbleShown, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", style: backlogAnchorSlot
+                            }), story.flash && _jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs })] }), uiVis.messageWindow && !messageWindowHidden && displayedMessage && !isNarratorMessage && bubbleSlot && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.MessageBubble, { speaker: displayedMessage.speaker, content: displayedMessage.content, slot: bubbleSlot, revealedCount: revealedCount, visible: bubbleShown, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }) })), displayedMessage && isNarratorMessage && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.NarratorCaption, { content: displayedMessage.content, revealedCount: revealedCount, visible: bubbleShown, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", style: backlogAnchorSlot
                     ? {
                         position: 'absolute',
                         left: `${backlogAnchorSlot.originX}%`,
@@ -260,6 +260,6 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         pointerEvents: 'auto',
                         marginTop: isOverlay ? 0 : 10,
                         zIndex: 51,
-                    }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive }, c.index))) }) }))] }));
+                    }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }, c.index))) }) }))] }));
 }
 //# sourceMappingURL=StageView.js.map

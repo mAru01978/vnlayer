@@ -33,17 +33,23 @@ export type MessageBubbleProps = {
     revealedCount: number;
     visible: boolean;
     onClick: () => void;
+    fontFamily?: string;
+    fontSizePx?: number;
 };
 export type NarratorCaptionProps = {
     content: string;
     revealedCount: number;
     visible: boolean;
     onClick: () => void;
+    fontFamily?: string;
+    fontSizePx?: number;
 };
 export type ChoiceButtonProps = {
     text: string;
     onClick: () => void;
     disabled: boolean;
+    fontFamily?: string;
+    fontSizePx?: number;
 };
 export type FlashOverlayProps = {
     color: string;
