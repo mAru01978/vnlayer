@@ -62,4 +62,8 @@ export type StoryEngine = {
   // 即座に打ち切り、event_loop等の#interrupt付き選択肢に辿り着き次第
   // それを自動選択する。
   notify: (eventName: string, payload?: unknown) => Promise<void>;
+  // このVNインスタンス自身の識別子(通常はmount()時のselector)。
+  // #ui:...タグの設定をこのインスタンスだけにスコープするために、
+  // StageView側がgetUiConfig(instanceId)を呼ぶ時に使う。
+  instanceId?: string;
 };

@@ -33,6 +33,6 @@ export type UiConfigPatch = {
     character?: Partial<UiConfig['character']>;
     font?: Partial<UiConfig['font']>;
 };
-export declare function setUiConfig(partial: UiConfigPatch): void;
-export declare function getUiConfig(): UiConfig;
+export declare function setUiConfig(patch: UiConfigPatch, scope?: string): void;
+export declare function getUiConfig(scope?: string): UiConfig;
 //# sourceMappingURL=uiConfig.d.ts.map

@@ -1,6 +1,8 @@
 // 各タグ定義(tags/defs/*.ts)が呼び出す、状態更新のための最終的な口。
 // 「ラベル→実際の値」の変換(config解決)は全部タグ定義側の責務にして、
 // ここに来る時点では全て解決済みの値(ms, scale, 座標等)だけを受け取る。
+import type { UiConfigPatch } from './uiConfig';
+
 export type SceneHandlers = {
   setBg: (name: string) => void;
   setChar: (name: string, expression: string) => void;
@@ -24,6 +26,11 @@ export type SceneHandlers = {
   // web:scroll:target → ページ内スクロール。数値ならY座標(px)へ、
   // それ以外はCSSセレクタ/id/アンカー名として scrollIntoView する。
   onScroll: (target: string) => void;
+  // #ui:...タグからのUI設定変更。呼び出し元(useStoryEngine.ts)がこのVN
+  // インスタンス自身のスコープ(mount時のselector)を使って
+  // tags/uiConfig.tsのsetUiConfig()を呼ぶ。これによりink側の#ui:...は
+  // 既定で「そのVNインスタンスだけ」に効き、他のVNへ影響しない。
+  setUiConfig: (patch: UiConfigPatch) => void;
   wait: (ms: number) => Promise<void>;
   // scale/durationは既にcam.tsが解決済みの値
   setCamera: (scale: number, target: string | undefined, durationMs: number) => void;

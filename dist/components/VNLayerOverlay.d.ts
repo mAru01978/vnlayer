@@ -15,6 +15,7 @@ export type VNLayerOverlayProps = {
     stepProvider?: StepProvider;
     onNavigate?: (path: string) => void;
     onReady?: (handle: VNLayerHandle) => void;
+    instanceId?: string;
 };
-export default function VNLayerOverlay({ scenario, mode, uiAnchor, showUi, stepProvider, onNavigate, onReady }: VNLayerOverlayProps): import("react").JSX.Element;
+export default function VNLayerOverlay({ scenario, mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }: VNLayerOverlayProps): import("react").JSX.Element;
 //# sourceMappingURL=VNLayerOverlay.d.ts.map

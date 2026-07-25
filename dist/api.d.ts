@@ -23,7 +23,7 @@ type ConfigureOptions = {
     webLinks?: Record<string, string>;
 };
 declare function reset(selector?: string): Promise<void>;
-declare function configure(options: ConfigureOptions): Promise<void>;
+declare function configure(options: ConfigureOptions, selector?: string): Promise<void>;
 export declare const VNLayer: {
     mount: typeof mount;
     unmount: typeof unmount;

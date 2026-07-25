@@ -138,6 +138,7 @@ export default function StageView({
     choicesHidden,
     messageWindowHidden,
     positionOverrides,
+    instanceId,
   } = story;
 
   const visibleChoices = choices.filter(
@@ -162,7 +163,7 @@ export default function StageView({
 
   // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
   // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
-  const uiConfig = getUiConfig();
+  const uiConfig = getUiConfig(instanceId);
   const choiceAnchorName = uiConfig.choice.anchor;
   const choiceAnchorSlot = choiceAnchorName
     ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
@@ -299,6 +300,8 @@ export default function StageView({
               revealedCount={revealedCount}
               visible={bubbleShown}
               onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
+              fontFamily={uiConfig.font.family}
+              fontSizePx={uiConfig.font.sizePx}
             />
           </div>
         )}
@@ -310,6 +313,8 @@ export default function StageView({
               revealedCount={revealedCount}
               visible={bubbleShown}
               onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
+              fontFamily={uiConfig.font.family}
+              fontSizePx={uiConfig.font.sizePx}
             />
           </div>
         )}
@@ -445,6 +450,8 @@ export default function StageView({
                 text={c.text}
                 onClick={() => choose(c.index)}
                 disabled={isProcessing || !uiConfig.choice.interactive}
+                fontFamily={uiConfig.font.family}
+                fontSizePx={uiConfig.font.sizePx}
               />
             ))}
           </div>

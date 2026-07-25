@@ -29,6 +29,9 @@ export type VNLayerOverlayProps = {
   onNavigate?: (path: string) => void;
   // マウント直後にVNLayerHandleを1回だけ受け取るコールバック(api.ts専用、通常は使わない)
   onReady?: (handle: VNLayerHandle) => void;
+  // このVNインスタンス自身の識別子(api.tsのmount()が自動でselector文字列を渡す)。
+  // #ui:...タグの設定をこのインスタンスだけにスコープするために使う。
+  instanceId?: string;
 };
 
 // StoryProviderの内側でuseStory()を呼び、engineの最新関数をref経由でapi.ts側に
@@ -59,9 +62,9 @@ function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }
 // <VNLayerOverlay scenario="BlogIntro" mode="overlay" /> をどのページに置いても
 // それだけでそのシナリオ用のエンジン一式が独立して動く。
 // (旧VNLayer.tsxと同じ役割。描画自体はStageViewに一本化されている)
-export default function VNLayerOverlay({ scenario = 'Scenario1', mode, uiAnchor, showUi, stepProvider, onNavigate, onReady }: VNLayerOverlayProps) {
+export default function VNLayerOverlay({ scenario = 'Scenario1', mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }: VNLayerOverlayProps) {
   return (
-    <StoryProvider scenario={scenario} stepProvider={stepProvider} onNavigate={onNavigate}>
+    <StoryProvider scenario={scenario} stepProvider={stepProvider} onNavigate={onNavigate} instanceId={instanceId}>
       <EngineBridge onReady={onReady} />
       <StageView mode={mode} uiAnchor={uiAnchor} showUi={showUi} />
     </StoryProvider>

@@ -68,7 +68,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }) 
                     zIndex: 6,
                 } }))] }));
 }
-function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick }) {
+function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx }) {
     return (_jsxs(_Fragment, { children: [_jsx("style", { children: `
         .vnlayer-scroll-hidden {
           scrollbar-width: none; /* Firefox */
@@ -96,7 +96,8 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
                     borderRadius: 12,
                     padding: '10px 14px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                    fontSize: 13,
+                    fontSize: fontSizePx ?? 13,
+                    fontFamily,
                     lineHeight: 1.5,
                     cursor: revealedCount < content.length ? 'pointer' : 'default',
                     opacity: visible ? 1 : 0,
@@ -114,7 +115,7 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
                             borderTop: '8px solid rgba(255,255,255,0.95)',
                         } })] })] }));
 }
-function NarratorCaption({ content, revealedCount, visible, onClick }) {
+function NarratorCaption({ content, revealedCount, visible, onClick, fontFamily, fontSizePx }) {
     return (_jsx("div", { onClick: onClick, style: {
             position: 'absolute',
             left: '50%',
@@ -125,7 +126,8 @@ function NarratorCaption({ content, revealedCount, visible, onClick }) {
             color: '#fff',
             borderRadius: 8,
             padding: '8px 16px',
-            fontSize: 13,
+            fontSize: fontSizePx ?? 13,
+            fontFamily,
             lineHeight: 1.5,
             textAlign: 'center',
             cursor: revealedCount < content.length ? 'pointer' : 'default',
@@ -134,7 +136,7 @@ function NarratorCaption({ content, revealedCount, visible, onClick }) {
             zIndex: 5,
         }, children: content.slice(0, revealedCount) }));
 }
-function ChoiceButton({ text, onClick, disabled }) {
+function ChoiceButton({ text, onClick, disabled, fontFamily, fontSizePx }) {
     return (_jsx("button", { onClick: onClick, disabled: disabled, style: {
             padding: '10px 14px',
             borderRadius: 6,
@@ -144,6 +146,8 @@ function ChoiceButton({ text, onClick, disabled }) {
             cursor: disabled ? 'not-allowed' : 'pointer',
             textAlign: 'left',
             width: '100%',
+            fontSize: fontSizePx,
+            fontFamily,
         }, children: text }));
 }
 function FlashOverlay({ color, durationMs }) {
