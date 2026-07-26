@@ -54,9 +54,17 @@ export function continueUntilChoice(story: Story, initialVisual: VisualState): R
       });
 
       // 話者抽出は解決済みのsタグから行う(2番目のセグメントが話者名)。
-      const sTag = remainingTags.find((t) => t.split(':')[0] === 's');
-      if (sTag) {
-        currentSpeakerForLine = sTag.split(':')[1];
+      // 重要: inkjsは文章を挟まない連続したタグ行を1回のContinue()に
+      // まとめてcurrentTagsとして返すことがある(例: 前の知の末尾の
+      // # s:alice:hide と、-> 診断先の知の先頭の # s:mika:normal が
+      // 間に文章が無いために同じ束としてまとまってしまう)。この場合、
+      // 「最初に見つかったsタグ」を採用すると古い話者(alice)のまま
+      // 固定されてしまうバグになるため、必ず「最後に見つかったsタグ」を
+      // 採用する(後に書かれたものが優先される、というinkスクリプトの
+      // 上から下への読み方と一致させる)。
+      const sTags = remainingTags.filter((t) => t.split(':')[0] === 's');
+      if (sTags.length > 0) {
+        currentSpeakerForLine = sTags[sTags.length - 1].split(':')[1];
       }
 
       for (const tag of remainingTags) {
