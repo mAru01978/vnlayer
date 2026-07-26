@@ -266,11 +266,14 @@ export function useStoryEngine(
         // を引き起こしたか(直前の操作)を照らし合わせて調べられる。
         if (stale && !hasWarnedStale) {
           hasWarnedStale = true;
+          const firstStepWithText = result.steps.find((s) => s.content);
           console.warn(
             `[VNLayer] advance() batch (generation ${myGeneration}) becoming stale after ${
               Date.now() - startedAt
             }ms — a newer advance()/resetStory() (generation ${advanceGenerationRef.current}) has started. ` +
-              `This batch's remaining tag/text processing already happened (visible in backlog), but its final ` +
+              `This batch had ${result.steps.length} step(s), first spoken line: ` +
+              `${firstStepWithText ? `"${firstStepWithText.speaker}: ${firstStepWithText.content}"` : '(none)'}. ` +
+              `Its remaining tag/text processing already happened (visible in backlog), but its final ` +
               `choices/visual state will NOT be applied. If this is unexpected, check what triggered a second ` +
               `advance() (choose() call, tick timer, resetStory()) during this scene.`
           );
@@ -486,12 +489,20 @@ export function useStoryEngine(
       // (連打、event_loopの自動choose()との競合等)では古い値のまま
       // すり抜けてしまうことがあったため、同期的に読めるref側を正とする。
       if (isProcessingRef.current) {
-        console.warn(
-          `[VNLayer] choose(${index}) ignored: a previous advance() (generation ${advanceGenerationRef.current}) is still in progress.`
-        );
+        // tick/interrupt由来の自動choose()が、他の処理(#wait:等)の最中に
+        // 弾かれるのは正常な挙動(次のtickでまた試すだけで実害が無い)。
+        // ここで警告を出すと「#tick:0.1が動いてるだけ」で大量にログが
+        // 埋まってしまうので、実際のユーザークリックが弾かれた場合だけ警告する。
+        const isAmbient = choices
+          .find((c) => c.index === index)
+          ?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
+        if (!isAmbient) {
+          console.warn(
+            `[VNLayer] choose(${index}) ignored: a previous advance() (generation ${advanceGenerationRef.current}) is still in progress.`
+          );
+        }
         return;
       }
-      console.warn(`[VNLayer] choose(${index}) called (will start generation ${advanceGenerationRef.current + 1})`);
       const chosen = choices.find((c) => c.index === index);
       if (chosen) setUserLine(chosen.text);
 
