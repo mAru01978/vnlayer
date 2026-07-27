@@ -110,6 +110,15 @@ registerTag({
             }
             return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
         }
+        if (section === 'stage') {
+            if (key === 'stickToViewport') {
+                const on = parseOnOff(value);
+                if (on !== undefined)
+                    handlers.setUiConfig({ stage: { stickToViewport: on } });
+                return;
+            }
+            return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
+        }
         handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     },
 });

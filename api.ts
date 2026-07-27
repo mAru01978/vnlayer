@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import VNLayerOverlay, { type VNLayerMode, type VNLayerHandle } from './components/VNLayerOverlay';
 import type { UiAnchor } from './components/StageView';
 import { setCharacterSlots, type CharacterSlot } from './tags/characterSlots';
+import { setBackgroundSlots, type BackgroundSlot } from './tags/backgroundSlots';
 import { setTagConfig, setUiConfig, type UiConfigPatch, setWebLinks } from './tags/index';
 import type { StepProvider } from './core/StepProvider';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
@@ -172,6 +173,7 @@ async function notify(eventName: string, payload: unknown = true, selector?: str
 // 許可済みリンクのホワイトリスト(inkのソース上に生URLを書けない制約の回避も兼ねる)。
 type ConfigureOptions = {
   characterSlots?: Record<string, CharacterSlot>;
+  backgroundSlots?: Record<string, BackgroundSlot>;
   tags?: Record<string, Record<string, unknown>>;
   ui?: UiConfigPatch;
   webLinks?: Record<string, string>;
@@ -210,6 +212,7 @@ async function reset(selector?: string): Promise<void> {
 //   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
 async function configure(options: ConfigureOptions, selector?: string): Promise<void> {
   if (options.characterSlots) setCharacterSlots(options.characterSlots);
+  if (options.backgroundSlots) setBackgroundSlots(options.backgroundSlots);
   if (options.tags) {
     for (const [key, partial] of Object.entries(options.tags)) {
       setTagConfig(key, partial);

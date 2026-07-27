@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import VNLayerOverlay from './components/VNLayerOverlay';
 import { setCharacterSlots } from './tags/characterSlots';
+import { setBackgroundSlots } from './tags/backgroundSlots';
 import { setTagConfig, setUiConfig, setWebLinks } from './tags/index';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
@@ -138,6 +139,8 @@ async function reset(selector) {
 async function configure(options, selector) {
     if (options.characterSlots)
         setCharacterSlots(options.characterSlots);
+    if (options.backgroundSlots)
+        setBackgroundSlots(options.backgroundSlots);
     if (options.tags) {
         for (const [key, partial] of Object.entries(options.tags)) {
             setTagConfig(key, partial);

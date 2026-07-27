@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 //  scripts/ 以下の各スクリプトを、矢印キー(↑↓)+Enterで選んで実行できる
-// 対話式メニュー。新しいnpmパッケージは使わず、Node標準機能だけで実装している。
+// 対話式メニュー。新しいnpmパッケージは使わせず、Node標準機能だけで実装している。
 //
 // 使い方: node  scripts/menu.js
 //   ↑↓キーで選択、Enterで実行、Ctrl+C または「終了」でメニューを抜ける。
@@ -8,12 +8,22 @@
 
 const { spawnSync } = require('child_process');
 const readline = require('readline');
+const path = require('path');
 
-// メニューに出す項目一覧。新しいスクリプトを増やしたら、ここに1項目足すだけでよい。
+// npm --prefix 経由で実行された場合でも、呼び出し元のプロジェクトルートを維持する
+const projectRoot = process.env.INIT_CWD || path.resolve(__dirname, '..', '..');
+const defaultDataDir = path.join(projectRoot, 'data');
+
+// メニューに出す項目一覧。スクリプトパスは絶対パスで安全に指定。
 const MENU_ITEMS = [
   {
     label: '新しいシーンを追加(new-scene.js)',
-    run: () => runWithPrompt('シーン名を入力してください(例: sceneD): ', (name) => ['node', 'scripts/new-scene.js', name]),
+    run: () =>
+      runWithPrompt('シーン名を入力してください(例: sceneD): ', (name) => [
+        'node',
+        path.join(__dirname, 'new-scene.js'),
+        name,
+      ]),
   },
   {
     label: '新しいキャラクターを追加(new-character.js)',
@@ -24,45 +34,73 @@ const MENU_ITEMS = [
           { question: '立ち位置 originX(0-100の数値): ' },
           { question: '立ち位置 originY(0-100の数値): ' },
         ],
-        (answers) => ['node', 'scripts/new-character.js', ...answers]
+        (answers) => ['node', path.join(__dirname, 'new-character.js'), ...answers]
       ),
   },
   {
     label: '新しいタグの雛形を追加(new-tag.js)',
-    run: () => runWithPrompt('タグ名を入力してください(例: sfx): ', (name) => ['node', 'scripts/new-tag.js', name]),
-  },
-  {
-    label: '新しいシナリオを追加(new-scenario.js)',
     run: () =>
-      runWithPrompt('シナリオ名を入力してください(例: Scenario2): ', (name) => [
+      runWithPrompt('タグ名を入力してください(例: sfx): ', (name) => [
         'node',
-        'scripts/new-scenario.js',
+        path.join(__dirname, 'new-tag.js'),
         name,
       ]),
   },
   {
+    label: '新しいシナリオを追加(new-scenario.js)',
+    run: async () => {
+      const scenarioName = await askQuestion('シナリオ名を入力してください(例: Scenario2): ');
+      if (!scenarioName) {
+        console.log('入力が空だったので中断しました。');
+        return;
+      }
+      const dataDirInput = await askQuestion(`dataディレクトリのパス [未入力の場合は ${defaultDataDir}]: `);
+      const targetDataDir = dataDirInput ? dataDirInput : defaultDataDir;
+
+      runDirect(['node', path.join(__dirname, 'new-scenario.js'), scenarioName, targetDataDir]);
+    },
+  },
+  {
     label: 'タグ一覧(TAGS.md)を生成(list-tags.js)',
-    run: () => runDirect(['node', 'scripts/list-tags.js']),
+    run: () => runDirect(['node', path.join(__dirname, 'list-tags.js')]),
   },
   {
     label: 'タグのラベルをチェック(lint-tags.js)',
-    run: () => runDirect(['node', 'scripts/lint-tags.js']),
+    run: () => runDirect(['node', path.join(__dirname, 'lint-tags.js')]),
   },
   {
     label: 'Inkを再コンパイル(compile-story.js)',
-    run: () => runDirect(['node', 'scripts/compile-story.js']),
+    run: async () => {
+      const dataDirInput = await askQuestion(`dataディレクトリのパス [未入力の場合は ${defaultDataDir}]: `);
+      const targetDataDir = dataDirInput ? dataDirInput : defaultDataDir;
+
+      runDirect(['node', path.join(__dirname, 'compile-story.js'), targetDataDir]);
+    },
   },
   {
     label: 'inkjs/inkjs-compilerをvendor/に固定・更新(update-vendor.js)',
-    run: () => runDirect(['node', 'scripts/update-vendor.js']),
+    run: () => runDirect(['node', path.join(__dirname, 'update-vendor.js')]),
   },
   {
     label: 'VNLayerのJSビルド、React等のランタイム全バンドル(build-vnlayer-standalone.js)',
-    run: () => runDirect(['node',"scripts/build-vnlayer-standalone.js"]),
+    run: () => runDirect(['node', path.join(__dirname, 'build-vnlayer-standalone.js')]),
   },
   {
     label: 'VNLayerのTypeScriptビルド(build-vnlayer-tsc.js)',
-    run: () => runDirect(['node',"scripts/build-vnlayer-tsc.js"]),
+    run: () => runDirect(['node', path.join(__dirname, 'build-vnlayer-tsc.js')]),
+  },
+  {
+    label: 'VNLayerの依存関係をインストール(npm install)',
+    run: () => {
+      // menu.js がある場所(__dirname)の親が VNLayer パッケージのルート
+      const vnlayerRoot = path.join(__dirname, '..');
+      console.log(`\n$ npm install (at ${vnlayerRoot})\n`);
+      spawnSync('npm', ['install'], {
+        stdio: 'inherit',
+        shell: true,
+        cwd: vnlayerRoot, // VNLayerのルートディレクトリでnpm installを実行
+      });
+    },
   },
   {
     label: '終了',
@@ -74,7 +112,12 @@ const MENU_ITEMS = [
 
 function runDirect(cmdParts) {
   console.log(`\n$ ${cmdParts.join(' ')}\n`);
-  spawnSync(cmdParts[0], cmdParts.slice(1), { stdio: 'inherit', shell: true });
+  // 実行時のカレントディレクトリ(cwd)を、呼び出し元のプロジェクトルートに強制する
+  spawnSync(cmdParts[0], cmdParts.slice(1), {
+    stdio: 'inherit',
+    shell: true,
+    cwd: projectRoot,
+  });
 }
 
 function askQuestion(question) {

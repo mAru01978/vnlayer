@@ -16,11 +16,11 @@
 
 ## `gaze`
 
-## `s`
-
 ## `shake`
 
 使えるラベル: `short`, `long`
+
+## `sprite`
 
 ## `type`
 

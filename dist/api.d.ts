@@ -1,6 +1,7 @@
 import { type VNLayerMode } from './components/VNLayerOverlay';
 import type { UiAnchor } from './components/StageView';
 import { type CharacterSlot } from './tags/characterSlots';
+import { type BackgroundSlot } from './tags/backgroundSlots';
 import { type UiConfigPatch } from './tags/index';
 import type { StepProvider } from './core/StepProvider';
 import { createServerStepProvider } from './core/serverStepProvider';
@@ -18,6 +19,7 @@ declare function setContext(vars: Record<string, unknown>, selector?: string): P
 declare function notify(eventName: string, payload?: unknown, selector?: string): Promise<void>;
 type ConfigureOptions = {
     characterSlots?: Record<string, CharacterSlot>;
+    backgroundSlots?: Record<string, BackgroundSlot>;
     tags?: Record<string, Record<string, unknown>>;
     ui?: UiConfigPatch;
     webLinks?: Record<string, string>;

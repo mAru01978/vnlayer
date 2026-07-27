@@ -259,17 +259,39 @@ export function useStoryEngine(scenario, options = {}) {
                     window.open(url, '_blank', 'noopener,noreferrer');
                 }
             },
-            onScroll: (target) => {
+            onScroll: (target, durationMs) => {
                 if (typeof window === 'undefined' || typeof document === 'undefined')
                     return;
                 const n = Number(target);
+                let targetY;
                 if (Number.isFinite(n) && target.trim() !== '') {
-                    window.scrollTo({ top: n, behavior: 'smooth' });
+                    targetY = n;
+                }
+                else {
+                    const el = document.getElementById(target) ?? document.querySelector(target);
+                    if (el)
+                        targetY = window.scrollY + el.getBoundingClientRect().top;
+                }
+                if (targetY === undefined)
+                    return;
+                if (!durationMs) {
+                    window.scrollTo({ top: targetY, behavior: 'smooth' });
                     return;
                 }
-                // id/セレクタ/アンカー名として解決を試みる(#付きセレクタ、素のid名どちらもOK)
-                const el = document.getElementById(target) ?? document.querySelector(target);
-                el?.scrollIntoView({ behavior: 'smooth' });
+                // ブラウザ既定のsmoothスクロールには時間指定が無いため、
+                // durationMs指定時だけ自前でrequestAnimationFrameアニメーションする。
+                const startY = window.scrollY;
+                const distance = targetY - startY;
+                const start = performance.now();
+                const easeInOutQuad = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+                const step = (now) => {
+                    const elapsed = now - start;
+                    const t = Math.min(elapsed / durationMs, 1);
+                    window.scrollTo(0, startY + distance * easeInOutQuad(t));
+                    if (t < 1)
+                        requestAnimationFrame(step);
+                };
+                requestAnimationFrame(step);
             },
             wait: (ms) => {
                 // 重要: このwait呼び出し専用のControllerをここで新規発行する。

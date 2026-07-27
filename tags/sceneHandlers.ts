@@ -23,9 +23,11 @@ export type SceneHandlers = {
   onGoto: (path: string) => void;
   // web:open:url → 新しいタブでURLを開く
   onOpen: (url: string) => void;
-  // web:scroll:target → ページ内スクロール。数値ならY座標(px)へ、
+  // web:scroll:target[:durationMs] → ページ内スクロール。数値ならY座標(px)へ、
   // それ以外はCSSセレクタ/id/アンカー名として scrollIntoView する。
-  onScroll: (target: string) => void;
+  // durationMsを指定すると、ブラウザ既定のsmoothスクロール(時間指定不可)では
+  // なく、その時間ぴったりで動く自前のスクロールアニメーションを使う。
+  onScroll: (target: string, durationMs?: number) => void;
   // #ui:...タグからのUI設定変更。呼び出し元(useStoryEngine.ts)がこのVN
   // インスタンス自身のスコープ(mount時のselector)を使って
   // tags/uiConfig.tsのsetUiConfig()を呼ぶ。これによりink側の#ui:...は

@@ -1,30 +1,24 @@
 #!/usr/bin/env node
-// data/ 以下の各「シナリオフォルダ」(story.ink を直接持つフォルダ)を見つけて、
-// それぞれ <フォルダ>/story.json にコンパイルする。
-//
-// 例: data/Scenario1/story.ink → data/Scenario1/story.json
-//     data/Scenario2/story.ink → data/Scenario2/story.json
-//
-// 新しいシナリオフォルダ(data/Scenario3/ 等)を追加しても、
-// このスクリプト自体は変更不要(story.inkがあるフォルダを自動的に見つける)。
-//
-// 以前の strip-bom.js の役割(inkjsのコンパイラが出力するBOMの除去)も
-// このスクリプト自身で行う(複数ファイルを扱うため、1ファイル固定だった
-// 旧strip-bom.jsへの依存をやめて自己完結させた)。
-//
-// 注意: コンパイル自体は "inkjs-compiler" という独立パッケージではなく、
-// inkjsパッケージ自体が提供するコマンド(npx inkjs)で行う。
-// ("inkjs-compiler"はinkjsパッケージのbinエイリアス名であり、
-//  npmレジストリ上の独立パッケージ名ではないため)
+// 任意の場所から実行可能にし、コマンドライン引数で data ディレクトリの指定を必須にしたスクリプト
+// 使用例: node scripts/compile-story.js ./data
+//     node scripts/compile-story.js /path/to/my/custom/data
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// 移動メモ(フェーズ2): scripts/ が VNLayer/scripts/ に1階層移動したので、
-// __dirnameからリポジトリルートまでの相対距離が1つ増えている。
-const repoRoot = path.join(__dirname, '..', '..');
-const dataDir = path.join(repoRoot, 'data');
+// 第1引数 (process.argv[2]) で data ディレクトリのパスを受け取る（必須）
+const inputArg = process.argv[2];
+
+if (!inputArg) {
+  console.error('エラー: dataディレクトリのパスを指定してください。');
+  console.error('使用例: node scripts/compile-story.js ./data');
+  process.exit(1);
+}
+
+// 実行時のカレントディレクトリを基準に絶対パスへ変換
+const dataDir = path.resolve(process.cwd(), inputArg);
+const execCwd = process.cwd();
 
 function stripBOM(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -46,8 +40,7 @@ const scenarioDirs = fs
 
 if (scenarioDirs.length === 0) {
   console.error(
-    'story.ink を含むシナリオフォルダが data/ 以下に見つかりませんでした。' +
-      '(例: data/Scenario1/story.ink のような構成を想定しています)'
+    `指定されたディレクトリ (${dataDir}) 以下に story.ink を含むシナリオフォルダが見つかりませんでした。`
   );
   process.exit(1);
 }
@@ -63,7 +56,7 @@ for (const dir of scenarioDirs) {
   try {
     execSync(`npx inkjs -o "${storyJsonPath}" "${storyInk}"`, {
       stdio: 'inherit',
-      cwd: repoRoot,
+      cwd: execCwd,
     });
     stripBOM(storyJsonPath);
     console.log(`[compile-story] "${scenarioName}" 完了。`);
