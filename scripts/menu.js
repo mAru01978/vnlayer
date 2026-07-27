@@ -17,11 +17,11 @@ const defaultDataDir = path.join(projectRoot, 'data');
 // メニューに出す項目一覧。スクリプトパスは絶対パスで安全に指定。
 const MENU_ITEMS = [
   {
-    label: '開発用dev起動 + inkホットリロード(dev-with-watch.js)',
+    label: '開発用dev起動 + inkホットリロード(watch-ink.js)',
     run: async () => {
       const dataDirInput = await askQuestion(`dataディレクトリのパス [未入力の場合は ${defaultDataDir}]: `);
       const targetDataDir = dataDirInput ? dataDirInput : defaultDataDir;
-      runDirect(['node', path.join(__dirname, 'dev-with-watch.js'), targetDataDir]);
+      runDirect(['node', path.join(__dirname, 'watch-ink.js'), targetDataDir]);
     },
   },
 
