@@ -25,6 +25,9 @@ export type UiConfig = {
         family?: string;
         sizePx?: number;
     };
+    stage: {
+        stickToViewport: boolean;
+    };
 };
 export type UiConfigPatch = {
     messageWindow?: Partial<UiConfig['messageWindow']>;
@@ -32,6 +35,7 @@ export type UiConfigPatch = {
     backlog?: Partial<UiConfig['backlog']>;
     character?: Partial<UiConfig['character']>;
     font?: Partial<UiConfig['font']>;
+    stage?: Partial<UiConfig['stage']>;
 };
 export declare function setUiConfig(patch: UiConfigPatch, scope?: string): void;
 export declare function getUiConfig(scope?: string): UiConfig;

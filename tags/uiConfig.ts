@@ -23,6 +23,12 @@ export type UiConfig = {
   backlog: { skin?: string; mode: BacklogMode; show: boolean; anchor?: string; offset?: number };
   character: { clickable: boolean };
   font: { family?: string; sizePx?: number };
+  // stickToViewport:on(既定) → overlayモード時、キャラ/背景/UIがビューポートに
+  // 貼り付いたまま、ページをスクロールしても付いてくる(今までの挙動)。
+  // off にすると、ページの通常のコンテンツと同じように、スクロールで
+  // 画面外へ流れていくようになる(ブログページに埋め込んで、スクロールで
+  // キャラが後ろへ流れていくような使い方向け)。
+  stage: { stickToViewport: boolean };
 };
 
 export type UiConfigPatch = {
@@ -31,6 +37,7 @@ export type UiConfigPatch = {
   backlog?: Partial<UiConfig['backlog']>;
   character?: Partial<UiConfig['character']>;
   font?: Partial<UiConfig['font']>;
+  stage?: Partial<UiConfig['stage']>;
 };
 
 const defaultUiConfig: UiConfig = {
@@ -39,6 +46,7 @@ const defaultUiConfig: UiConfig = {
   backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
   character: { clickable: true },
   font: {},
+  stage: { stickToViewport: true },
 };
 
 const GLOBAL_SCOPE = '__global__';
@@ -60,6 +68,7 @@ function mergePatch(base: UiConfig, patch: UiConfigPatch | undefined): UiConfig 
     backlog: mergeSection(base.backlog, patch.backlog),
     character: mergeSection(base.character, patch.character),
     font: mergeSection(base.font, patch.font),
+    stage: mergeSection(base.stage, patch.stage),
   };
 }
 
@@ -80,6 +89,7 @@ export function setUiConfig(patch: UiConfigPatch, scope?: string): void {
     backlog: { ...existing.backlog, ...patch.backlog },
     character: { ...existing.character, ...patch.character },
     font: { ...existing.font, ...patch.font },
+    stage: { ...existing.stage, ...patch.stage },
   });
 }
 

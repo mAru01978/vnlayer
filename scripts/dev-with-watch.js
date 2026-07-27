@@ -1,28 +1,23 @@
 #!/usr/bin/env node
-// `npm run dev` を、Inkファイルの変更を自動検知して再コンパイルする
-// 「開発用ウォッチャー」ごと起動するためのスクリプト。
-//
-// 今までは data/*.ink を直しても、next dev はTSX/JSファイルの変更しか
-// 検知しないため story.json が再コンパイルされず、一旦devサーバーを止めて
-// 手動で npm run compile-story を叩き直す必要があった。
-// このスクリプトはNext.jsの開発サーバーを起動しつつ、裏側で data/ 以下の
-// .ink ファイルの変更を監視し、変更を検知したら自動で再コンパイルする。
-//
-// 使い方はいつも通り: npm run dev
-//
-// 新しいnpmパッケージ(nodemonやconcurrently等)は増やさず、
-// Node標準の fs.watch / child_process だけで実装している。
+// 任意の場所から実行可能にし、コマンドライン引数で data ディレクトリを指定できるようにしたウォッチャースクリプト
+// 使用例: node watch-ink.js [dataディレクトリのパス]
+// 例: node watch-ink.js ./data
+//     node watch-ink.js /path/to/my/custom/data
 
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// 移動メモ(フェーズ2): scripts/ が VNLayer/scripts/ に1階層移動したので、
-// __dirnameからリポジトリルートまでの相対距離が1つ増えている。
-// (npm run compile-story / next dev は共にリポジトリルートで実行する必要があるため、
-//  ここのrootは「リポジトリルート」を指す)
+// コマンドライン引数 (process.argv[2]) が指定されていればそれを使用し、
+// 未指定の場合はスクリプトからの相対パス (../../data) にフォールバックします。
+const inputArg = process.argv[2];
+
+const dataDir = inputArg
+  ? path.resolve(process.cwd(), inputArg)
+  : path.join(__dirname, '..', '..', 'data');
+
+// リポジトリルートなど、コマンドを実行する基準ディレクトリ
 const root = path.join(__dirname, '..', '..');
-const dataDir = path.join(root, 'data');
 
 let compiling = false;
 let pendingRecompile = false;
@@ -37,7 +32,8 @@ function runCompile() {
   compiling = true;
   console.log('\n[watch-ink] Inkファイルの変更を検知、再コンパイルします...');
 
-  const child = spawn('npm', ['run', 'compile-story'], {
+  // コンパイルスクリプトへ dataDir のパスを引数として渡す
+  const child = spawn('node', [path.join(__dirname, 'compile.js'), dataDir], {
     cwd: root,
     stdio: 'inherit',
     shell: true,
@@ -66,21 +62,17 @@ function scheduleCompile() {
   debounceTimer = setTimeout(runCompile, 300);
 }
 
-// 初回起動時に一度コンパイルしておく(predevと同じ役割)
+// 初回起動時に一度コンパイルしておく
 runCompile();
 
 // data/ 以下を再帰的に監視し、.ink ファイルの変更だけに反応する。
-// 注意: fs.watch の recursive オプションはWindows/macOSでは動作するが、
-// Node.jsのバージョンによってはLinuxで非対応の場合がある。
-// その場合はこのウォッチャーだけ動かず、警告が出て今まで通り手動での
-// npm run compile-story が必要になる(devサーバー自体は問題なく動く)。
 try {
   fs.watch(dataDir, { recursive: true }, (eventType, filename) => {
     if (filename && filename.endsWith('.ink')) {
       scheduleCompile();
     }
   });
-  console.log(`[watch-ink] ${path.relative(root, dataDir)} 以下の .ink ファイルを監視しています。`);
+  console.log(`[watch-ink] ${dataDir} 以下の .ink ファイルを監視しています。`);
 } catch (e) {
   console.warn(
     '[watch-ink] ファイル監視の開始に失敗しました(このOS/Node.jsバージョンでは fs.watch の recursive オプションが使えない可能性があります):',

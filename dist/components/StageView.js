@@ -97,6 +97,10 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
     // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
     const uiConfig = getUiConfig(instanceId);
+    // overlayモードでの固定方法。stickToViewport:on(既定)なら今まで通り
+    // ビューポートに貼り付く'fixed'、offならページの通常コンテンツと同じ
+    // 'absolute'(ページのスクロールに合わせて流れていく)。
+    const overlayPosition = uiConfig.stage.stickToViewport ? 'fixed' : 'absolute';
     const choiceAnchorName = uiConfig.choice.anchor;
     const choiceAnchorSlot = choiceAnchorName
         ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
@@ -116,7 +120,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
         };
     const outerStyle = isOverlay
         ? {
-            position: 'fixed',
+            position: overlayPosition,
             inset: 0,
             pointerEvents: 'none',
             zIndex: 50,
@@ -165,7 +169,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         zIndex: 51,
                     }
                     : isOverlay
-                        ? { position: 'fixed', ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
+                        ? { position: overlayPosition, ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
                         : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
                         padding: '4px 10px',
                         borderRadius: 6,
@@ -198,7 +202,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         zIndex: 51,
                     }
                     : {
-                        position: isOverlay ? 'fixed' : 'static',
+                        position: isOverlay ? overlayPosition : 'static',
                         ...(isOverlay ? anchorSide : {}),
                         bottom: isOverlay ? (uiConfig.backlog.offset ?? 12) + 44 : undefined,
                         width: isOverlay ? 320 : undefined,
@@ -215,7 +219,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         gap: 10,
                         zIndex: 51,
                     }, children: [lines.length === 0 && _jsx("div", { style: { opacity: 0.5, fontSize: 12 }, children: "\u307E\u3060\u4F1A\u8A71\u304C\u3042\u308A\u307E\u305B\u3093" }), lines.map((line, i) => (_jsxs("div", { children: [line.speaker && _jsx("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: line.speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 }, children: line.content })] }, i)))] })), uiVis.userLine && userLine && (_jsxs("div", { style: {
-                    position: isOverlay ? 'fixed' : 'static',
+                    position: isOverlay ? overlayPosition : 'static',
                     ...(isOverlay ? anchorSide : {}),
                     bottom: isOverlay ? 100 : undefined,
                     pointerEvents: 'auto',
@@ -251,7 +255,7 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                     }
                     : {
                         // 既定: ステージの角(uiAnchor)に固定表示。
-                        position: isOverlay ? 'fixed' : 'static',
+                        position: isOverlay ? overlayPosition : 'static',
                         ...(isOverlay ? anchorSide : {}),
                         bottom: isOverlay ? uiConfig.choice.offset ?? 130 : undefined,
                         width: isOverlay ? 280 : undefined,

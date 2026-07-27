@@ -164,6 +164,10 @@ export default function StageView({
   // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
   // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
   const uiConfig = getUiConfig(instanceId);
+  // overlayモードでの固定方法。stickToViewport:on(既定)なら今まで通り
+  // ビューポートに貼り付く'fixed'、offならページの通常コンテンツと同じ
+  // 'absolute'(ページのスクロールに合わせて流れていく)。
+  const overlayPosition: 'fixed' | 'absolute' = uiConfig.stage.stickToViewport ? 'fixed' : 'absolute';
   const choiceAnchorName = uiConfig.choice.anchor;
   const choiceAnchorSlot = choiceAnchorName
     ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
@@ -187,7 +191,7 @@ export default function StageView({
 
   const outerStyle: CSSProperties = isOverlay
     ? {
-        position: 'fixed',
+        position: overlayPosition,
         inset: 0,
         pointerEvents: 'none',
         zIndex: 50,
@@ -247,7 +251,7 @@ export default function StageView({
                   zIndex: 51,
                 }
               : isOverlay
-              ? { position: 'fixed', ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
+              ? { position: overlayPosition, ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
               : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }
           }
         >
@@ -344,7 +348,7 @@ export default function StageView({
                   zIndex: 51,
                 }
               : {
-                  position: isOverlay ? 'fixed' : 'static',
+                  position: isOverlay ? overlayPosition : 'static',
                   ...(isOverlay ? anchorSide : {}),
                   bottom: isOverlay ? (uiConfig.backlog.offset ?? 12) + 44 : undefined,
                   width: isOverlay ? 320 : undefined,
@@ -376,7 +380,7 @@ export default function StageView({
       {uiVis.userLine && userLine && (
         <div
           style={{
-            position: isOverlay ? 'fixed' : 'static',
+            position: isOverlay ? overlayPosition : 'static',
             ...(isOverlay ? anchorSide : {}),
             bottom: isOverlay ? 100 : undefined,
             pointerEvents: 'auto',
@@ -431,7 +435,7 @@ export default function StageView({
                 }
               : {
                   // 既定: ステージの角(uiAnchor)に固定表示。
-                  position: isOverlay ? 'fixed' : 'static',
+                  position: isOverlay ? overlayPosition : 'static',
                   ...(isOverlay ? anchorSide : {}),
                   bottom: isOverlay ? uiConfig.choice.offset ?? 130 : undefined,
                   width: isOverlay ? 280 : undefined,

@@ -1,1 +1,1 @@
-{"version":3,"file":"mockRenderer.d.ts","sourceRoot":"","sources":["../../components/mockRenderer.tsx"],"names":[],"mappings":"AAIA,OAAO,KAAK,EACV,aAAa,EAOd,MAAM,SAAS,CAAC;AAsPjB,eAAO,MAAM,YAAY,EAAE,aAO1B,CAAC"}
+{"version":3,"file":"mockRenderer.d.ts","sourceRoot":"","sources":["../../components/mockRenderer.tsx"],"names":[],"mappings":"AAIA,OAAO,KAAK,EACV,aAAa,EAOd,MAAM,SAAS,CAAC;AA4PjB,eAAO,MAAM,YAAY,EAAE,aAO1B,CAAC"}

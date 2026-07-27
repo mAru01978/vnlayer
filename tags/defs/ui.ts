@@ -45,6 +45,10 @@ import { parseOnOff } from '../numericOrLabel';
 //   [font]
 //   # ui:font:family:"Noto Sans JP"     → VNLayer全体で使うフォント
 //   # ui:font:size:16                   → 基準フォントサイズ(px)
+//
+//   [stage]
+//   # ui:stage:stickToViewport:on/off   → overlayモード時、キャラ/背景/UIが
+//                                          ページスクロールに追従するか(既定on)
 export type UiTagConfig = { transientDurationMs: number };
 
 const defaultConfig: UiTagConfig = {
@@ -139,6 +143,15 @@ registerTag<UiTagConfig>({
       if (key === 'size') {
         const n = Number(value);
         if (Number.isFinite(n)) return handlers.setUiConfig({ font: { sizePx: n } });
+        return;
+      }
+      return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
+    }
+
+    if (section === 'stage') {
+      if (key === 'stickToViewport') {
+        const on = parseOnOff(value);
+        if (on !== undefined) handlers.setUiConfig({ stage: { stickToViewport: on } });
         return;
       }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));

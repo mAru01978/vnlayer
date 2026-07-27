@@ -11,6 +11,7 @@ import type {
   ChoiceButtonProps,
   FlashOverlayProps,
 } from './types';
+import { getBackgroundSlot } from '../tags/backgroundSlots';
 
 const BG_COLORS: Record<string, string> = {
   izakaya_main_day: '#f3e3c8',
@@ -29,6 +30,11 @@ function computeGazeAngleDeg(fromX: number, fromY: number, toX: number, toY: num
 }
 
 function resolveBgColor(bg: string): string {
+  // # bg:name:color:... やVNLayer.configure({backgroundSlots})で定義された
+  // 色があれば最優先する(ink/JS側だけで見た目を完結できるようにするため)。
+  // 無ければ従来通りモック用の固定テーブルにフォールバックする。
+  const defined = getBackgroundSlot(bg)?.color;
+  if (defined) return defined;
   const key = bg.replace(':', '_');
   return BG_COLORS[`izakaya_main_${bg.split(':')[1] ?? bg}`] ?? BG_COLORS[key] ?? '#333';
 }

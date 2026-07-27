@@ -20,6 +20,7 @@ const defaultUiConfig = {
     backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
     character: { clickable: true },
     font: {},
+    stage: { stickToViewport: true },
 };
 const GLOBAL_SCOPE = '__global__';
 // スコープ(グローバルは特別なキー、インスタンス別は選択肢文字列そのまま)ごとに
@@ -38,6 +39,7 @@ function mergePatch(base, patch) {
         backlog: mergeSection(base.backlog, patch.backlog),
         character: mergeSection(base.character, patch.character),
         font: mergeSection(base.font, patch.font),
+        stage: mergeSection(base.stage, patch.stage),
     };
 }
 function computeGlobal() {
@@ -56,6 +58,7 @@ export function setUiConfig(patch, scope) {
         backlog: { ...existing.backlog, ...patch.backlog },
         character: { ...existing.character, ...patch.character },
         font: { ...existing.font, ...patch.font },
+        stage: { ...existing.stage, ...patch.stage },
     });
 }
 // scopeを省略するとグローバル設定(全VN共通の既定値)を返す。

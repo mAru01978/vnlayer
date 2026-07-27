@@ -18,14 +18,18 @@
 const fs = require('fs');
 const path = require('path');
 
-// scripts/ は VNLayer/scripts/ に置かれている前提(このファイルの1つ上がVNLayer/)。
-const root = path.join(__dirname, '..', '..');
-const tagsDefsDir = path.join(__dirname, '..', 'tags', 'defs');
-const dataDir = path.join(root, 'data');
+// 呼び出し元のプロジェクトルート（npm経由なら INIT_CWD、直接なら process.cwd()）
+const projectRoot = process.env.INIT_CWD || process.cwd();
+
+// VNLayer パッケージ自身のルート（scripts のひとつ上の階層）
+const vnlayerRoot = path.join(__dirname, '..');
+
+const tagsDefsDir = path.join(vnlayerRoot, 'tags', 'defs');
+const dataDir = path.join(projectRoot, 'data');
 
 if (!fs.existsSync(tagsDefsDir)) {
   console.error(`見つかりません: ${tagsDefsDir}`);
-  console.error('このスクリプトはVNLayer/scripts/に置かれている前提です。');
+  console.error('VNLayerのパッケージ構造が正しくありません。');
   process.exit(1);
 }
 
@@ -108,6 +112,7 @@ function extractTopLevelKeys(objectText) {
 
 function listInkFiles(dir) {
   const results = [];
+  if (!fs.existsSync(dir)) return results;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -148,7 +153,7 @@ let problemCount = 0;
 const tagLinePattern = /^\s*#\s*([a-zA-Z_]+):([a-zA-Z0-9_.]+)(?::([a-zA-Z0-9_.]+))?/;
 
 for (const file of inkFiles) {
-  const rel = path.relative(root, file);
+  const rel = path.relative(projectRoot, file);
   const lines = fs.readFileSync(file, 'utf8').split('\n');
   lines.forEach((line, i) => {
     const m = line.match(tagLinePattern);
@@ -175,7 +180,7 @@ for (const file of inkFiles) {
     if (!Number.isNaN(Number(label)) && label.trim() !== '') return;
     if (!validLabels.has(label)) {
       console.error(
-        `✗ ${rel}:${i + 1}  "${tag}:${arg1}${arg2 ? ':' + arg2 : ''}" の "${label}" というラベルは tags/defs/${tag}.ts に存在しません`
+        `✗ ${rel}:${i + 1} "${tag}:${arg1}${arg2 ? ':' + arg2 : ''}" の "${label}" というラベルは tags/defs/${tag}.ts に存在しません`
       );
       problemCount += 1;
     }

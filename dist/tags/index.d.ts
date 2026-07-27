@@ -1,5 +1,5 @@
 import './defs/bg';
-import './defs/s';
+import './defs/sprite';
 import './defs/anim';
 import './defs/cam';
 import './defs/gaze';
@@ -14,6 +14,7 @@ export declare function dispatchTag(tag: string, handlers: SceneHandlers): Promi
 export { setTagConfig, getTagConfig, registerTag, registerAlias } from './registry';
 export type { SceneHandlers } from './sceneHandlers';
 export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
+export { setBackgroundSlots, getBackgroundSlot, getAllBackgroundSlots } from './backgroundSlots';
 export { setUiConfig, getUiConfig } from './uiConfig';
 export type { UiConfig, UiConfigPatch, BacklogMode } from './uiConfig';
 export { setWebLinks, getWebLink } from './webLinks';

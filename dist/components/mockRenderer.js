@@ -1,4 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { getBackgroundSlot } from '../tags/backgroundSlots';
 const BG_COLORS = {
     izakaya_main_day: '#f3e3c8',
     izakaya_main_evening: '#e6b06a',
@@ -14,6 +15,12 @@ function computeGazeAngleDeg(fromX, fromY, toX, toY) {
     return (Math.atan2(dy, dx) * 180) / Math.PI;
 }
 function resolveBgColor(bg) {
+    // # bg:name:color:... やVNLayer.configure({backgroundSlots})で定義された
+    // 色があれば最優先する(ink/JS側だけで見た目を完結できるようにするため)。
+    // 無ければ従来通りモック用の固定テーブルにフォールバックする。
+    const defined = getBackgroundSlot(bg)?.color;
+    if (defined)
+        return defined;
     const key = bg.replace(':', '_');
     return BG_COLORS[`izakaya_main_${bg.split(':')[1] ?? bg}`] ?? BG_COLORS[key] ?? '#333';
 }
