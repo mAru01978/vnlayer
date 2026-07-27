@@ -1,23 +1,22 @@
 #!/usr/bin/env node
 // 任意の場所から実行可能にし、コマンドライン引数で data ディレクトリを指定できるようにしたウォッチャースクリプト
-// 使用例: node watch-ink.js [dataディレクトリのパス]
-// 例: node watch-ink.js ./data
-//     node watch-ink.js /path/to/my/custom/data
+// 使用例: node node_modules/VNLayer/scripts/watch-ink.js [dataディレクトリのパス]
+// 例: node node_modules/VNLayer/scripts/watch-ink.js ./data
 
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// 呼び出し元のプロジェクトルート（npm経由なら INIT_CWD、直接なら process.cwd()）
+const projectRoot = process.env.INIT_CWD || process.cwd();
+
 // コマンドライン引数 (process.argv[2]) が指定されていればそれを使用し、
-// 未指定の場合はスクリプトからの相対パス (../../data) にフォールバックします。
+// 未指定の場合は呼び出し元プロジェクトの data ディレクトリにフォールバックします。
 const inputArg = process.argv[2];
 
 const dataDir = inputArg
   ? path.resolve(process.cwd(), inputArg)
-  : path.join(__dirname, '..', '..', 'data');
-
-// リポジトリルートなど、コマンドを実行する基準ディレクトリ
-const root = path.join(__dirname, '..', '..');
+  : path.join(projectRoot, 'data');
 
 let compiling = false;
 let pendingRecompile = false;
@@ -32,9 +31,12 @@ function runCompile() {
   compiling = true;
   console.log('\n[watch-ink] Inkファイルの変更を検知、再コンパイルします...');
 
-  // コンパイルスクリプトへ dataDir のパスを引数として渡す
-  const child = spawn('node', [path.join(__dirname, 'compile.js'), dataDir], {
-    cwd: root,
+  // VNLayer 内にあるコンパイルスクリプトのパス
+  const compileScriptPath = path.join(__dirname, 'compile-story.js');
+
+  // コンパイルスクリプトへ dataDir のパスを引数として渡し、呼び出し元プロジェクトのルートで実行する
+  const child = spawn('node', [compileScriptPath, dataDir], {
+    cwd: projectRoot,
     stdio: 'inherit',
     shell: true,
   });
@@ -67,6 +69,11 @@ runCompile();
 
 // data/ 以下を再帰的に監視し、.ink ファイルの変更だけに反応する。
 try {
+  // dataディレクトリが存在しない場合は作成しておく
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+
   fs.watch(dataDir, { recursive: true }, (eventType, filename) => {
     if (filename && filename.endsWith('.ink')) {
       scheduleCompile();
@@ -80,18 +87,18 @@ try {
   );
 }
 
-// Next.jsの開発サーバーを起動(ログはそのままターミナルに出す)
-const next = spawn('npx', ['next', 'dev', '--webpack'], {
-  cwd: root,
+// 汎用的なNodeプロジェクトの開発用コマンド（npm run dev）を呼び出し元プロジェクトのルートで実行
+const devProcess = spawn('npm', ['run', 'dev'], {
+  cwd: projectRoot,
   stdio: 'inherit',
   shell: true,
 });
 
-next.on('close', (code) => {
+devProcess.on('close', (code) => {
   process.exit(code ?? 0);
 });
 
 process.on('SIGINT', () => {
-  next.kill('SIGINT');
+  devProcess.kill('SIGINT');
   process.exit(0);
 });

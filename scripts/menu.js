@@ -17,6 +17,15 @@ const defaultDataDir = path.join(projectRoot, 'data');
 // メニューに出す項目一覧。スクリプトパスは絶対パスで安全に指定。
 const MENU_ITEMS = [
   {
+    label: '開発用dev起動 + inkホットリロード(dev-with-watch.js)',
+    run: async () => {
+      const dataDirInput = await askQuestion(`dataディレクトリのパス [未入力の場合は ${defaultDataDir}]: `);
+      const targetDataDir = dataDirInput ? dataDirInput : defaultDataDir;
+      runDirect(['node', path.join(__dirname, 'dev-with-watch.js'), targetDataDir]);
+    },
+  },
+
+  {
     label: '新しいシーンを追加(new-scene.js)',
     run: () =>
       runWithPrompt('シーン名を入力してください(例: sceneD): ', (name) => [
