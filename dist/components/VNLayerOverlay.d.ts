@@ -3,9 +3,12 @@ import type { StepProvider } from '../core/StepProvider';
 import { type StageMode, type UiAnchor } from './StageView';
 export type VNLayerMode = StageMode;
 export type VNLayerHandle = {
-    setContextVars: (vars: Record<string, unknown>) => Promise<void>;
+    setContextVars: (vars: Record<string, unknown>, options?: {
+        notify?: boolean;
+        expose?: boolean;
+    }) => Promise<void>;
+    getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
     resetStory: () => Promise<void>;
-    notify: (eventName: string, payload?: unknown) => Promise<void>;
 };
 export type VNLayerOverlayProps = {
     scenario?: string;

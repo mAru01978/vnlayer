@@ -372,7 +372,11 @@ export default function StageView({
                 slot={slot}
                 isFocused={isFocused}
                 hasSpeaker={!!speaker}
-                onClick={uiConfig.character.clickable ? () => story.notify('char_click', name) : undefined}
+                onClick={
+                  uiConfig.character.clickable
+                    ? () => story.setContextVars({ vn_event_char_click: name }, { notify: true })
+                    : undefined
+                }
               />
             );
           })}

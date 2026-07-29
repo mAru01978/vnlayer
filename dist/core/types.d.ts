@@ -81,8 +81,11 @@ export type StoryEngine = {
         durationMs: number;
     } | null;
     typeSpeedMs: number;
-    setContextVars: (vars: Record<string, unknown>) => Promise<void>;
-    notify: (eventName: string, payload?: unknown) => Promise<void>;
+    setContextVars: (vars: Record<string, unknown>, options?: {
+        notify?: boolean;
+        expose?: boolean;
+    }) => Promise<void>;
+    getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
     instanceId?: string;
 };
 //# sourceMappingURL=types.d.ts.map

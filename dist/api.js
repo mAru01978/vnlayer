@@ -55,10 +55,29 @@ function unmount(selector) {
     instances.delete(selector);
     return Promise.resolve();
 }
-// setContext({ seconds }) : 引数のselectorを省略した場合、マウント中の全インスタンスに
-// 同じ値をブロードキャストする(通常は1ページ1インスタンスなのでこれで十分)。
-// 複数インスタンスを個別に制御したい場合は setContext(vars, selector) を使う。
-async function setContext(vars, selector) {
+// api-refactor-1/2(真の統合版): 第3引数optionsで挙動を制御する。
+//   options.notify: true
+//     → 渡した各キーに対して"${key}_seq"という単調増加カウンタを自動生成・
+//       インクリメントし、値と一緒に書き込む(呼び出し側はseqを一切
+//       意識しなくてよい)。同時に実行中の#wait:/type_wait待ちを即座に
+//       打ち切り、event_loop等の#interrupt付き選択肢に辿り着き次第それを
+//       自動選択する。
+//   options.expose: false (既定はtrue)
+//     → 書き込んだ値をVNLayer.getContext()から見えないようにする。
+//       既定(true)の間はgetContext()で読み返せる。将来追加予定の#emit
+//       特殊タグ等、内部的な書き込みを外部に露出させたくない場合に使う想定。
+// これにより、以前は別APIだったVNLayer.notify(eventName, payload, selector)は
+// 完全に不要になったため廃止した(seqの面倒もこちら側が見てくれるため)。
+//
+//   旧: VNLayer.notify("blink", true);
+//   新: VNLayer.setContext({ vn_event_blink: true }, undefined, { notify: true });
+//       → vn_event_blink / vn_event_blink_seq が自動で書き込まれる
+//
+// #tickとの違い: #tickはInk側が「このシーンで何秒待ったか」を自己完結で
+// 管理する内蔵タイマーで、ホストページの実イベントは一切見ない。
+// notify:trueは逆にホスト側の実イベントをInkに伝える経路であり、
+// #tickを置き換えるものではない。
+async function setContext(vars, selector, options) {
     const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
     if (targets.length === 0) {
         console.warn('[VNLayer] setContext called but no instance is mounted yet.');
@@ -69,46 +88,38 @@ async function setContext(vars, selector) {
             console.warn('[VNLayer] setContext called before the instance finished initializing; ignoring this call.');
             return Promise.resolve();
         }
-        return instance.handle.setContextVars(vars);
+        return instance.handle.setContextVars(vars, options);
     }));
 }
-// VNLayer.notify("blink", payload?, selector?)
-// ホストページ側の実イベント(クリック、他のウィジェットの状態変化、任意のタイミング等)を
-// Inkに「今まさに起きたこと」として伝えるためのショートカット。
-// 中身はsetContextと同じ経路(StepProvider.idleの一方通行書き込み)を使うが、
-// 単に event_blink = payload と書くだけだと、Ink側は「値が変わったかどうか」でしか
-// 検知できず、同じpayloadを続けて送った場合に区別が付かない。そこで
-// event_blink_seq という単調増加のカウンタも一緒に書き込み、Ink側では
-// 「event_blink_seqが前回チェック時と違う値になっていたら、新しくnotifyされた」
-// という形で判定できるようにしてある。
-//
-// setContextとの役割分担:
-//   - setContext: 継続的なデータ(時刻、設定値、他ページの状態等)を反映する
-//   - notify:     「今この瞬間に何かが起きた」という単発の出来事を伝える。
-//                 event_${name}/_seqの書き込みと同時に、実行中の
-//                 #wait:/type_wait待ちを即座に打ち切り、event_loop等の
-//                 #interrupt付き選択肢に辿り着き次第それを自動選択する
-//                 (=「データを送る」と「即座に反応させる」を分けずに
-//                  notify1回で両方やる)。seq採番自体はengine側
-//                 (core/useStoryEngine.ts)に一本化したので、ここは
-//                 handle.notify()への委譲のみ。
-//
-// #tickとの違い: #tickはInk側が「このシーンで何秒待ったか」を自己完結で
-// 管理する内蔵タイマーで、ホストページの実イベントは一切見ない。
-// notifyは逆にホスト側の実イベントをInkに伝える経路であり、#tickを置き換えるものではない。
-async function notify(eventName, payload = true, selector) {
-    const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
-    if (targets.length === 0) {
-        console.warn('[VNLayer] notify called but no instance is mounted yet.');
-        return;
+// VNLayer.getContext(varNames?, selector?)
+// setContextの読み取り版。setContextで(expose:falseでなく)書き込まれた値の
+// JS側の写しを返す。ink本体(variablesState)には問い合わせないため、
+// サーバー往復(Next.js運用時)は発生しない。単一の変数名(string)・配列・
+// 省略(exposeされている値すべて)のいずれでも渡せる。setContextと違い、
+// 複数インスタンスへの一括ブロードキャストは意味を持たない(読み取り結果を
+// どう合成するかが曖昧なため)ので、mount中のインスタンスが1つだけなら
+// selector省略可、2つ以上ある場合はselector必須。
+//   const { hp } = await VNLayer.getContext("hp", "#vn");
+//   const vars = await VNLayer.getContext(["hp", "mp"], "#vn");
+//   const all = await VNLayer.getContext(undefined, "#vn"); // exposeされてる値すべて
+async function getContext(varNames, selector) {
+    let instance;
+    if (selector) {
+        instance = instances.get(selector);
     }
-    await Promise.all(targets.map((instance) => {
-        if (!instance?.handle) {
-            console.warn('[VNLayer] notify called before the instance finished initializing; ignoring this call.');
-            return Promise.resolve();
-        }
-        return instance.handle.notify(eventName, payload);
-    }));
+    else if (instances.size === 1) {
+        instance = instances.values().next().value;
+    }
+    else {
+        console.warn(`[VNLayer] getContext: ${instances.size} instance(s) are mounted; please specify a selector to disambiguate.`);
+        return {};
+    }
+    if (!instance?.handle) {
+        console.warn('[VNLayer] getContext called before the instance finished initializing, or no matching instance is mounted.');
+        return {};
+    }
+    const names = varNames === undefined ? undefined : Array.isArray(varNames) ? varNames : [varNames];
+    return instance.handle.getContextVars(names);
 }
 // VNLayer.reset(selector?)
 // 進行状況を最初からやり直す。以前はvisibleChoices.length===0(=Inkが->ENDに
@@ -155,7 +166,7 @@ export const VNLayer = {
     mount,
     unmount,
     setContext,
-    notify,
+    getContext,
     reset,
     configure,
     // 修正: 以前はこの2つを「モジュールの名前付きexport」としてだけ公開していたが、
