@@ -19,7 +19,12 @@ export type CharacterState = {
 };
 export type CamState = { target: string; scale: number; originX: number; originY: number };
 export type ShakeState = { nonce: number; amplitude: number; duration: number };
-export type LineEntry = { speaker: string; content: string };
+// バックログの1エントリ。発言(kind:'line')か、選択した項目の記録(kind:'choice')。
+// 選択肢は「表示されてたリストの何番目か(1始まり)」も一緒に持たせる
+// (# ui:...等で除外されるtick/interrupt等の裏方選択肢は数に含めない)。
+export type LineEntry =
+  | { kind: 'line'; speaker: string; content: string }
+  | { kind: 'choice'; number: number; text: string };
 export type PositionOverrides = Record<string, { originX: number; originY: number; durationMs?: number }>;
 export type ActiveMessage =
   | { speaker: string; content: string; fadeIn: boolean; typeSpeedMs: number }
@@ -41,7 +46,6 @@ export type StoryEngine = {
   speaker: string;
   cam: CamState;
   shake: ShakeState;
-  userLine: string;
   isProcessing: boolean;
   choose: (index: number) => Promise<void>;
   choicesHidden: boolean;

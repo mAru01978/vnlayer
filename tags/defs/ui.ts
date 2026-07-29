@@ -16,6 +16,12 @@ import { parseOnOff } from '../numericOrLabel';
 //   # ui:messageWindow:interactive:on/off
 //                                       → クリックでの文字送りスキップの有効/無効
 //   # ui:messageWindow:skin:izakaya     → 見た目の素材セットを差し替え(本番用)
+//   # ui:messageWindow:offset:130       → キャラの立ち位置(originY%)から吹き出し
+//                                          下端までの距離(px、既定130)。
+//                                          #ui:stage:height:<px>でステージの
+//                                          実高さを大きくした場合、この値が
+//                                          小さすぎ/大きすぎだと間隔が不自然に
+//                                          なるので合わせて調整する。
 //
 //   [choice]
 //   # ui:choice:show:on/off             → 選択肢を箱ごと表示/非表示
@@ -49,6 +55,19 @@ import { parseOnOff } from '../numericOrLabel';
 //   [stage]
 //   # ui:stage:stickToViewport:on/off   → overlayモード時、キャラ/背景/UIが
 //                                          ページスクロールに追従するか(既定on)
+//   # ui:stage:height:2000              → stickToViewport:off時のこの箱自体の
+//                                          高さ(px)。中身は全部position:absolute
+//                                          の子要素なので、これを指定しないと
+//                                          画面1枚分(100vh)に潰れ、それより外側の
+//                                          originY/スクロール量が見えない・押せない
+//                                          領域になる。
+//   # ui:stage:width:1080               → この箱自体の幅(px、中央寄せ)。
+//                                          未指定だと埋め込むページの幅に伸縮する
+//                                          ため、characterSlots/initPosの
+//                                          originX(%)が指す実座標がページごとに
+//                                          ズレる。widthとheight両方指定すると、
+//                                          常に同じ絶対座標になる「固定解像度の
+//                                          舞台」として扱える。
 export type UiTagConfig = { transientDurationMs: number };
 
 const defaultConfig: UiTagConfig = {
@@ -80,6 +99,11 @@ registerTag<UiTagConfig>({
         return;
       }
       if (key === 'skin') return handlers.setUiConfig({ messageWindow: { skin: value } });
+      if (key === 'offset') {
+        const n = Number(value);
+        if (Number.isFinite(n)) return handlers.setUiConfig({ messageWindow: { offset: n } });
+        return;
+      }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     }
 
@@ -152,6 +176,16 @@ registerTag<UiTagConfig>({
       if (key === 'stickToViewport') {
         const on = parseOnOff(value);
         if (on !== undefined) handlers.setUiConfig({ stage: { stickToViewport: on } });
+        return;
+      }
+      if (key === 'height') {
+        const n = Number(value);
+        if (Number.isFinite(n) && n > 0) return handlers.setUiConfig({ stage: { heightPx: n } });
+        return;
+      }
+      if (key === 'width') {
+        const n = Number(value);
+        if (Number.isFinite(n) && n > 0) return handlers.setUiConfig({ stage: { widthPx: n } });
         return;
       }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));

@@ -18,7 +18,17 @@
 export type BacklogMode = 'perInstance' | 'global';
 
 export type UiConfig = {
-  messageWindow: { skin?: string; interactive: boolean };
+  messageWindow: {
+    skin?: string;
+    interactive: boolean;
+    // キャラの立ち位置(originY%)から、吹き出しの下端までの距離(px)。
+    // 修正メモ: 以前はmockRenderer.tsx側に`originY - 26(%)`という形で
+    // ハードコードされていたため、#ui:stage:stickToViewport:off +
+    // #ui:stage:height:<px>でステージの実高さを大きくした際、この26%が
+    // 巨大なpx値に化けて「キャラと吹き出しの間隔が異常に開く」原因になっていた。
+    // choice.offset/backlog.offsetと同じくpx単位に統一し、ここで調整可能にする。
+    offset: number;
+  };
   choice: { skin?: string; spacing?: number; anchor?: string; offset?: number; interactive: boolean };
   backlog: { skin?: string; mode: BacklogMode; show: boolean; anchor?: string; offset?: number };
   character: { clickable: boolean };
@@ -28,7 +38,20 @@ export type UiConfig = {
   // off にすると、ページの通常のコンテンツと同じように、スクロールで
   // 画面外へ流れていくようになる(ブログページに埋め込んで、スクロールで
   // キャラが後ろへ流れていくような使い方向け)。
-  stage: { stickToViewport: boolean };
+  stage: {
+    stickToViewport: boolean;
+    // stickToViewport:off時のこの箱自体の高さ(px)。中身(bg/キャラ/選択肢)は
+    // 全部position:absoluteの子要素なので、親の高さを明示しないと画面1枚分
+    // (100vh)に潰れ、それより外側のoriginY/スクロール量は見えない・押せない
+    // 領域になってしまう。#ui:stage:height:<px>で明示指定する。
+    heightPx?: number;
+    // 修正メモ: heightPxだけ固定してもwidthは従来通りページ幅に追従
+    // (left:0,right:0で伸縮)していたため、characterSlots.json/initPosの
+    // originX(%)がこの箱に埋め込むページの横幅によって指す実座標(px)が
+    // ズレてしまっていた。widthPxも指定した場合、この箱自体を固定サイズ
+    // (中央寄せ)にし、originX/originYが常に同じ絶対座標を指すようにする。
+    widthPx?: number;
+  };
 };
 
 export type UiConfigPatch = {
@@ -41,12 +64,12 @@ export type UiConfigPatch = {
 };
 
 const defaultUiConfig: UiConfig = {
-  messageWindow: { interactive: true },
+  messageWindow: { interactive: true, offset: 130 },
   choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true },
   backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
   character: { clickable: true },
   font: {},
-  stage: { stickToViewport: true },
+  stage: { stickToViewport: true, heightPx: undefined, widthPx: undefined },
 };
 
 const GLOBAL_SCOPE = '__global__';

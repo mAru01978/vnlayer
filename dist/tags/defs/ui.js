@@ -33,6 +33,12 @@ registerTag({
             }
             if (key === 'skin')
                 return handlers.setUiConfig({ messageWindow: { skin: value } });
+            if (key === 'offset') {
+                const n = Number(value);
+                if (Number.isFinite(n))
+                    return handlers.setUiConfig({ messageWindow: { offset: n } });
+                return;
+            }
             return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
         }
         if (section === 'choice') {
@@ -115,6 +121,18 @@ registerTag({
                 const on = parseOnOff(value);
                 if (on !== undefined)
                     handlers.setUiConfig({ stage: { stickToViewport: on } });
+                return;
+            }
+            if (key === 'height') {
+                const n = Number(value);
+                if (Number.isFinite(n) && n > 0)
+                    return handlers.setUiConfig({ stage: { heightPx: n } });
+                return;
+            }
+            if (key === 'width') {
+                const n = Number(value);
+                if (Number.isFinite(n) && n > 0)
+                    return handlers.setUiConfig({ stage: { widthPx: n } });
                 return;
             }
             return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));

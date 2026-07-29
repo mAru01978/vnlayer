@@ -42,6 +42,11 @@ export type MessageBubbleProps = {
   // #ui:font:family/size で設定されたフォント(未指定ならrenderer側の既定値を使う)
   fontFamily?: string;
   fontSizePx?: number;
+  // #ui:messageWindow:offset:<px> で設定される、キャラのoriginY(%)から
+  // 吹き出し下端までの距離(px)。以前は%固定(originY - 26%)だったため、
+  // stickToViewport:off + stage.heightPx併用時にstageの実高さが変わると
+  // 間隔が異常になる問題があった。px単位に統一して設定可能にしてある。
+  offsetPx: number;
 };
 
 export type NarratorCaptionProps = {
