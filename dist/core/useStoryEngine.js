@@ -50,9 +50,6 @@ export function useStoryEngine(scenario, options = {}) {
     // 「即時反応の要求があった」ことだけを記録しておき、後でchoicesが更新される
     // (=event_loop等に到達する)たびにチェックして消費する。
     const pendingInterruptRef = useRef(false);
-    // notify()のevent_${name}_seq採番用。以前はapi.ts側(Instance.eventSeq)が
-    // 持っていたが、notifyをengine側の機能として一本化したのでここに移した。
-    const eventSeqRef = useRef({});
     // isProcessing(React state)は非同期にしかコミットされないため、
     // 「短時間に連続でinit()/choose()が呼ばれる」ケース(StrictModeの二重
     // effect実行、素早い連打、event_loopの自動choose()との競合等)で
@@ -579,27 +576,22 @@ export function useStoryEngine(scenario, options = {}) {
         positionOverridesRef.current = {};
         clearBubbleTimer();
         setActiveMessageState(null);
+        // シナリオを最初からやり直す以上、setContextで書き込んだ(exposeされた)
+        // 値の写しも古い情報になるためクリアする。
+        contextStoreRef.current = {};
         const result = await stepProvider.reset(scenario);
         await advance(result);
     }, [advance, clearBubbleTimer, scenario, stepProvider]);
-    const setContextVars = useCallback(async (vars) => {
-        for (const [varName, value] of Object.entries(vars)) {
-            await stepProvider.idle(scenario, varName, value);
-        }
-    }, [scenario, stepProvider]);
     // notify()が短時間(mousemove等)に大量連続で呼ばれた場合の保険。
-    // event_${name}/_seqの書き込み自体は毎回やる(データとしては欠けない)が、
-    // 「実行中のwait/type_wait待ちを打ち切る」効果の方は一定間隔に間引く。
-    // 単発の本来の使い方(クリック等)ではこの間隔より間が空くのが普通なので
-    // 体感には影響しない。連続的なデータをうっかりnotify()に繋いでしまっても、
-    // 演出のテンポを壊す被害を最小限にするための保険。
+    // 値の書き込み自体は毎回やる(データとしては欠けない)が、「実行中の
+    // wait/type_wait待ちを打ち切る」効果の方は一定間隔に間引く。単発の
+    // 本来の使い方(クリック等)ではこの間隔より間が空くのが普通なので
+    // 体感には影響しない。連続的なデータをうっかりnotify:trueで送って
+    // しまっても、演出のテンポを壊す被害を最小限にするための保険。
     const WAKE_THROTTLE_MS = 50;
     const lastWakeAtRef = useRef(0);
     // 内部専用: wait/type_wait待ちを即座に打ち切り、次に#interrupt付き
     // 選択肢に到達した時点でそれを自動選択する「即時反応」トリガー。
-    // 単独では公開せず、notify()から常に呼ばれる形にする
-    // (「データを書く」と「即座に反応する」を分けて考える必要が無いなら
-    //  notifyだけ呼べば両方やってくれる、という形に統一)。
     const wake = useCallback(() => {
         const now = Date.now();
         if (now - lastWakeAtRef.current < WAKE_THROTTLE_MS)
@@ -608,20 +600,72 @@ export function useStoryEngine(scenario, options = {}) {
         pendingInterruptRef.current = true;
         abortControllerRef.current?.abort();
     }, []);
-    // VNLayer.notify("blink", payload) 等から呼ばれる、host→ink一方向イベント通知。
-    // 1. event_${name} / event_${name}_seq をink変数として書き込む(今まで通り)
-    // 2. 同時に wake() して、実行中の#wait:/type_wait待ちを打ち切り、
-    //    event_loop等の#interrupt付き選択肢に辿り着き次第それを即選択する
-    // これにより「notifyしたのにink側が#wait:の間ずっと気づかない」を防げる。
-    const notify = useCallback(async (eventName, payload = true) => {
-        wake();
-        const nextSeq = (eventSeqRef.current[eventName] ?? 0) + 1;
-        eventSeqRef.current[eventName] = nextSeq;
-        await setContextVars({
-            [`event_${eventName}`]: payload,
-            [`event_${eventName}_seq`]: nextSeq,
-        });
-    }, [wake, setContextVars]);
+    // notify:trueで渡されたキーごとの_seq採番用(インスタンス内で永続する、
+    // キー名ごとに独立したカウンタ)。以前は「event名+payload」専用の
+    // notify()という別APIがseqの面倒を見ていたが、setContextVarsに統合した
+    // 今は、渡されたvarsのキーそれぞれに対して自動で"${key}_seq"を生成する
+    // ことで、呼び出し側は一切seqを意識しなくてよい(=notify()という別APIが
+    // 本当に不要になった)。
+    const contextSeqRef = useRef({});
+    // api-refactor-2: getContext()はink本体(variablesState)に問い合わせるの
+    // ではなく、setContextVarsで書き込まれた値の「写し」をJS側でこのローカル
+    // ストアに保持しておき、そこから読む方式にした。これにより:
+    //   - getContext()のたびにサーバー往復(Next.js運用時)が発生しない
+    //   - expose:falseというオプションが実際に意味を持つ(=ローカルストアに
+    //     反映するかどうかのフラグとして機能する)。ink本体の値をそのまま
+    //     読むだけなら、そもそも「exposeするかどうか」を選べる余地が無い。
+    // 想定用途: 将来追加予定の#emit特殊タグ等、内部的にsetContextVarsを
+    // 呼ぶが外部(getContext)からは見えてほしくない書き込みは
+    // { notify: true, expose: false } のように使う。
+    const contextStoreRef = useRef({});
+    // api-refactor-1/2: setContextVars(vars, options?)に一本化。
+    //   setContextVars(vars)
+    //     → 値をInkへ書き込み、既定(expose:true)でローカルの
+    //       contextStoreにも反映する(getContext()から読めるようになる)。
+    //   setContextVars(vars, { notify: true })
+    //     → 上記に加え、渡した各キーに対して"${key}_seq"を自動生成・
+    //       インクリメントして一緒に書き込み、同時にwake()して実行中の
+    //       #wait:/type_wait待ちを即座に打ち切り、event_loop等の#interrupt付き
+    //       選択肢に辿り着き次第それを自動選択する
+    //       (=以前の別APIだったnotify()の役割を完全に吸収した)。
+    //   setContextVars(vars, { expose: false })
+    //     → Inkへは書き込むが、contextStoreには反映しない
+    //       (getContext()からは見えなくなる)。
+    // 変数名(vn_event_xxx等の命名規則)自体は呼び出し側が決めて渡す。
+    const setContextVars = useCallback(async (vars, options) => {
+        let toWrite = vars;
+        if (options?.notify) {
+            wake();
+            const withSeq = { ...vars };
+            for (const key of Object.keys(vars)) {
+                const nextSeq = (contextSeqRef.current[key] ?? 0) + 1;
+                contextSeqRef.current[key] = nextSeq;
+                withSeq[`${key}_seq`] = nextSeq;
+            }
+            toWrite = withSeq;
+        }
+        // expose未指定は既定でtrue(setContextの基本挙動はgetContextから見える)。
+        // false指定時のみローカルストアへの反映をスキップする。
+        if (options?.expose !== false) {
+            contextStoreRef.current = { ...contextStoreRef.current, ...toWrite };
+        }
+        for (const [varName, value] of Object.entries(toWrite)) {
+            await stepProvider.idle(scenario, varName, value);
+        }
+    }, [scenario, stepProvider, wake]);
+    // api-refactor-2: VNLayer.getContext()用。setContextVarsで(expose:falseで
+    // なく)書き込まれた値のローカルの写しから読む。varNames省略時はストア全体を
+    // 返し、指定時はその名前だけを抜き出して返す(該当キーが無ければundefined)。
+    const getContextVars = useCallback(async (varNames) => {
+        if (!varNames || varNames.length === 0) {
+            return { ...contextStoreRef.current };
+        }
+        const result = {};
+        for (const name of varNames) {
+            result[name] = contextStoreRef.current[name];
+        }
+        return result;
+    }, []);
     return {
         lines,
         choices,
@@ -641,7 +685,7 @@ export function useStoryEngine(scenario, options = {}) {
         flash,
         typeSpeedMs,
         setContextVars,
-        notify,
+        getContextVars,
         instanceId,
     };
 }

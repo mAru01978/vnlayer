@@ -282,7 +282,9 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                     }, children: backlogOpen ? 'バックログを閉じる' : 'バックログ' }) })), _jsxs("div", { style: stageStyle, children: [!isOverlay && _jsx(renderer.Background, { bg: bg }), _jsxs("div", { style: { position: 'absolute', inset: 0, ...camStyle, pointerEvents: isOverlay ? 'none' : undefined }, children: [Object.entries(characters).map(([name, state]) => {
                                 const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 60 };
                                 const isFocused = speaker === name;
-                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, onClick: uiConfig.character.clickable ? () => story.notify('char_click', name) : undefined }, name));
+                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, onClick: uiConfig.character.clickable
+                                        ? () => story.setContextVars({ vn_event_char_click: name }, { notify: true })
+                                        : undefined }, name));
                             }), story.flash && _jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs })] }), uiVis.messageWindow &&
                         !messageWindowHidden &&
                         Object.entries(bubbles)

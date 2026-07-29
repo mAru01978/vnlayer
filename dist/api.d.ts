@@ -15,8 +15,11 @@ type MountOptions = {
 };
 declare function mount(selector: string, options: MountOptions): Promise<void>;
 declare function unmount(selector: string): Promise<void>;
-declare function setContext(vars: Record<string, unknown>, selector?: string): Promise<void>;
-declare function notify(eventName: string, payload?: unknown, selector?: string): Promise<void>;
+declare function setContext(vars: Record<string, unknown>, selector?: string, options?: {
+    notify?: boolean;
+    expose?: boolean;
+}): Promise<void>;
+declare function getContext(varNames?: string | string[], selector?: string): Promise<Record<string, unknown>>;
 type ConfigureOptions = {
     characterSlots?: Record<string, CharacterSlot>;
     backgroundSlots?: Record<string, BackgroundSlot>;
@@ -30,7 +33,7 @@ export declare const VNLayer: {
     mount: typeof mount;
     unmount: typeof unmount;
     setContext: typeof setContext;
-    notify: typeof notify;
+    getContext: typeof getContext;
     reset: typeof reset;
     configure: typeof configure;
     serverStepProvider: StepProvider;
