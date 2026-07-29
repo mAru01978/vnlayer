@@ -7,11 +7,15 @@ import StageView, { type StageMode, type UiAnchor } from './StageView';
 export type VNLayerMode = StageMode;
 
 // api.ts(VNLayer.mount/setContext)から命令的に操作するための最小ハンドル。
+// api-refactor-1: 以前あったnotify()はsetContextVars(vars, {notify:true})に
+// 統合されたため、このハンドルからも削除した(呼び出し側はapi.ts側で
+// 従来通りVNLayer.notify()という名前のAPIを提供し続けるので、利用者からは
+// 見た目上の変化はない)。
 export type VNLayerHandle = {
-  setContextVars: (vars: Record<string, unknown>) => Promise<void>;
+  setContextVars: (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => Promise<void>;
+  // api-refactor-2: VNLayer.getContext()用
+  getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
   resetStory: () => Promise<void>;
-  // host→ink一方向イベント通知(即時反応込み)。api.tsのVNLayer.notify()が使う。
-  notify: (eventName: string, payload?: unknown) => Promise<void>;
 };
 
 export type VNLayerOverlayProps = {
@@ -48,9 +52,9 @@ function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }
     if (notifiedRef.current || !onReady) return;
     notifiedRef.current = true;
     onReady({
-      setContextVars: (vars) => engineRef.current!.setContextVars(vars),
+      setContextVars: (vars, options) => engineRef.current!.setContextVars(vars, options),
+      getContextVars: (varNames) => engineRef.current!.getContextVars(varNames),
       resetStory: () => engineRef.current!.resetStory(),
-      notify: (eventName, payload) => engineRef.current!.notify(eventName, payload),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
