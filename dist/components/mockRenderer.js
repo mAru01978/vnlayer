@@ -75,7 +75,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick }) 
                     zIndex: 6,
                 } }))] }));
 }
-function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx }) {
+function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx, offsetPx }) {
     return (_jsxs(_Fragment, { children: [_jsx("style", { children: `
         .vnlayer-scroll-hidden {
           scrollbar-width: none; /* Firefox */
@@ -87,7 +87,13 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
       ` }), _jsxs("div", { onClick: onClick, className: "vnlayer-scroll-hidden", style: {
                     position: 'absolute',
                     left: `${slot.originX}%`,
-                    top: `${Math.max(slot.originY - 26, 4)}%`,
+                    // 修正メモ: 以前は `Math.max(slot.originY - 26, 4)%` という%固定の
+                    // オフセットだったため、#ui:stage:height:<px>でstageの実高さを
+                    // 大きくすると、この26%が巨大なpx値に化けて「キャラと吹き出しの
+                    // 間隔が異常に開く」原因になっていた。offsetPx(#ui:messageWindow:offset)
+                    // をpx単位でcalc()により差し引く形に変更し、stageの高さに依存せず
+                    // 常に一定の見た目の距離になるようにした。
+                    top: `calc(${slot.originY}% - ${offsetPx}px)`,
                     transform: 'translate(-50%, -100%)',
                     maxWidth: 220,
                     // 文字数が多い時、吹き出しは上方向(translate(-50%,-100%))に伸び続けるため、

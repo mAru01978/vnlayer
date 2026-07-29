@@ -3,6 +3,7 @@ export type UiConfig = {
     messageWindow: {
         skin?: string;
         interactive: boolean;
+        offset: number;
     };
     choice: {
         skin?: string;
@@ -27,6 +28,8 @@ export type UiConfig = {
     };
     stage: {
         stickToViewport: boolean;
+        heightPx?: number;
+        widthPx?: number;
     };
 };
 export type UiConfigPatch = {

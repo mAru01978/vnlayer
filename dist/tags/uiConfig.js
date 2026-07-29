@@ -15,12 +15,12 @@
 // 真偽値は全てon/off(boolean)で統一している。true/falseという値そのものは
 // タグの引数としては使わない(タグ設計方針: 数値・小数・意味のあるラベルのみ)。
 const defaultUiConfig = {
-    messageWindow: { interactive: true },
+    messageWindow: { interactive: true, offset: 130 },
     choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true },
     backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
     character: { clickable: true },
     font: {},
-    stage: { stickToViewport: true },
+    stage: { stickToViewport: true, heightPx: undefined, widthPx: undefined },
 };
 const GLOBAL_SCOPE = '__global__';
 // スコープ(グローバルは特別なキー、インスタンス別は選択肢文字列そのまま)ごとに

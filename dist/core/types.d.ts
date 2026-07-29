@@ -26,8 +26,13 @@ export type ShakeState = {
     duration: number;
 };
 export type LineEntry = {
+    kind: 'line';
     speaker: string;
     content: string;
+} | {
+    kind: 'choice';
+    number: number;
+    text: string;
 };
 export type PositionOverrides = Record<string, {
     originX: number;
@@ -63,7 +68,6 @@ export type StoryEngine = {
     speaker: string;
     cam: CamState;
     shake: ShakeState;
-    userLine: string;
     isProcessing: boolean;
     choose: (index: number) => Promise<void>;
     choicesHidden: boolean;

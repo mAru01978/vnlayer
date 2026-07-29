@@ -35,6 +35,7 @@ export type MessageBubbleProps = {
     onClick: () => void;
     fontFamily?: string;
     fontSizePx?: number;
+    offsetPx: number;
 };
 export type NarratorCaptionProps = {
     content: string;

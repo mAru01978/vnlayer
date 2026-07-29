@@ -48,7 +48,6 @@ export function useStoryEngine(
   const [speaker, setSpeakerState] = useState('');
   const [cam, setCamState] = useState<CamState>({ target: '', scale: 1, originX: 50, originY: 50 });
   const [shake, setShakeState] = useState({ nonce: 0, amplitude: 0, duration: 300 });
-  const [userLine, setUserLine] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [choicesHidden, setChoicesHidden] = useState(false);
   const [messageWindowHidden, setMessageWindowHiddenState] = useState(false);
@@ -318,7 +317,20 @@ export function useStoryEngine(
           if (Number.isFinite(n) && target.trim() !== '') {
             targetY = n;
           } else {
-            const el = document.getElementById(target) ?? document.querySelector(target);
+            // 修正メモ: targetがCSSセレクタとして不正な文字列(スペースを含む、
+            // 記号始まり等)だと document.querySelector が同期的に例外を投げる。
+            // #web:scrollのtargetはシナリオ制作者が手で書くink側の文字列なので、
+            // タイポ等で不正な値が来ても演出全体を巻き込んで止めないよう、
+            // ここで例外を吸収する(このtry/catchが無いと、この例外は
+            // dispatchTag→advance()まで伝播し、advance()が最後まで到達できず
+            // isProcessingRef.current=falseに戻らないまま止まる → 以後の
+            // クリックが全部「処理中」判定で弾かれ続け、操作不能になる)。
+            let el: Element | null = null;
+            try {
+              el = document.getElementById(target) ?? document.querySelector(target);
+            } catch (e) {
+              console.warn(`[VNLayer] web:scroll: invalid selector/target "${target}", ignoring:`, e);
+            }
             if (el) targetY = window.scrollY + el.getBoundingClientRect().top;
           }
           if (targetY === undefined) return;
@@ -391,14 +403,24 @@ export function useStoryEngine(
 
         for (const tag of step.tags) {
           if (isStale()) return;
-          await dispatchTag(tag, handlers);
+          try {
+            await dispatchTag(tag, handlers);
+          } catch (e) {
+            // 重要: ここで握りつぶさないと、1つのタグ実行中の例外が
+            // advance()全体をreject させ、末尾のisProcessingRef.current=false /
+            // setIsProcessing(false)に到達しないまま止まる → 以後choose()が
+            // 「処理中」判定でずっと弾かれ続け、クリックしても一切反応しなく
+            // なる(コンソールにエラーが出ていても見た目には「フリーズ」に
+            // しか見えない)。1タグ失敗しても残りの処理は続行する。
+            console.warn(`[VNLayer] tag dispatch failed, skipping this tag and continuing: "${tag}"`, e);
+          }
         }
 
         if (isStale()) return;
 
         if (step.content) {
           setSpeakerState(step.speaker);
-          setLines((prev) => [...prev, { speaker: step.speaker, content: step.content }]);
+          setLines((prev) => [...prev, { kind: 'line', speaker: step.speaker, content: step.content }]);
           clearBubbleTimer();
           const fadeIn = nextRevealFadeRef.current;
           nextRevealFadeRef.current = false;
@@ -523,8 +545,24 @@ export function useStoryEngine(
         }
         return;
       }
+      // 選択された瞬間に古い選択肢ボタンを即座に消す。以前はここでclearせず
+      // advance()完了(次の選択肢が決まるまで)まで放置していたため、
+      // 長いシーン転換中ずっと「もう選べない古い選択肢」が表示されたまま
+      // になって不自然だった。
+      setChoices([]);
+
       const chosen = choices.find((c) => c.index === index);
-      if (chosen) setUserLine(chosen.text);
+      if (chosen) {
+        // バックログに「どの選択肢を選んだか」を記録する。番号は
+        // 実際に画面に表示されていた選択肢の中での順番(1始まり)。
+        // #tick/#interrupt等の裏方選択肢はユーザーに見えていないので
+        // 数に含めない。
+        const visibleAtChoiceTime = choices.filter(
+          (c) => !c.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt')
+        );
+        const number = visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
+        setLines((prev) => [...prev, { kind: 'choice', number: number > 0 ? number : 1, text: chosen.text }]);
+      }
 
       const result = await stepProvider.choose(scenario, index);
       await advance(result);
@@ -602,7 +640,6 @@ export function useStoryEngine(
     setCharacters({});
     setSpeakerState('');
     setCamState({ target: '', scale: 1, originX: 50, originY: 50 });
-    setUserLine('');
     setChoicesHidden(false);
     setMessageWindowHiddenState(false);
     setPositionOverrides({});
@@ -625,7 +662,7 @@ export function useStoryEngine(
 
   // notify()が短時間(mousemove等)に大量連続で呼ばれた場合の保険。
   // event_${name}/_seqの書き込み自体は毎回やる(データとしては欠けない)が、
-  // 「実行中のwait/type_waitを打ち切る」効果の方は一定間隔に間引く。
+  // 「実行中のwait/type_wait待ちを打ち切る」効果の方は一定間隔に間引く。
   // 単発の本来の使い方(クリック等)ではこの間隔より間が空くのが普通なので
   // 体感には影響しない。連続的なデータをうっかりnotify()に繋いでしまっても、
   // 演出のテンポを壊す被害を最小限にするための保険。
@@ -671,7 +708,6 @@ export function useStoryEngine(
     speaker,
     cam,
     shake,
-    userLine,
     isProcessing,
     choose,
     choicesHidden,

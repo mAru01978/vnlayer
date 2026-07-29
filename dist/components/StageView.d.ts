@@ -5,7 +5,6 @@ export type UiVisibility = {
     backlogButton?: boolean;
     choices?: boolean;
     messageWindow?: boolean;
-    userLine?: boolean;
 };
 export default function StageView({ mode, uiAnchor, showUi, }: {
     mode?: StageMode;

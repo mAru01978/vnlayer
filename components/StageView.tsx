@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useStory } from '../context/StoryContext';
 import { getCharacterSlot } from '../tags/characterSlots';
 import { getUiConfig } from '../tags/uiConfig';
@@ -17,14 +17,9 @@ export type StageMode = 'full' | 'overlay';
 export type UiAnchor = 'left' | 'right';
 
 export type UiVisibility = {
-  // バックログ開閉ボタン(+パネル)
   backlogButton?: boolean;
-  // 選択肢欄(ink側のchoices:hide/showとはAND条件。どちらかがfalseなら非表示)
   choices?: boolean;
-  // 吹き出し・ナレーションキャプション(ink側のmsg_window:hide/showとはAND条件)
   messageWindow?: boolean;
-  // 「あなた: ...」欄
-  userLine?: boolean;
 };
 
 export default function StageView({
@@ -34,28 +29,71 @@ export default function StageView({
 }: {
   mode?: StageMode;
   uiAnchor?: UiAnchor;
-  // true/false で一括指定、または個別に真偽値を指定できる。
-  // これはホスト側(mount側)が決める「表示できる上限」で、ink側のタグ
-  // (choices:hide/show, msg_window:hide/show)はこの上限の内側でのみ効く
-  // (ホスト側でfalseにした要素は、ink側からは復活させられない)。
   showUi?: boolean | UiVisibility;
 }) {
   const story = useStory();
   const [backlogOpen, setBacklogOpen] = useState(false);
 
-  const [displayedMessage, setDisplayedMessage] = useState<{
-    speaker: string;
-    content: string;
-    fadeIn?: boolean;
-    typeSpeedMs?: number;
-  } | null>(null);
-  const [bubbleShown, setBubbleShown] = useState(false);
-  const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  type BubbleEntry = { content: string; revealedCount: number; visible: boolean; typeSpeedMs: number; fadeIn?: boolean };
+  const [bubbles, setBubbles] = useState<Record<string, BubbleEntry>>({});
+  const activeSpeakerRef = useRef<string | null>(null);
+  const fadeOutTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const typeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const activeMessage = story?.activeMessage ?? null;
 
-  const [revealedCount, setRevealedCount] = useState(0);
-  const typeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (activeMessage) {
+      const prevSpeaker = activeSpeakerRef.current;
+      const newSpeaker = activeMessage.speaker;
+      activeSpeakerRef.current = newSpeaker;
+
+      if (prevSpeaker && prevSpeaker !== newSpeaker) {
+        if (fadeOutTimersRef.current[prevSpeaker]) clearTimeout(fadeOutTimersRef.current[prevSpeaker]);
+        setBubbles((prev) =>
+          prev[prevSpeaker] ? { ...prev, [prevSpeaker]: { ...prev[prevSpeaker], visible: false } } : prev
+        );
+        fadeOutTimersRef.current[prevSpeaker] = setTimeout(() => {
+          setBubbles((prev) => {
+            const next = { ...prev };
+            delete next[prevSpeaker];
+            return next;
+          });
+        }, BUBBLE_FADE_MS);
+      }
+
+      if (fadeOutTimersRef.current[newSpeaker]) {
+        clearTimeout(fadeOutTimersRef.current[newSpeaker]);
+        delete fadeOutTimersRef.current[newSpeaker];
+      }
+      setBubbles((prev) => ({
+        ...prev,
+        [newSpeaker]: {
+          content: activeMessage.content,
+          revealedCount: 0,
+          visible: false,
+          typeSpeedMs: activeMessage.typeSpeedMs ?? 30,
+          fadeIn: activeMessage.fadeIn,
+        },
+      }));
+      requestAnimationFrame(() =>
+        setBubbles((prev) => (prev[newSpeaker] ? { ...prev, [newSpeaker]: { ...prev[newSpeaker], visible: true } } : prev))
+      );
+    } else {
+      const speaker = activeSpeakerRef.current;
+      activeSpeakerRef.current = null;
+      if (!speaker) return;
+      if (fadeOutTimersRef.current[speaker]) clearTimeout(fadeOutTimersRef.current[speaker]);
+      setBubbles((prev) => (prev[speaker] ? { ...prev, [speaker]: { ...prev[speaker], visible: false } } : prev));
+      fadeOutTimersRef.current[speaker] = setTimeout(() => {
+        setBubbles((prev) => {
+          const next = { ...prev };
+          delete next[speaker];
+          return next;
+        });
+      }, BUBBLE_FADE_MS);
+    }
+  }, [activeMessage]);
 
   useEffect(() => {
     if (typeIntervalRef.current) {
@@ -63,64 +101,102 @@ export default function StageView({
       typeIntervalRef.current = null;
     }
 
-    const text = displayedMessage?.content ?? '';
-    if (!text) {
-      setRevealedCount(0);
+    const speaker = activeMessage?.speaker;
+    const text = activeMessage?.content ?? '';
+    if (!speaker || !text) return;
+
+    const speed = activeMessage?.typeSpeedMs ?? 30;
+    if (speed <= 0) {
+      setBubbles((prev) => (prev[speaker] ? { ...prev, [speaker]: { ...prev[speaker], revealedCount: text.length } } : prev));
       return;
     }
 
-    const speedForThisMessage = displayedMessage?.typeSpeedMs ?? 30;
-
-    if (speedForThisMessage <= 0) {
-      setRevealedCount(text.length);
-      return;
-    }
-
-    setRevealedCount(0);
     typeIntervalRef.current = setInterval(() => {
-      setRevealedCount((prev) => {
-        if (prev >= text.length) {
+      setBubbles((prev) => {
+        const entry = prev[speaker];
+        if (!entry) return prev;
+        if (entry.revealedCount >= text.length) {
           if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
           return prev;
         }
-        return prev + 1;
+        return { ...prev, [speaker]: { ...entry, revealedCount: entry.revealedCount + 1 } };
       });
-    }, speedForThisMessage);
+    }, speed);
 
     return () => {
       if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayedMessage]);
+  }, [activeMessage]);
 
   const skipTyping = () => {
     if (typeIntervalRef.current) {
       clearInterval(typeIntervalRef.current);
       typeIntervalRef.current = null;
     }
-    setRevealedCount(displayedMessage?.content.length ?? 0);
+    const speaker = activeMessage?.speaker;
+    if (!speaker) return;
+    setBubbles((prev) =>
+      prev[speaker] ? { ...prev, [speaker]: { ...prev[speaker], revealedCount: prev[speaker].content.length } } : prev
+    );
   };
 
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [autoHeightPx, setAutoHeightPx] = useState<number | undefined>(undefined);
+  // isProcessingは`story`から取り出す前にこのeffect内で参照したいので、
+  // refに都度同期しておく(このeffect自体はhooksの順序を守るため、
+  // 下の`if (!story) return null;`より前、つまりstoryがまだnullかもしれない
+  // 段階で定義しておく必要がある)。
+  const isProcessingForMeasureRef = useRef(false);
   useEffect(() => {
-    if (fadeOutTimerRef.current) {
-      clearTimeout(fadeOutTimerRef.current);
-      fadeOutTimerRef.current = null;
-    }
+    isProcessingForMeasureRef.current = story?.isProcessing ?? false;
+  }, [story?.isProcessing]);
 
-    if (activeMessage) {
-      setDisplayedMessage(activeMessage);
-      setBubbleShown(false);
-      requestAnimationFrame(() => setBubbleShown(true));
-    } else {
-      setBubbleShown(false);
-      fadeOutTimerRef.current = setTimeout(() => setDisplayedMessage(null), BUBBLE_FADE_MS);
-    }
+  const stageStickToViewport = story ? getUiConfig(story.instanceId).stage.stickToViewport : true;
+  const explicitHeightPx = story ? getUiConfig(story.instanceId).stage.heightPx : undefined;
+
+  // 自分自身の絶対配置ボックスの高さを一旦0にしてから測ることで、
+  // 「自分の高さがdocument全体のscrollHeightに混入し、その値を自分の
+  // 高さとして採用する」という自己参照ループ(measurementが自分自身に
+  // フィードバックして値が肥大化/実際のコンテンツより過大な値で固定
+  // されてしまう)を避ける。
+  const measureStageHeight = useCallback(() => {
+    const el = outerRef.current;
+    if (!el || typeof document === 'undefined') return;
+    const prevHeight = el.style.height;
+    el.style.height = '0px';
+    void el.offsetHeight; // 強制的にreflowさせ、直後のscrollHeight測定に反映させる
+    const measured = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    el.style.height = prevHeight;
+    setAutoHeightPx(measured);
+  }, []);
+
+  useEffect(() => {
+    // #ui:stage:height:<px> の明示指定がある場合、あるいはstickToViewport:on
+    // (この機構自体が不要)、またはoverlayモードでない(mode:'full'、そもそも
+    // stage.heightPxを使わない)場合は自動計測しない。
+    if (mode !== 'overlay' || stageStickToViewport || explicitHeightPx) return;
+    if (typeof document === 'undefined' || typeof ResizeObserver === 'undefined') return;
+
+    measureStageHeight();
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const observer = new ResizeObserver(() => {
+      // 実行中(タグ処理・#wait:や移動アニメーション等の最中)は基準の
+      // 高さを動かさない。シナリオが選択肢待ち等で落ち着いている
+      // タイミングでだけ再計測することで、シーンの途中で足元(座標系)が
+      // ガクッと動いてキャラの位置がズレて見える事態を防ぐ。
+      if (isProcessingForMeasureRef.current) return;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(measureStageHeight, 150);
+    });
+    observer.observe(document.body);
 
     return () => {
-      if (fadeOutTimerRef.current) clearTimeout(fadeOutTimerRef.current);
+      observer.disconnect();
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeMessage]);
+  }, [mode, stageStickToViewport, explicitHeightPx, measureStageHeight]);
 
   if (!story) return null;
 
@@ -132,7 +208,6 @@ export default function StageView({
     speaker,
     cam,
     shake,
-    userLine,
     isProcessing,
     choose,
     choicesHidden,
@@ -151,29 +226,16 @@ export default function StageView({
     transition: 'transform 500ms ease',
   };
 
-  const isNarratorMessage = displayedMessage?.speaker === 'narrator';
-
-  const bubbleSlot =
-    displayedMessage && !isNarratorMessage
-      ? positionOverrides[displayedMessage.speaker] ?? getCharacterSlot(displayedMessage.speaker) ?? { originX: 50, originY: 40 }
-      : null;
-
   const isOverlay = mode === 'overlay';
   const anchorSide: CSSProperties = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
 
-  // #ui:choice:anchor:<キャラ名> が指定されていれば、選択肢をそのキャラの
-  // スロット位置基準で表示する(未指定なら従来通りuiAnchorのステージ角固定)。
   const uiConfig = getUiConfig(instanceId);
-  // overlayモードでの固定方法。stickToViewport:on(既定)なら今まで通り
-  // ビューポートに貼り付く'fixed'、offならページの通常コンテンツと同じ
-  // 'absolute'(ページのスクロールに合わせて流れていく)。
   const overlayPosition: 'fixed' | 'absolute' = uiConfig.stage.stickToViewport ? 'fixed' : 'absolute';
   const choiceAnchorName = uiConfig.choice.anchor;
   const choiceAnchorSlot = choiceAnchorName
     ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
     : null;
 
-  // バックログの開閉ボタン/パネルも選択肢と同じ考え方でキャラ位置基準にできる。
   const backlogAnchorName = uiConfig.backlog.anchor;
   const backlogAnchorSlot = backlogAnchorName
     ? positionOverrides[backlogAnchorName] ?? getCharacterSlot(backlogAnchorName) ?? null
@@ -181,18 +243,41 @@ export default function StageView({
 
   const uiVis: Required<UiVisibility> =
     typeof showUi === 'boolean'
-      ? { backlogButton: showUi, choices: showUi, messageWindow: showUi, userLine: showUi }
+      ? { backlogButton: showUi, choices: showUi, messageWindow: showUi }
       : {
           backlogButton: showUi.backlogButton ?? true,
           choices: showUi.choices ?? true,
           messageWindow: showUi.messageWindow ?? true,
-          userLine: showUi.userLine ?? true,
         };
+
+  const effectiveHeightPx = uiConfig.stage.heightPx ?? autoHeightPx;
 
   const outerStyle: CSSProperties = isOverlay
     ? {
         position: overlayPosition,
-        inset: 0,
+        // 修正メモ: stickToViewport:off時、中身(bg/キャラ/選択肢)は全部
+        // position:absoluteの子要素なので、この外枠の高さを明示しないと
+        // 画面1枚分(100vh相当)に潰れてしまい、それより外側のoriginY(%)や
+        // #web:scrollのスクロール量が「見えない・押せない」領域になってしまう
+        // (操作不能バグの正体だった)。#ui:stage:height:<px>の明示指定が
+        // あればそれを最優先、無ければ上のuseEffectで自動計測した
+        // ページ全体の高さ(autoHeightPx)を使う。どちらも無ければ以前と
+        // 同じ挙動(inset:0)にフォールバック。
+        ...(uiConfig.stage.stickToViewport || !effectiveHeightPx
+          ? { inset: 0 }
+          : uiConfig.stage.widthPx
+          ? {
+              // 修正メモ: widthPxも指定された場合、左右をページ幅に伸縮させず
+              // 固定サイズの箱にして中央寄せする。これでcharacterSlots/initPosの
+              // originX(%)は常に同じ絶対座標(px)を指すようになり、この
+              // VNLayerを埋め込むページの横幅が変わっても位置がズレなくなる。
+              top: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: `${uiConfig.stage.widthPx}px`,
+              height: `${effectiveHeightPx}px`,
+            }
+          : { top: 0, left: 0, right: 0, height: `${effectiveHeightPx}px` }),
         pointerEvents: 'none',
         zIndex: 50,
         fontFamily: uiConfig.font.family ?? 'sans-serif',
@@ -218,7 +303,7 @@ export default function StageView({
       };
 
   return (
-    <div style={outerStyle}>
+    <div ref={outerRef} style={outerStyle}>
       <style key={shake.nonce}>{`
         @keyframes izakaya-shake-${shake.nonce} {
           0% { transform: translateX(0); }
@@ -230,11 +315,11 @@ export default function StageView({
       `}</style>
       <style>{`
         .vnlayer-scroll-hidden {
-          scrollbar-width: none; /* Firefox */
-          -ms-overflow-style: none; /* 旧Edge/IE */
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
         .vnlayer-scroll-hidden::-webkit-scrollbar {
-          display: none; /* Chrome/Safari */
+          display: none;
         }
       `}</style>
 
@@ -295,27 +380,35 @@ export default function StageView({
           {story.flash && <renderer.FlashOverlay color={story.flash.color} durationMs={story.flash.durationMs} />}
         </div>
 
-        {uiVis.messageWindow && !messageWindowHidden && displayedMessage && !isNarratorMessage && bubbleSlot && (
-          <div style={isOverlay ? { pointerEvents: 'auto' } : undefined}>
-            <renderer.MessageBubble
-              speaker={displayedMessage.speaker}
-              content={displayedMessage.content}
-              slot={bubbleSlot}
-              revealedCount={revealedCount}
-              visible={bubbleShown}
-              onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
-              fontFamily={uiConfig.font.family}
-              fontSizePx={uiConfig.font.sizePx}
-            />
-          </div>
-        )}
+        {uiVis.messageWindow &&
+          !messageWindowHidden &&
+          Object.entries(bubbles)
+            .filter(([name]) => name !== 'narrator')
+            .map(([name, entry]) => {
+              const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 40 };
+              return (
+                <div key={name} style={isOverlay ? { pointerEvents: 'auto' } : undefined}>
+                  <renderer.MessageBubble
+                    speaker={name}
+                    content={entry.content}
+                    slot={slot}
+                    revealedCount={entry.revealedCount}
+                    visible={entry.visible}
+                    onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
+                    fontFamily={uiConfig.font.family}
+                    fontSizePx={uiConfig.font.sizePx}
+                    offsetPx={uiConfig.messageWindow.offset}
+                  />
+                </div>
+              );
+            })}
 
-        {displayedMessage && isNarratorMessage && (
+        {uiVis.messageWindow && !messageWindowHidden && bubbles.narrator && (
           <div style={isOverlay ? { pointerEvents: 'auto' } : undefined}>
             <renderer.NarratorCaption
-              content={displayedMessage.content}
-              revealedCount={revealedCount}
-              visible={bubbleShown}
+              content={bubbles.narrator.content}
+              revealedCount={bubbles.narrator.revealedCount}
+              visible={bubbles.narrator.visible}
               onClick={uiConfig.messageWindow.interactive ? skipTyping : undefined}
               fontFamily={uiConfig.font.family}
               fontSizePx={uiConfig.font.sizePx}
@@ -368,73 +461,43 @@ export default function StageView({
           }
         >
           {lines.length === 0 && <div style={{ opacity: 0.5, fontSize: 12 }}>まだ会話がありません</div>}
-          {lines.map((line: any, i: number) => (
-            <div key={i}>
-              {line.speaker && <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 2 }}>{line.speaker}</div>}
-              <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{line.content}</div>
-            </div>
-          ))}
+          {lines.map((line, i) =>
+            line.kind === 'choice' ? (
+              <div key={i}>
+                <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 2 }}>[Choice]</div>
+                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                  {line.number}. {line.text}
+                </div>
+              </div>
+            ) : (
+              <div key={i}>
+                {line.speaker && (
+                  <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 2 }}>[{line.speaker}]</div>
+                )}
+                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{line.content}</div>
+              </div>
+            )
+          )}
         </div>
       )}
 
-      {uiVis.userLine && userLine && (
-        <div
-          style={{
-            position: isOverlay ? overlayPosition : 'static',
-            ...(isOverlay ? anchorSide : {}),
-            bottom: isOverlay ? 100 : undefined,
-            pointerEvents: 'auto',
-            marginTop: isOverlay ? 0 : 8,
-            padding: '8px 14px',
-            background: '#3a5a8c',
-            color: '#fff',
-            borderRadius: 8,
-            fontSize: 14,
-            zIndex: 51,
-          }}
-        >
-          あなた: {userLine}
-        </div>
-      )}
-
-      {/* 修正メモ(切り出し対応): 以前はvisibleChoices.length===0の時に
-          「今日の営業はここまでのようです」+「はじめから」ボタンを固定で
-          描画していたが、これはこのプロジェクト固有の文言・演出であり、
-          汎用コンポーネントであるVNLayerが持つべきものではなかった。
-          今は選択肢が無い間は何も描画しない。終了時のメッセージや
-          「最初に戻る」導線が欲しい場合は、Ink側で s:narrator/msg等を使い
-          普通のテキストとして書くか、"+[はじめから] -> home" のような
-          本物の選択肢として書くのが自然。JS側から明示的にリセットしたい
-          場合は VNLayer.reset(selector) を呼べる(api.ts参照)。 */}
       {uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (
         <div
           className="vnlayer-scroll-hidden"
           style={
             choiceAnchorSlot
               ? {
-                  // キャラのスロット位置基準(#ui:choice:anchor:name指定時)。
-                  // メッセージ吹き出しと同じ座標系(ステージ全体基準%、カメラズームの
-                  // 影響を受けない)に合わせてある。
-                  // offsetはanchor時にも効く: 「キャラの位置から何pxの余白を
-                  // 空けて選択肢を出すか」として共用する(既定表示時は
-                  // 「画面端からの距離」、anchor時は「キャラ位置からの距離」)。
                   position: 'absolute',
                   left: `${choiceAnchorSlot.originX}%`,
                   top: `calc(${choiceAnchorSlot.originY}% + ${uiConfig.choice.offset ?? 20}px)`,
                   transform: 'translateX(-50%)',
                   width: isOverlay ? 220 : 200,
-                  // 選択肢の数が多いと画面外まではみ出すことがあるため、
-                  // topの位置に応じて残りスペースぶんだけしか高さを取らない
-                  // ようcalc()で連動させる(どこにanchorしても必ず画面内に収まる)。
-                  // 超えた分は内部スクロールにする(スクロールバー自体は
-                  // 下のvnlayer-scroll-hidden CSSで見た目だけ非表示にしている)。
                   maxHeight: `calc(100% - ${choiceAnchorSlot.originY}% - ${uiConfig.choice.offset ?? 20}px - 8px)`,
                   overflowY: 'auto',
                   pointerEvents: 'auto',
                   zIndex: 51,
                 }
               : {
-                  // 既定: ステージの角(uiAnchor)に固定表示。
                   position: isOverlay ? overlayPosition : 'static',
                   ...(isOverlay ? anchorSide : {}),
                   bottom: isOverlay ? uiConfig.choice.offset ?? 130 : undefined,
