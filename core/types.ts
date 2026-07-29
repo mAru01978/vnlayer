@@ -59,13 +59,39 @@ export type StoryEngine = {
   resetStory: () => Promise<void>;
   flash: { color: string; durationMs: number } | null;
   typeSpeedMs: number;
-  // 外部(VNLayer.setContext等)から一方通行でInk変数へ値を反映するための口。
-  setContextVars: (vars: Record<string, unknown>) => Promise<void>;
-  // host→ink一方向イベント通知(VNLayer.notify相当)。
-  // event_${name}/_seqを書き込むと同時に、実行中の#wait:/type_wait待ちを
-  // 即座に打ち切り、event_loop等の#interrupt付き選択肢に辿り着き次第
-  // それを自動選択する。
-  notify: (eventName: string, payload?: unknown) => Promise<void>;
+  // api-refactor-1: 外部(VNLayer.setContext等)から一方通行でInk変数へ値を
+  // 反映するための口。以前はこれとは別に「値を書いて即時反応もさせる」
+  // notify()というAPIがあったが、notifyの中身は実質「setContextVars+wake()」
+  // でしかなかったため、options.notify:trueへ一本化した。
+  //   setContextVars({ vn_event_char_click: name, vn_event_char_click_seq: n })
+  //     → 値を書き込むだけ(今まで通り)
+  //   setContextVars({ ... }, { notify: true })
+  //     → 値を書き込み、同時に実行中の#wait:/type_wait待ちを即座に打ち切り、
+  //       event_loop等の#interrupt付き選択肢に辿り着き次第それを自動選択する
+  //       (=以前のnotify()と同じ効果)
+  // event_${name}/_seqという変数名の自動組み立ては廃止した。呼び出し側
+  // (api.tsのVNLayer.notify()、StageView内部のキャラクリック処理等)が
+  // 変数名(vn_event_xxx等の命名規則含む)を明示的に組み立てて渡す。
+  // api-refactor-1/2: 外部(VNLayer.setContext等)から一方通行でInk変数へ値を
+  // 反映するための口。
+  //   setContextVars(vars)
+  //     → 値を書き込むだけ。既定(expose:true)でgetContextVars()から見える
+  //       ようになる。
+  //   setContextVars(vars, { notify: true })
+  //     → 上記に加え、渡した各キーに"${key}_seq"を自動生成・インクリメント
+  //       して書き込み、実行中の#wait:/type_wait待ちを即座に打ち切り、
+  //       event_loop等の#interrupt付き選択肢に辿り着き次第それを自動選択する
+  //       (以前の別APIだったnotify()の役割を吸収した)。
+  //   setContextVars(vars, { expose: false })
+  //     → Inkへは書き込むが、getContextVars()からは見えないようにする
+  //       (将来の#emit特殊タグ等、内部的な書き込みを外部に露出させたくない
+  //       場合向け)。
+  // 変数名(vn_event_xxx等の命名規則)自体は呼び出し側が決めて渡す。
+  setContextVars: (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => Promise<void>;
+  // api-refactor-2: setContextVarsの読み取り版。setContextVarsで(expose:false
+  // でなく)書き込まれた値の写しを返す。varNames省略時はexposeされている
+  // 値すべてを返す。ink本体には問い合わせない(サーバー往復が発生しない)。
+  getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
   // このVNインスタンス自身の識別子(通常はmount()時のselector)。
   // #ui:...タグの設定をこのインスタンスだけにスコープするために、
   // StageView側がgetUiConfig(instanceId)を呼ぶ時に使う。
