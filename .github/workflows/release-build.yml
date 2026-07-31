@@ -1,0 +1,47 @@
+name: Release Build
+
+# Dockerfile経由でビルドし、dist/(tsc出力 + 単体バンドルvnlayer.js)を
+# 生成する。開発環境(Dockerfile)とCIで同じビルド手順を共有することで、
+# 「手元では動くのにCIでは失敗する」というズレを防ぐ狙い。
+#
+# - タグ push (v*) 時: ビルド成果物をzipにしてGitHub Releaseへ添付する
+# - 手動実行(workflow_dispatch): ビルドの動作確認だけ行い、Actionsの
+#   Artifactとしてdist/を保存する(Releaseへの添付はしない)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t vnlayer-build .
+
+      - name: Run build inside container
+        run: |
+          docker run --name vnlayer-build-container vnlayer-build
+          docker cp vnlayer-build-container:/app/dist ./dist
+          docker rm vnlayer-build-container
+
+      - name: Upload dist as Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vnlayer-dist
+          path: dist
+
+      - name: Package release zip
+        if: startsWith(github.ref, 'refs/tags/')
+        run: zip -r vnlayer-dist.zip dist vendor global.d.ts package.json
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: vnlayer-dist.zip

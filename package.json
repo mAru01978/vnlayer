@@ -11,7 +11,8 @@
     "add:scenario": "node scripts/new-scenario.js",
     "menu": "node scripts/menu.js",
     "build": "node scripts/build-vnlayer-tsc.js",
-    "build:vnlayer": "node scripts/build-vnlayer-standalone.js"
+    "build:vnlayer": "node scripts/build-vnlayer-standalone.js",
+    "build:all": "node scripts/build.js"
     },
   "description": "Ink駆動の軽量VN演出レイヤー。Reactコンポーネントとしても、vnlayer.js(script読み込み+API経由)としても使える。",
   "main": "dist/api.js",

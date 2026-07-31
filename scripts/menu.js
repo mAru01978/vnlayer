@@ -99,6 +99,10 @@ const MENU_ITEMS = [
     run: () => runDirect(['node', path.join(__dirname, 'build-vnlayer-tsc.js')]),
   },
   {
+    label: 'VNLayerの全ビルド(build.js)',
+    run: () => runDirect(['node', path.join(__dirname, 'build.js')]),
+  },
+  {
     label: 'VNLayerの依存関係をインストール(npm install)',
     run: () => {
       // menu.js がある場所(__dirname)の親が VNLayer パッケージのルート
