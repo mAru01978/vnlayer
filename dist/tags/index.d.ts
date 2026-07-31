@@ -9,6 +9,7 @@ import './defs/shake';
 import './defs/type';
 import './defs/ui';
 import './defs/web';
+import './defs/emit';
 import type { SceneHandlers } from './sceneHandlers';
 export declare function dispatchTag(tag: string, handlers: SceneHandlers): Promise<void>;
 export { setTagConfig, getTagConfig, registerTag, registerAlias } from './registry';

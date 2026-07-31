@@ -15,6 +15,11 @@ export type SceneHandlers = {
     onGoto: (path: string) => void;
     onOpen: (url: string) => void;
     onScroll: (target: string, durationMs?: number) => void;
+    emit: (selector: string, vars: Record<string, unknown>, options?: {
+        notify?: boolean;
+        expose?: boolean;
+    }) => Promise<void> | void;
+    emitToWeb: (eventName: string, payload: unknown) => void;
     setUiConfig: (patch: UiConfigPatch) => void;
     wait: (ms: number) => Promise<void>;
     setCamera: (scale: number, target: string | undefined, durationMs: number) => void;

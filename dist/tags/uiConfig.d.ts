@@ -4,6 +4,8 @@ export type UiConfig = {
         skin?: string;
         interactive: boolean;
         offset: number;
+        autoHideOnCharHide: boolean;
+        autoHideOnBgChange: boolean;
     };
     choice: {
         skin?: string;
@@ -11,6 +13,7 @@ export type UiConfig = {
         anchor?: string;
         offset?: number;
         interactive: boolean;
+        autoClearOnChoose: boolean;
     };
     backlog: {
         skin?: string;
