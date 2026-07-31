@@ -28,8 +28,26 @@ export type UiConfig = {
     // 巨大なpx値に化けて「キャラと吹き出しの間隔が異常に開く」原因になっていた。
     // choice.offset/backlog.offsetと同じくpx単位に統一し、ここで調整可能にする。
     offset: number;
+    // 修正メモ: メッセージウィンドウ(吹き出し)は、明示的に
+    // #ui:messageWindow:mode:hide/transientを使わない限り何によっても
+    // 自動でクリアされず、話者が#s:name:hideで消えても、#bgで場面転換しても
+    // 前の発言が居残り続ける不自然さがあった。以下2つの既定ON設定で自動化し、
+    // 必要な場面(演出上あえて残したい等)だけタグでoffにできるようにする。
+    autoHideOnCharHide: boolean;
+    autoHideOnBgChange: boolean;
   };
-  choice: { skin?: string; spacing?: number; anchor?: string; offset?: number; interactive: boolean };
+  choice: {
+    skin?: string;
+    spacing?: number;
+    anchor?: string;
+    offset?: number;
+    interactive: boolean;
+    // choose()した瞬間、まだ次の選択肢が決まっていない間、古い選択肢ボタンを
+    // 即座に非表示にするかどうか(既定ON)。offにすると、次の選択肢に
+    // 差し替わるまで古いボタンが表示され続ける(長いシーン転換中に選択肢が
+    // 一瞬消えるのを許容したくない場合向け)。
+    autoClearOnChoose: boolean;
+  };
   backlog: { skin?: string; mode: BacklogMode; show: boolean; anchor?: string; offset?: number };
   character: { clickable: boolean };
   font: { family?: string; sizePx?: number };
@@ -64,8 +82,8 @@ export type UiConfigPatch = {
 };
 
 const defaultUiConfig: UiConfig = {
-  messageWindow: { interactive: true, offset: 130 },
-  choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true },
+  messageWindow: { interactive: true, offset: 130, autoHideOnCharHide: true, autoHideOnBgChange: true },
+  choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true, autoClearOnChoose: true },
   backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
   character: { clickable: true },
   font: {},

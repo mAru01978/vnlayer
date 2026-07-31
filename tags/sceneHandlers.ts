@@ -28,6 +28,19 @@ export type SceneHandlers = {
   // durationMsを指定すると、ブラウザ既定のsmoothスクロール(時間指定不可)では
   // なく、その時間ぴったりで動く自前のスクロールアニメーションを使う。
   onScroll: (target: string, durationMs?: number) => void;
+  // #emit:selector:varName:value → 他のVNインスタンス(selector)のink変数へ
+  // 一方通行で値を書き込む(VN間イベント連携)。中身はそのインスタンスの
+  // setContextVars(vars, options)を呼ぶだけ。selectorに該当するインスタンスが
+  // 未マウントの場合は警告を出して何もしない。
+  emit: (
+    selector: string,
+    vars: Record<string, unknown>,
+    options?: { notify?: boolean; expose?: boolean }
+  ) => Promise<void> | void;
+  // #web:emit:eventName:value → ink変数(setContext/getContext)を一切経由せず、
+  // window.dispatchEventで直接ブラウザ側へ通知する(ink→webへの一方通行の
+  // 唯一の出口)。host側はwindow.addEventListenerで受け取る。
+  emitToWeb: (eventName: string, payload: unknown) => void;
   // #ui:...タグからのUI設定変更。呼び出し元(useStoryEngine.ts)がこのVN
   // インスタンス自身のスコープ(mount時のselector)を使って
   // tags/uiConfig.tsのsetUiConfig()を呼ぶ。これによりink側の#ui:...は

@@ -15,8 +15,8 @@
 // 真偽値は全てon/off(boolean)で統一している。true/falseという値そのものは
 // タグの引数としては使わない(タグ設計方針: 数値・小数・意味のあるラベルのみ)。
 const defaultUiConfig = {
-    messageWindow: { interactive: true, offset: 130 },
-    choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true },
+    messageWindow: { interactive: true, offset: 130, autoHideOnCharHide: true, autoHideOnBgChange: true },
+    choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true, autoClearOnChoose: true },
     backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
     character: { clickable: true },
     font: {},

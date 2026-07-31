@@ -39,6 +39,18 @@ registerTag({
                     return handlers.setUiConfig({ messageWindow: { offset: n } });
                 return;
             }
+            if (key === 'autoHideOnCharHide') {
+                const on = parseOnOff(value);
+                if (on !== undefined)
+                    handlers.setUiConfig({ messageWindow: { autoHideOnCharHide: on } });
+                return;
+            }
+            if (key === 'autoHideOnBgChange') {
+                const on = parseOnOff(value);
+                if (on !== undefined)
+                    handlers.setUiConfig({ messageWindow: { autoHideOnBgChange: on } });
+                return;
+            }
             return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
         }
         if (section === 'choice') {
@@ -46,6 +58,12 @@ registerTag({
                 const on = parseOnOff(value);
                 if (on !== undefined)
                     handlers.setChoicesVisible(on);
+                return;
+            }
+            if (key === 'autoClearOnChoose') {
+                const on = parseOnOff(value);
+                if (on !== undefined)
+                    handlers.setUiConfig({ choice: { autoClearOnChoose: on } });
                 return;
             }
             if (key === 'interactive') {
