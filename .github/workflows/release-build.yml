@@ -1,18 +1,21 @@
 name: Release Build
 
-# Dockerfile経由でビルドし、dist/(tsc出力 + 単体バンドルvnlayer.js)を
-# 生成する。開発環境(Dockerfile)とCIで同じビルド手順を共有することで、
-# 「手元では動くのにCIでは失敗する」というズレを防ぐ狙い。
+# package.jsonのversionを正とし、そのバージョン用のGitHub Releaseがまだ
+# 存在しなければ、Dockerfile経由でビルド→zip化→Release作成(タグも
+# このワークフローが自動生成)まで行う。
 #
-# - タグ push (v*) 時: ビルド成果物をzipにしてGitHub Releaseへ添付する
-# - 手動実行(workflow_dispatch): ビルドの動作確認だけ行い、Actionsの
-#   Artifactとしてdist/を保存する(Releaseへの添付はしない)
+# 手でタグを打つ運用を無くし、「package.jsonのversionを書き換えてpushする
+# だけ」でパッチ版(v0.1.4等)もメジャー版(v1.0.0等)も同じ手順で出せる
+# ようにする狙い。既に同じバージョンのReleaseが存在する場合はビルド自体を
+# スキップする(version未変更のpushで無駄なビルド/重複Releaseを作らない)。
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
   workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -21,27 +24,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check if this version was already released
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.pkg.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build Docker image
+        if: steps.check.outputs.exists == 'false'
         run: docker build -t vnlayer-build .
 
       - name: Run build inside container
+        if: steps.check.outputs.exists == 'false'
         run: |
           docker run --name vnlayer-build-container vnlayer-build
           docker cp vnlayer-build-container:/app/dist ./dist
           docker rm vnlayer-build-container
 
       - name: Upload dist as Actions artifact
+        if: steps.check.outputs.exists == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: vnlayer-dist
+          name: vnlayer-dist-v${{ steps.pkg.outputs.version }}
           path: dist
 
       - name: Package release zip
-        if: startsWith(github.ref, 'refs/tags/')
+        if: steps.check.outputs.exists == 'false'
         run: zip -r vnlayer-dist.zip dist vendor global.d.ts package.json
 
-      - name: Attach to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create GitHub Release (tag auto-created from package.json version)
+        if: steps.check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: v${{ steps.pkg.outputs.version }}
+          generate_release_notes: true
           files: vnlayer-dist.zip
