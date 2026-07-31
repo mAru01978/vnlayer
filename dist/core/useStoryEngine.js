@@ -2,8 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dispatchTag, getTagConfig } from '../tags/index';
 import { getCharacterSlot } from '../tags/characterSlots';
-import { setUiConfig as setUiConfigStore } from '../tags/uiConfig';
+import { setUiConfig as setUiConfigStore, getUiConfig } from '../tags/uiConfig';
 import { getDefaultStepProvider } from './defaultStepProvider';
+import { registerInstance, unregisterInstance, emitToInstance } from './instanceRegistry';
+import { resolveDomSelectorToken } from '../tags/domSelector';
 import { abortableSleep } from './abortableSleep';
 // フェーズ2でのポイント:
 // - タグの「ラベル→実際の値」の変換(wait:long→1200ms、cam:zoom→scale1.6等)は
@@ -41,6 +43,9 @@ export function useStoryEngine(scenario, options = {}) {
     const typeWaitEnabledRef = useRef(false);
     const typeWaitBufferRef = useRef(1500);
     const positionOverridesRef = useRef({});
+    // setBgハンドラ内でbgの変化判定に使う(state更新関数の中で別のstate更新関数を
+    // 呼ぶ危険なネストを避けるため、refで持つ)。
+    const bgRef = useRef('');
     const transientTimerRef = useRef(null);
     // notify()の即時反応機構: advance()の1回の呼び出し(=タグ処理のバッチ)ごとに
     // 新しいAbortControllerを張り直す。notify()が呼ばれるとabort()され、
@@ -149,7 +154,20 @@ export function useStoryEngine(scenario, options = {}) {
             delete next[name];
             return next;
         });
-    }, []);
+        // 修正メモ: 話者が#s:name:hideで非表示になっても、以前はメッセージ
+        // ウィンドウ(吹き出し)がそのまま画面に残り続けていた
+        // (「キャラがいなくなっても残っちゃう」不自然さの原因)。
+        // #ui:messageWindow:autoHideOnCharHide(既定on)で自動フェードアウトする。
+        if (getUiConfig(instanceId).messageWindow.autoHideOnCharHide) {
+            setActiveMessageState((prev) => {
+                if (prev && prev.speaker === name) {
+                    clearBubbleTimer();
+                    return null;
+                }
+                return prev;
+            });
+        }
+    }, [instanceId, clearBubbleTimer]);
     const setChoicesVisible = useCallback((visible) => {
         setChoicesHidden(!visible);
     }, []);
@@ -235,7 +253,23 @@ export function useStoryEngine(scenario, options = {}) {
                 setFlash({ color, durationMs });
                 setTimeout(() => setFlash(null), durationMs);
             },
-            setBg: (name) => setBg(name),
+            setBg: (name) => {
+                // 修正メモ: 以前はsetBg((prev) => { ...; setActiveMessageState(null); ... })
+                // という、React stateの更新関数の中で別のstate更新関数を呼ぶ形に
+                // なっていた。これはReactが想定していない書き方で、開発モード
+                // (StrictMode)がこの更新関数を意図的に2回呼んで副作用を検出する
+                // 仕組みと衝突し、bg/activeMessageの更新タイミングが噛み合わなくなって
+                // 直後に出すはずのメッセージが反映されなくなるバグを引き起こしていた。
+                // bgの変化判定はrefで行い、setActiveMessageStateは更新関数の外側で
+                // 普通に呼ぶ形に直した。
+                const changed = bgRef.current !== name;
+                bgRef.current = name;
+                setBg(name);
+                if (changed && getUiConfig(instanceId).messageWindow.autoHideOnBgChange) {
+                    clearBubbleTimer();
+                    setActiveMessageState(null);
+                }
+            },
             setChar: (name, expression) => setCharacters((prev) => ({ ...prev, [name]: { expression } })),
             setAnim: (name, motion) => setAnimDirect(name, motion),
             setAnimLoop: (name, motion) => setAnimLoop(name, motion),
@@ -255,6 +289,20 @@ export function useStoryEngine(scenario, options = {}) {
                     window.open(url, '_blank', 'noopener,noreferrer');
                 }
             },
+            // #emit:selector:varName:value タグ用。他のVNインスタンス(selector)の
+            // ink変数へ一方通行で値を書き込む(VN間イベント連携)。中身はcore/
+            // instanceRegistry.ts経由でそのインスタンス自身のsetContextVarsを呼ぶ。
+            emit: (selector, vars, options) => emitToInstance(selector, vars, options),
+            // #web:emit:eventName:value タグ用。ink変数(setContext/getContext)は
+            // 一切経由せず、window.dispatchEventで直接ブラウザ側へ通知する
+            // (ink→webへの一方通行の唯一の出口)。host側はwindow.addEventListenerで
+            // "vnlayer:emit" を購読し、e.detail.name / e.detail.payload / 
+            // e.detail.instanceId を見て振り分ける想定。
+            emitToWeb: (eventName, payload) => {
+                if (typeof window === 'undefined')
+                    return;
+                window.dispatchEvent(new CustomEvent('vnlayer:emit', { detail: { name: eventName, payload, instanceId } }));
+            },
             onScroll: (target, durationMs) => {
                 if (typeof window === 'undefined' || typeof document === 'undefined')
                     return;
@@ -272,9 +320,14 @@ export function useStoryEngine(scenario, options = {}) {
                     // dispatchTag→advance()まで伝播し、advance()が最後まで到達できず
                     // isProcessingRef.current=falseに戻らないまま止まる → 以後の
                     // クリックが全部「処理中」判定で弾かれ続け、操作不能になる)。
+                    //
+                    // targetは resolveDomSelectorToken() で .class / @id(→#id) /
+                    // 裸の単語(→[data-vn-id="..."])のいずれかとして解決してから
+                    // querySelectorする(tags/domSelector.ts参照。他の「DOM要素を
+                    // 探す」タグ全般と解決ルールを共通化してある)。
                     let el = null;
                     try {
-                        el = document.getElementById(target) ?? document.querySelector(target);
+                        el = document.querySelector(resolveDomSelectorToken(target));
                     }
                     catch (e) {
                         console.warn(`[VNLayer] web:scroll: invalid selector/target "${target}", ignoring:`, e);
@@ -491,10 +544,21 @@ export function useStoryEngine(scenario, options = {}) {
         // 選択された瞬間に古い選択肢ボタンを即座に消す。以前はここでclearせず
         // advance()完了(次の選択肢が決まるまで)まで放置していたため、
         // 長いシーン転換中ずっと「もう選べない古い選択肢」が表示されたまま
-        // になって不自然だった。
-        setChoices([]);
+        // になって不自然だった。#ui:choice:autoClearOnChoose(既定on)でON/OFF可能。
+        if (getUiConfig(instanceId).choice.autoClearOnChoose) {
+            setChoices([]);
+        }
         const chosen = choices.find((c) => c.index === index);
-        if (chosen) {
+        // 修正メモ: choose()はユーザーの実クリックだけでなく、#tickタイマーや
+        // #interrupt付き選択肢による「裏方の自動選択」からも呼ばれる
+        // (useStoryEngine.ts下部のtick/interrupt処理useEffect参照)。
+        // 以前はここでその区別をしていなかったため、テキストの無い裏方選択肢
+        // まで律儀に「[Choice] 1. 」としてバックログに記録し続けてしまい、
+        // event_loop等が回るたびに空の選択肢エントリが増えていくバグになっていた。
+        // 裏方選択肢(tick/interruptタグ付き)はそもそもユーザーに見えていない
+        // ので、バックログにも一切記録しない。
+        const isAmbientChoice = chosen?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
+        if (chosen && !isAmbientChoice) {
             // バックログに「どの選択肢を選んだか」を記録する。番号は
             // 実際に画面に表示されていた選択肢の中での順番(1始まり)。
             // #tick/#interrupt等の裏方選択肢はユーザーに見えていないので
@@ -567,6 +631,7 @@ export function useStoryEngine(scenario, options = {}) {
         setLines([]);
         setChoices([]);
         setBg('');
+        bgRef.current = '';
         setCharacters({});
         setSpeakerState('');
         setCamState({ target: '', scale: 1, originX: 50, originY: 50 });
@@ -666,6 +731,17 @@ export function useStoryEngine(scenario, options = {}) {
         }
         return result;
     }, []);
+    // web:emit用の自己登録: このVNインスタンスが自分のinstanceId(=mount時の
+    // selector)でcore/instanceRegistry.tsに自己登録しておくことで、他の
+    // VNインスタンスの#web:emit:<このinstanceId>:...タグから見つけてもらえる
+    // ようになる。instanceIdが無い(mount()経由でない単純な使い方)場合は
+    // 登録しない(emitのターゲットにはなれないが、それ以外の動作には影響しない)。
+    useEffect(() => {
+        if (!instanceId)
+            return;
+        registerInstance(instanceId, { setContextVars });
+        return () => unregisterInstance(instanceId);
+    }, [instanceId, setContextVars]);
     return {
         lines,
         choices,

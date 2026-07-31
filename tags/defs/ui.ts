@@ -22,6 +22,14 @@ import { parseOnOff } from '../numericOrLabel';
 //                                          実高さを大きくした場合、この値が
 //                                          小さすぎ/大きすぎだと間隔が不自然に
 //                                          なるので合わせて調整する。
+//   # ui:messageWindow:autoHideOnCharHide:on/off
+//                                       → 話者が#s:name:hideで非表示になった時、
+//                                          自動でその吹き出しをフェードアウト
+//                                          させるか(既定on)。
+//   # ui:messageWindow:autoHideOnBgChange:on/off
+//                                       → #bgで背景が実際に変わった(場面転換)時、
+//                                          居残っていた吹き出しを自動で
+//                                          フェードアウトさせるか(既定on)。
 //
 //   [choice]
 //   # ui:choice:show:on/off             → 選択肢を箱ごと表示/非表示
@@ -34,6 +42,10 @@ import { parseOnOff } from '../numericOrLabel';
 //                                          距離」、anchor指定時は「キャラ位置からの
 //                                          距離」(どちらもはみ出さないよう自動で
 //                                          スクロール枠になる)
+//   # ui:choice:autoClearOnChoose:on/off
+//                                       → choose()した瞬間、次の選択肢が決まる
+//                                          までの間、古い選択肢ボタンを即座に
+//                                          非表示にするか(既定on)。
 //
 //   [backlog]
 //   # ui:backlog:clear                  → 会話ログをクリア
@@ -104,6 +116,16 @@ registerTag<UiTagConfig>({
         if (Number.isFinite(n)) return handlers.setUiConfig({ messageWindow: { offset: n } });
         return;
       }
+      if (key === 'autoHideOnCharHide') {
+        const on = parseOnOff(value);
+        if (on !== undefined) handlers.setUiConfig({ messageWindow: { autoHideOnCharHide: on } });
+        return;
+      }
+      if (key === 'autoHideOnBgChange') {
+        const on = parseOnOff(value);
+        if (on !== undefined) handlers.setUiConfig({ messageWindow: { autoHideOnBgChange: on } });
+        return;
+      }
       return handlers.onUnknownTag?.(['ui', section, key, value].filter(Boolean).join(':'));
     }
 
@@ -111,6 +133,11 @@ registerTag<UiTagConfig>({
       if (key === 'show') {
         const on = parseOnOff(value);
         if (on !== undefined) handlers.setChoicesVisible(on);
+        return;
+      }
+      if (key === 'autoClearOnChoose') {
+        const on = parseOnOff(value);
+        if (on !== undefined) handlers.setUiConfig({ choice: { autoClearOnChoose: on } });
         return;
       }
       if (key === 'interactive') {
