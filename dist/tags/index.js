@@ -13,6 +13,7 @@ import './defs/shake';
 import './defs/type';
 import './defs/ui';
 import './defs/web';
+import './defs/emit';
 import { runTag } from './registry';
 function parseTag(tag) {
     const [key, ...args] = tag.split(':').map((s) => s.trim());

@@ -14,6 +14,7 @@ import './defs/shake';
 import './defs/type';
 import './defs/ui';
 import './defs/web';
+import './defs/emit';
 
 import { runTag } from './registry';
 import type { SceneHandlers } from './sceneHandlers';
