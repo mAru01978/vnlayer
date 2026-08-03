@@ -11,6 +11,14 @@
     "moduleResolution": "Node",
     "jsx": "react-jsx"
   },
-  "include": ["core", "tags", "components", "context", "api.ts", "standalone.ts", "global.d.ts"],
+  "include": [
+    "core",
+    "tags",
+    "components",
+    "context",
+    "api.ts",
+    "standalone.ts",
+    "global.d.ts"
+  ],
   "exclude": ["node_modules", "dist", "vendor", "scripts"]
 }

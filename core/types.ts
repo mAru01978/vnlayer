@@ -17,24 +17,43 @@ export type CharacterState = {
   // 素材のキャラ絵が入るまでのモック段階で、視線の向き(矢印)を確認するためのもの。
   gaze?: { x: number; y: number };
 };
-export type CamState = { target: string; scale: number; originX: number; originY: number };
+export type CamState = {
+  target: string;
+  scale: number;
+  originX: number;
+  originY: number;
+};
 export type ShakeState = { nonce: number; amplitude: number; duration: number };
 // バックログの1エントリ。発言(kind:'line')か、選択した項目の記録(kind:'choice')。
 // 選択肢は「表示されてたリストの何番目か(1始まり)」も一緒に持たせる
 // (# ui:...等で除外されるtick/interrupt等の裏方選択肢は数に含めない)。
 export type LineEntry =
-  | { kind: 'line'; speaker: string; content: string }
-  | { kind: 'choice'; number: number; text: string };
-export type PositionOverrides = Record<string, { originX: number; originY: number; durationMs?: number }>;
-export type ActiveMessage =
-  | { speaker: string; content: string; fadeIn: boolean; typeSpeedMs: number }
-  | null;
+  | { kind: "line"; speaker: string; content: string }
+  | { kind: "choice"; number: number; text: string };
+export type PositionOverrides = Record<
+  string,
+  { originX: number; originY: number; durationMs?: number }
+>;
+export type ActiveMessage = {
+  speaker: string;
+  content: string;
+  fadeIn: boolean;
+  typeSpeedMs: number;
+} | null;
 
 // app/api/story/route.ts のレスポンス形状(lib/story/server/engine.ts の RunResult と対応)。
 // StepProviderの戻り値の形なので、サーバー版・静的版どちらの実装もこの形に合わせる。
 export type StepEntry = { speaker: string; content: string; tags: string[] };
-export type VisualState = { bg: string; characters: Record<string, CharacterState>; speaker: string };
-export type RunResult = { steps: StepEntry[]; choices: Choice[]; visual: VisualState };
+export type VisualState = {
+  bg: string;
+  characters: Record<string, CharacterState>;
+  speaker: string;
+};
+export type RunResult = {
+  steps: StepEntry[];
+  choices: Choice[];
+  visual: VisualState;
+};
 
 // useStoryEngineが返す値の形。VNLayer/components側はこれだけを見て描画する
 // (StepProviderの実装がサーバー版か静的版かを一切意識しない)。
@@ -87,7 +106,10 @@ export type StoryEngine = {
   //       (将来の#emit特殊タグ等、内部的な書き込みを外部に露出させたくない
   //       場合向け)。
   // 変数名(vn_event_xxx等の命名規則)自体は呼び出し側が決めて渡す。
-  setContextVars: (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => Promise<void>;
+  setContextVars: (
+    vars: Record<string, unknown>,
+    options?: { notify?: boolean; expose?: boolean },
+  ) => Promise<void>;
   // api-refactor-2: setContextVarsの読み取り版。setContextVarsで(expose:false
   // でなく)書き込まれた値の写しを返す。varNames省略時はexposeされている
   // 値すべてを返す。ink本体には問い合わせない(サーバー往復が発生しない)。

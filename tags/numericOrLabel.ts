@@ -7,20 +7,20 @@
 export function numericOrLabel(
   raw: string | undefined,
   table: Record<string, number>,
-  fallback: number
+  fallback: number,
 ): number {
-  if (raw !== undefined && raw.trim() !== '') {
+  if (raw !== undefined && raw.trim() !== "") {
     const n = Number(raw);
     if (Number.isFinite(n)) return n;
   }
-  return table[raw ?? ''] ?? fallback;
+  return table[raw ?? ""] ?? fallback;
 }
 
 // rawが「解釈可能な生の数値」かどうかだけを判定する(値そのものは呼び出し側で
 // Number(raw)して使う)。shake/pos/camのように複数の引数をまとめて数値指定
 // するケースで、そもそも数値モードかどうかを先に判定したい時に使う。
 export function isNumeric(raw: string | undefined): boolean {
-  if (raw === undefined || raw.trim() === '') return false;
+  if (raw === undefined || raw.trim() === "") return false;
   return Number.isFinite(Number(raw));
 }
 
@@ -30,7 +30,7 @@ export function isNumeric(raw: string | undefined): boolean {
 // 採用しない)。on/off以外が来た場合はundefinedを返す(呼び出し側で
 // 無視するか警告するかを決める)。
 export function parseOnOff(raw: string | undefined): boolean | undefined {
-  if (raw === 'on') return true;
-  if (raw === 'off') return false;
+  if (raw === "on") return true;
+  if (raw === "off") return false;
   return undefined;
 }

@@ -11,9 +11,9 @@
 // data/<scenario>/story.json は vnlayer.js と同じ階層に data/ フォルダごと
 // 置いておく(dataBaseUrlはVNLayer.configureや後述の window.VNLAYER_DATA_BASE_URL で変更可)。
 
-import { createStaticStepProvider } from './core/staticStepProvider';
-import { setDefaultStepProvider } from './core/defaultStepProvider';
-import './api'; // side-effect: window.VNLayer を公開する
+import { createStaticStepProvider } from "./core/staticStepProvider";
+import { setDefaultStepProvider } from "./core/defaultStepProvider";
+import "./api"; // side-effect: window.VNLayer を公開する
 
 declare global {
   interface Window {
@@ -21,7 +21,10 @@ declare global {
   }
 }
 
-const dataBaseUrl = typeof window !== 'undefined' ? window.VNLAYER_DATA_BASE_URL ?? './data' : './data';
+const dataBaseUrl =
+  typeof window !== "undefined"
+    ? (window.VNLAYER_DATA_BASE_URL ?? "./data")
+    : "./data";
 
 // Next.js運用(context/StoryContext.tsx)と違い、こちらは既定でサーバーを
 // 一切呼ばないstaticStepProviderを使う(index.html + vnlayer.js + assetsだけで完結)。

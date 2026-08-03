@@ -11,21 +11,27 @@
 // どちらかのステップが失敗したら、そこで打ち切ってexit code 1で終了する
 // (CIが失敗を正しく検知できるように)。
 
-const { execFileSync } = require('child_process');
-const path = require('path');
+const { execFileSync } = require("child_process");
+const path = require("path");
 
-const root = path.join(__dirname, '..');
+const root = path.join(__dirname, "..");
 
 const steps = [
-  { label: 'tscビルド(型定義 + JSモジュール出力 → dist/)', script: 'build-vnlayer-tsc.js' },
-  { label: '単体バンドル(esbuild → dist/vnlayer.js)', script: 'build-vnlayer-standalone.js' },
+  {
+    label: "tscビルド(型定義 + JSモジュール出力 → dist/)",
+    script: "build-vnlayer-tsc.js",
+  },
+  {
+    label: "単体バンドル(esbuild → dist/vnlayer.js)",
+    script: "build-vnlayer-standalone.js",
+  },
 ];
 
 for (const step of steps) {
   console.log(`\n=== ${step.label} ===`);
   try {
     execFileSync(process.execPath, [path.join(__dirname, step.script)], {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: root,
     });
   } catch (e) {
@@ -34,4 +40,4 @@ for (const step of steps) {
   }
 }
 
-console.log('\n✓ 全ビルド完了(tsc出力 + 単体バンドルの両方)。');
+console.log("\n✓ 全ビルド完了(tsc出力 + 単体バンドルの両方)。");

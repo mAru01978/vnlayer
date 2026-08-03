@@ -1,6 +1,6 @@
-import { registerTag } from '../registry';
-import { getWebLink } from '../webLinks';
-import { isNumeric, parseOnOff } from '../numericOrLabel';
+import { registerTag } from "../registry";
+import { getWebLink } from "../webLinks";
+import { isNumeric, parseOnOff } from "../numericOrLabel";
 // #web はWeb接続系(ページ遷移/新規タブ/スクロール/VN間イベント連携)をまとめた統合タグ。
 // 以前は「意図的にこの3つ以上は増やさない方針」としていたが、それは絶対的な
 // ルールではなくあくまで方針だったため、VN間イベント連携(emit)もここに含める
@@ -42,62 +42,66 @@ import { isNumeric, parseOnOff } from '../numericOrLabel';
 // inkのソースファイルは "//" を行コメントの開始として扱うため、コンパイル時点で
 // //以降が消えてしまう(この問題を避けるための、上記のリンク名方式)。
 registerTag({
-    key: 'web',
-    run: ({ args, handlers }) => {
-        const [action, target, durationArg] = args;
-        const resolveDestination = (raw) => {
-            // "/"始まりは自サイト内のパスとみなし、無条件で許可する。
-            if (raw.startsWith('/'))
-                return raw;
-            // それ以外は「登録済みリンク名」として解決する。未登録なら弾く。
-            const resolved = getWebLink(raw);
-            if (!resolved) {
-                console.warn(`[VNLayer] web:${action}:${raw} は許可済みリンクに登録されていません(ブロックしました)`);
-                return null;
-            }
-            return resolved;
-        };
-        switch (action) {
-            case 'goto': {
-                const dest = resolveDestination(target);
-                if (dest)
-                    handlers.onGoto(dest);
-                break;
-            }
-            case 'open': {
-                const dest = resolveDestination(target);
-                if (dest)
-                    handlers.onOpen(dest);
-                break;
-            }
-            case 'scroll':
-                handlers.onScroll(target, isNumeric(durationArg) ? Number(durationArg) : undefined);
-                break;
-            case 'emit': {
-                // args = ['emit', eventName, value]
-                // ink変数(setContext/getContext)は一切経由せず、直接ブラウザへ
-                // イベントを飛ばす(ink→webへの一方通行の唯一の出口)。
-                // #emit(VN間通信、selector指定)とは無関係の別の仕組み。
-                const [, eventName, rawValue] = args;
-                if (!eventName) {
-                    console.warn(`[VNLayer] web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(':')}`);
-                    break;
-                }
-                let value = rawValue;
-                if (isNumeric(rawValue)) {
-                    value = Number(rawValue);
-                }
-                else {
-                    const on = parseOnOff(rawValue);
-                    if (on !== undefined)
-                        value = on;
-                }
-                handlers.emitToWeb(eventName, value);
-                break;
-            }
-            default:
-                handlers.onUnknownTag?.(['web', action, target].filter(Boolean).join(':'));
+  key: "web",
+  run: ({ args, handlers }) => {
+    const [action, target, durationArg] = args;
+    const resolveDestination = (raw) => {
+      // "/"始まりは自サイト内のパスとみなし、無条件で許可する。
+      if (raw.startsWith("/")) return raw;
+      // それ以外は「登録済みリンク名」として解決する。未登録なら弾く。
+      const resolved = getWebLink(raw);
+      if (!resolved) {
+        console.warn(
+          `[VNLayer] web:${action}:${raw} は許可済みリンクに登録されていません(ブロックしました)`,
+        );
+        return null;
+      }
+      return resolved;
+    };
+    switch (action) {
+      case "goto": {
+        const dest = resolveDestination(target);
+        if (dest) handlers.onGoto(dest);
+        break;
+      }
+      case "open": {
+        const dest = resolveDestination(target);
+        if (dest) handlers.onOpen(dest);
+        break;
+      }
+      case "scroll":
+        handlers.onScroll(
+          target,
+          isNumeric(durationArg) ? Number(durationArg) : undefined,
+        );
+        break;
+      case "emit": {
+        // args = ['emit', eventName, value]
+        // ink変数(setContext/getContext)は一切経由せず、直接ブラウザへ
+        // イベントを飛ばす(ink→webへの一方通行の唯一の出口)。
+        // #emit(VN間通信、selector指定)とは無関係の別の仕組み。
+        const [, eventName, rawValue] = args;
+        if (!eventName) {
+          console.warn(
+            `[VNLayer] web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`,
+          );
+          break;
         }
-    },
+        let value = rawValue;
+        if (isNumeric(rawValue)) {
+          value = Number(rawValue);
+        } else {
+          const on = parseOnOff(rawValue);
+          if (on !== undefined) value = on;
+        }
+        handlers.emitToWeb(eventName, value);
+        break;
+      }
+      default:
+        handlers.onUnknownTag?.(
+          ["web", action, target].filter(Boolean).join(":"),
+        );
+    }
+  },
 });
 //# sourceMappingURL=web.js.map

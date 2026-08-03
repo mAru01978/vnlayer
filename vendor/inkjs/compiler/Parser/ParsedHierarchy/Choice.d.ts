@@ -9,37 +9,44 @@ import { Path as RuntimePath } from "../../../engine/Path";
 import { Story } from "./Story";
 import { Expression } from "./Expression/Expression";
 import { Identifier } from "./Identifier";
-export declare class Choice extends ParsedObject implements IWeavePoint, INamedContent {
-    private _condition;
-    private _innerContentContainer;
-    private _outerContainer;
-    private _runtimeChoice;
-    get runtimeChoice(): ChoicePoint;
-    private _returnToR1;
-    private _returnToR2;
-    private _r1Label;
-    private _r2Label;
-    private _divertToStartContentOuter;
-    private _divertToStartContentInner;
-    private _startContentRuntimeContainer;
-    startContent: ContentList;
-    choiceOnlyContent: ContentList;
-    innerContent: ContentList;
-    identifier?: Identifier;
-    get name(): string | null;
-    onceOnly: boolean;
-    isInvisibleDefault: boolean;
-    indentationDepth: number;
-    hasWeaveStyleInlineBrackets: boolean;
-    get condition(): Expression | null;
-    set condition(value: Expression | null);
-    get runtimeContainer(): RuntimeContainer | null;
-    get innerContentContainer(): RuntimeContainer | null;
-    get containerForCounting(): RuntimeContainer | null;
-    get runtimePath(): RuntimePath;
-    constructor(startContent: ContentList, choiceOnlyContent: ContentList, innerContent: ContentList);
-    get typeName(): string;
-    readonly GenerateRuntimeObject: () => RuntimeObject;
-    ResolveReferences(context: Story): void;
-    readonly toString: () => string;
+export declare class Choice
+  extends ParsedObject
+  implements IWeavePoint, INamedContent
+{
+  private _condition;
+  private _innerContentContainer;
+  private _outerContainer;
+  private _runtimeChoice;
+  get runtimeChoice(): ChoicePoint;
+  private _returnToR1;
+  private _returnToR2;
+  private _r1Label;
+  private _r2Label;
+  private _divertToStartContentOuter;
+  private _divertToStartContentInner;
+  private _startContentRuntimeContainer;
+  startContent: ContentList;
+  choiceOnlyContent: ContentList;
+  innerContent: ContentList;
+  identifier?: Identifier;
+  get name(): string | null;
+  onceOnly: boolean;
+  isInvisibleDefault: boolean;
+  indentationDepth: number;
+  hasWeaveStyleInlineBrackets: boolean;
+  get condition(): Expression | null;
+  set condition(value: Expression | null);
+  get runtimeContainer(): RuntimeContainer | null;
+  get innerContentContainer(): RuntimeContainer | null;
+  get containerForCounting(): RuntimeContainer | null;
+  get runtimePath(): RuntimePath;
+  constructor(
+    startContent: ContentList,
+    choiceOnlyContent: ContentList,
+    innerContent: ContentList,
+  );
+  get typeName(): string;
+  readonly GenerateRuntimeObject: () => RuntimeObject;
+  ResolveReferences(context: Story): void;
+  readonly toString: () => string;
 }

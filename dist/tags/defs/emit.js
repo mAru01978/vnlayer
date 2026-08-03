@@ -1,5 +1,5 @@
-import { registerTag } from '../registry';
-import { isNumeric, parseOnOff } from '../numericOrLabel';
+import { registerTag } from "../registry";
+import { isNumeric, parseOnOff } from "../numericOrLabel";
 // #emit はVN間イベント連携専用のタグ。他の「このVNインスタンス自身」を
 // 操作する各種タグ(#s, #bg, #cam等)と違い、#emitだけは指定した別の
 // VNインスタンス(selector、mount()時に渡したものと同じ文字列)へ向けて
@@ -24,23 +24,27 @@ import { isNumeric, parseOnOff } from '../numericOrLabel';
 // 注意: 「ink→ブラウザ(host JS)」への通知は#web:emit(tags/defs/web.ts)を
 // 使う。#emitはVN(ink)同士の連携専用で、ブラウザ側へは直接何も届かない。
 registerTag({
-    key: 'emit',
-    run: ({ args, handlers }) => {
-        const [selector, varName, rawValue] = args;
-        if (!selector || !varName) {
-            console.warn(`[VNLayer] emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(':')}`);
-            return;
-        }
-        let value = rawValue;
-        if (isNumeric(rawValue)) {
-            value = Number(rawValue);
-        }
-        else {
-            const on = parseOnOff(rawValue);
-            if (on !== undefined)
-                value = on;
-        }
-        handlers.emit(selector, { [varName]: value }, { notify: true, expose: false });
-    },
+  key: "emit",
+  run: ({ args, handlers }) => {
+    const [selector, varName, rawValue] = args;
+    if (!selector || !varName) {
+      console.warn(
+        `[VNLayer] emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`,
+      );
+      return;
+    }
+    let value = rawValue;
+    if (isNumeric(rawValue)) {
+      value = Number(rawValue);
+    } else {
+      const on = parseOnOff(rawValue);
+      if (on !== undefined) value = on;
+    }
+    handlers.emit(
+      selector,
+      { [varName]: value },
+      { notify: true, expose: false },
+    );
+  },
 });
 //# sourceMappingURL=emit.js.map

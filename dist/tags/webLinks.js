@@ -11,11 +11,11 @@
 // 行けなくなる(ホワイトリスト化)。
 const links = new Map();
 export function setWebLinks(patch) {
-    for (const [key, url] of Object.entries(patch)) {
-        links.set(key, url);
-    }
+  for (const [key, url] of Object.entries(patch)) {
+    links.set(key, url);
+  }
 }
 export function getWebLink(key) {
-    return links.get(key);
+  return links.get(key);
 }
 //# sourceMappingURL=webLinks.js.map

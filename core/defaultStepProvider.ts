@@ -1,5 +1,5 @@
-import { serverStepProvider } from './serverStepProvider';
-import type { StepProvider } from './StepProvider';
+import { serverStepProvider } from "./serverStepProvider";
+import type { StepProvider } from "./StepProvider";
 
 // context/StoryContext.tsx(Next.js用)もstandalone.ts(vnlayer.js用)も同じ
 // components/VNLayerOverlay.tsxを使うので、「stepProviderを明示的に渡さなかった場合の

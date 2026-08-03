@@ -33,4 +33,3 @@
 使えるラベル: `short`, `long`, `serve`
 
 ## `web`
-

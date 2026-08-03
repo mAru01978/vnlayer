@@ -1,6 +1,6 @@
-import { registerTag } from '../registry';
+import { registerTag } from "../registry";
 registerTag({
-    key: 'clear',
-    run: ({ handlers }) => handlers.clearLines(),
+  key: "clear",
+  run: ({ handlers }) => handlers.clearLines(),
 });
 //# sourceMappingURL=clear.js.map

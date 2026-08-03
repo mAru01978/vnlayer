@@ -18,10 +18,13 @@
 export type NavigateFn = (path: string) => void;
 
 let current: NavigateFn = (path: string) => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     window.location.href = path;
   } else {
-    console.warn('[VNLayer] onNavigate fallback called in a non-browser environment:', path);
+    console.warn(
+      "[VNLayer] onNavigate fallback called in a non-browser environment:",
+      path,
+    );
   }
 };
 
