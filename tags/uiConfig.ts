@@ -15,7 +15,7 @@
 // 真偽値は全てon/off(boolean)で統一している。true/falseという値そのものは
 // タグの引数としては使わない(タグ設計方針: 数値・小数・意味のあるラベルのみ)。
 
-export type BacklogMode = 'perInstance' | 'global';
+export type BacklogMode = "perInstance" | "global";
 
 export type UiConfig = {
   messageWindow: {
@@ -48,7 +48,13 @@ export type UiConfig = {
     // 一瞬消えるのを許容したくない場合向け)。
     autoClearOnChoose: boolean;
   };
-  backlog: { skin?: string; mode: BacklogMode; show: boolean; anchor?: string; offset?: number };
+  backlog: {
+    skin?: string;
+    mode: BacklogMode;
+    show: boolean;
+    anchor?: string;
+    offset?: number;
+  };
   character: { clickable: boolean };
   font: { family?: string; sizePx?: number };
   // stickToViewport:on(既定) → overlayモード時、キャラ/背景/UIがビューポートに
@@ -73,35 +79,57 @@ export type UiConfig = {
 };
 
 export type UiConfigPatch = {
-  messageWindow?: Partial<UiConfig['messageWindow']>;
-  choice?: Partial<UiConfig['choice']>;
-  backlog?: Partial<UiConfig['backlog']>;
-  character?: Partial<UiConfig['character']>;
-  font?: Partial<UiConfig['font']>;
-  stage?: Partial<UiConfig['stage']>;
+  messageWindow?: Partial<UiConfig["messageWindow"]>;
+  choice?: Partial<UiConfig["choice"]>;
+  backlog?: Partial<UiConfig["backlog"]>;
+  character?: Partial<UiConfig["character"]>;
+  font?: Partial<UiConfig["font"]>;
+  stage?: Partial<UiConfig["stage"]>;
 };
 
 const defaultUiConfig: UiConfig = {
-  messageWindow: { interactive: true, offset: 130, autoHideOnCharHide: true, autoHideOnBgChange: true },
-  choice: { spacing: 8, anchor: undefined, offset: 130, interactive: true, autoClearOnChoose: true },
-  backlog: { mode: 'perInstance', show: true, anchor: undefined, offset: undefined },
+  messageWindow: {
+    interactive: true,
+    offset: 130,
+    autoHideOnCharHide: true,
+    autoHideOnBgChange: true,
+  },
+  choice: {
+    spacing: 8,
+    anchor: undefined,
+    offset: 130,
+    interactive: true,
+    autoClearOnChoose: true,
+  },
+  backlog: {
+    mode: "perInstance",
+    show: true,
+    anchor: undefined,
+    offset: undefined,
+  },
   character: { clickable: true },
   font: {},
   stage: { stickToViewport: true, heightPx: undefined, widthPx: undefined },
 };
 
-const GLOBAL_SCOPE = '__global__';
+const GLOBAL_SCOPE = "__global__";
 
 // スコープ(グローバルは特別なキー、インスタンス別は選択肢文字列そのまま)ごとに
 // 「差分(patch)」だけを保持する。フルの設定値ではなく差分で持つことで、
 // 「そのスコープで明示的に設定した項目だけ」がグローバルの上に重なるようにする。
 const patchesByScope = new Map<string, UiConfigPatch>();
 
-function mergeSection<T extends object>(base: T, patch: Partial<T> | undefined): T {
+function mergeSection<T extends object>(
+  base: T,
+  patch: Partial<T> | undefined,
+): T {
   return patch ? { ...base, ...patch } : base;
 }
 
-function mergePatch(base: UiConfig, patch: UiConfigPatch | undefined): UiConfig {
+function mergePatch(
+  base: UiConfig,
+  patch: UiConfigPatch | undefined,
+): UiConfig {
   if (!patch) return base;
   return {
     messageWindow: mergeSection(base.messageWindow, patch.messageWindow),

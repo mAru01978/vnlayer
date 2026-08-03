@@ -1,8 +1,8 @@
-'use client';
+"use client";
 import { jsx as _jsx } from "react/jsx-runtime";
-import { createContext, useContext } from 'react';
-import { useStoryEngine } from '../core/useStoryEngine';
-import { getDefaultOnNavigate } from '../core/defaultNavigate';
+import { createContext, useContext } from "react";
+import { useStoryEngine } from "../core/useStoryEngine";
+import { getDefaultOnNavigate } from "../core/defaultNavigate";
 // 修正メモ(切り出し対応): 以前はここで data/characterSlots.json を直接importして
 // いたが、それだとVNLayerフォルダの外(ホストアプリ側のdata/フォルダ)を
 // 直接参照してしまい、VNLayerを別リポジトリに切り出した瞬間にimportが壊れる。
@@ -22,13 +22,19 @@ import { getDefaultOnNavigate } from '../core/defaultNavigate';
 // (未設定ならlocation.href代入、Next.js運用でNextNavigationBridgeをマウント
 // していればrouter.push)が使われる。
 const StoryContext = createContext(null);
-export const StoryProvider = ({ children, scenario = 'Scenario1', stepProvider, onNavigate, instanceId, }) => {
-    const engine = useStoryEngine(scenario, {
-        stepProvider,
-        onNavigate: onNavigate ?? getDefaultOnNavigate(),
-        instanceId,
-    });
-    return _jsx(StoryContext.Provider, { value: engine, children: children });
+export const StoryProvider = ({
+  children,
+  scenario = "Scenario1",
+  stepProvider,
+  onNavigate,
+  instanceId,
+}) => {
+  const engine = useStoryEngine(scenario, {
+    stepProvider,
+    onNavigate: onNavigate ?? getDefaultOnNavigate(),
+    instanceId,
+  });
+  return _jsx(StoryContext.Provider, { value: engine, children: children });
 };
 export const useStory = () => useContext(StoryContext);
 //# sourceMappingURL=StoryContext.js.map

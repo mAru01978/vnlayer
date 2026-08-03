@@ -23,9 +23,19 @@ if (item.exists) {
  *
  */
 export interface TryGetResult<T> {
-    result: T;
-    exists: boolean;
+  result: T;
+  exists: boolean;
 }
-export declare function tryGetValueFromMap<K, V>(map: Map<K, V> | null, key: K, value: V): TryGetResult<V>;
-export declare function tryParseInt(value: any, defaultValue?: number): TryGetResult<number>;
-export declare function tryParseFloat(value: any, defaultValue?: number): TryGetResult<number>;
+export declare function tryGetValueFromMap<K, V>(
+  map: Map<K, V> | null,
+  key: K,
+  value: V,
+): TryGetResult<V>;
+export declare function tryParseInt(
+  value: any,
+  defaultValue?: number,
+): TryGetResult<number>;
+export declare function tryParseFloat(
+  value: any,
+  defaultValue?: number,
+): TryGetResult<number>;

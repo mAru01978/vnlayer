@@ -1,4 +1,4 @@
 export type MsgConfig = {
-    transientDurationMs: number;
+  transientDurationMs: number;
 };
 //# sourceMappingURL=msg.d.ts.map

@@ -1,8 +1,8 @@
-'use client';
-import { createContext, useContext, type ReactNode } from 'react';
-import { useStoryEngine } from '../core/useStoryEngine';
-import type { StepProvider } from '../core/StepProvider';
-import { getDefaultOnNavigate } from '../core/defaultNavigate';
+"use client";
+import { createContext, useContext, type ReactNode } from "react";
+import { useStoryEngine } from "../core/useStoryEngine";
+import type { StepProvider } from "../core/StepProvider";
+import { getDefaultOnNavigate } from "../core/defaultNavigate";
 
 // 修正メモ(切り出し対応): 以前はここで data/characterSlots.json を直接importして
 // いたが、それだとVNLayerフォルダの外(ホストアプリ側のdata/フォルダ)を
@@ -23,11 +23,13 @@ import { getDefaultOnNavigate } from '../core/defaultNavigate';
 // (未設定ならlocation.href代入、Next.js運用でNextNavigationBridgeをマウント
 // していればrouter.push)が使われる。
 
-const StoryContext = createContext<ReturnType<typeof useStoryEngine> | null>(null);
+const StoryContext = createContext<ReturnType<typeof useStoryEngine> | null>(
+  null,
+);
 
 export const StoryProvider = ({
   children,
-  scenario = 'Scenario1',
+  scenario = "Scenario1",
   stepProvider,
   onNavigate,
   instanceId,
@@ -47,7 +49,9 @@ export const StoryProvider = ({
     instanceId,
   });
 
-  return <StoryContext.Provider value={engine}>{children}</StoryContext.Provider>;
+  return (
+    <StoryContext.Provider value={engine}>{children}</StoryContext.Provider>
+  );
 };
 
 export const useStory = () => useContext(StoryContext);

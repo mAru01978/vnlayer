@@ -8,12 +8,12 @@
 // (# sprite:alice:initPos:30:55 、 # bg:name:color:#f3e3c8 等)。
 let slots = {};
 export function setBackgroundSlots(next) {
-    slots = { ...slots, ...next };
+  slots = { ...slots, ...next };
 }
 export function getBackgroundSlot(name) {
-    return slots[name];
+  return slots[name];
 }
 export function getAllBackgroundSlots() {
-    return slots;
+  return slots;
 }
 //# sourceMappingURL=backgroundSlots.js.map

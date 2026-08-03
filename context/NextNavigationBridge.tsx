@@ -1,7 +1,7 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { setDefaultOnNavigate } from '../core/defaultNavigate';
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { setDefaultOnNavigate } from "../core/defaultNavigate";
 
 // Next.js運用では、アプリのどこか1箇所(例: app/layout.tsxの中の'use client'な
 // ラッパー、または各ページ)でこれを1回マウントしておくと、goto:タグが
