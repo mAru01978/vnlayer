@@ -1,4 +1,4 @@
 export type TypeWaitConfig = {
-    readingBufferMs: number;
+  readingBufferMs: number;
 };
 //# sourceMappingURL=type_wait.d.ts.map

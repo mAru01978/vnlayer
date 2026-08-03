@@ -22,10 +22,10 @@
 //   3. 問題無ければ git add vendor/ package.json package-lock.json && git commit
 // までやってから確定させること。
 
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { execSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const { execSync } = require("child_process");
 
 // 移動メモ(フェーズ2): scripts/ が VNLayer/scripts/ に1階層移動したので、
 // __dirnameからリポジトリルートまでの相対距離が1つ増えている。
@@ -37,15 +37,15 @@ const { execSync } = require('child_process');
 // data/(シナリオ・Ink本文)は逆にVNLayerを埋め込む側のプロジェクトが持つべき
 // コンテンツなので、compile-story.js等はこれまで通り埋め込み先のdata/を見に行く
 // (vendor/inkjsだけがVNLayer自身のエンジン側の依存、という区別)。
-const root = path.join(__dirname, '..');
-const vendorDir = path.join(root, 'vendor');
+const root = path.join(__dirname, "..");
+const vendorDir = path.join(root, "vendor");
 
 // vendorで管理するパッケージ一覧。
 // 注意: "inkjs-compiler" という独立したnpmパッケージは存在しない。
 // inkjsパッケージ自体が package.json の bin フィールドで
 // "inkjs" と "inkjs-compiler" という2つのコマンド別名を登録しているだけで、
 // 実体は同じ1つのパッケージ(inkjs)。なのでvendor対象は inkjs だけでよい。
-const VENDORED_PACKAGES = ['inkjs'];
+const VENDORED_PACKAGES = ["inkjs"];
 
 const requested = process.argv.slice(2);
 const targets = requested.length > 0 ? requested : VENDORED_PACKAGES;
@@ -56,24 +56,31 @@ let hadError = false;
 
 for (const pkgName of targets) {
   if (!VENDORED_PACKAGES.includes(pkgName)) {
-    console.error(`"${pkgName}" はvendor管理対象ではありません(対象: ${VENDORED_PACKAGES.join(', ')})`);
+    console.error(
+      `"${pkgName}" はvendor管理対象ではありません(対象: ${VENDORED_PACKAGES.join(", ")})`,
+    );
     hadError = true;
     continue;
   }
 
   console.log(`\n[update-vendor] ${pkgName} の最新版を取得しています...`);
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vendor-update-'));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vendor-update-"));
 
   try {
     // 本体のnode_modules/package-lock.jsonには一切触れず、
     // 一時ディレクトリに単独でインストールして取得する。
-    execSync(`npm install ${pkgName}@latest --prefix "${tempDir}" --no-save --no-package-lock`, {
-      stdio: 'inherit',
-    });
+    execSync(
+      `npm install ${pkgName}@latest --prefix "${tempDir}" --no-save --no-package-lock`,
+      {
+        stdio: "inherit",
+      },
+    );
 
-    const src = path.join(tempDir, 'node_modules', pkgName);
+    const src = path.join(tempDir, "node_modules", pkgName);
     if (!fs.existsSync(src)) {
-      console.error(`[update-vendor] ${pkgName} の取得に失敗しました(${src} が見つかりません)`);
+      console.error(
+        `[update-vendor] ${pkgName} の取得に失敗しました(${src} が見つかりません)`,
+      );
       hadError = true;
       continue;
     }
@@ -90,29 +97,38 @@ for (const pkgName of targets) {
     // (inkjs自体は "zero dependency" でランタイムに外部パッケージを必要としないため、
     //  安全に削除できる。他のパッケージをvendor対象に増やす場合は、本当に
     //  ランタイム依存が無いか確認してから同じ扱いにすること)
-    const nestedNodeModules = path.join(dest, 'node_modules');
+    const nestedNodeModules = path.join(dest, "node_modules");
     if (fs.existsSync(nestedNodeModules)) {
       fs.rmSync(nestedNodeModules, { recursive: true, force: true });
-      console.log(`[update-vendor] ${pkgName} 内の不要な node_modules(開発用ツール)を削除しました。`);
+      console.log(
+        `[update-vendor] ${pkgName} 内の不要な node_modules(開発用ツール)を削除しました。`,
+      );
     }
 
-    const pkgJsonPath = path.join(dest, 'package.json');
+    const pkgJsonPath = path.join(dest, "package.json");
     const version = fs.existsSync(pkgJsonPath)
-      ? JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).version
-      : '(不明)';
-    console.log(`[update-vendor] ${pkgName}@${version} を vendor/${pkgName} に反映しました。`);
+      ? JSON.parse(fs.readFileSync(pkgJsonPath, "utf8")).version
+      : "(不明)";
+    console.log(
+      `[update-vendor] ${pkgName}@${version} を vendor/${pkgName} に反映しました。`,
+    );
   } catch (e) {
-    console.error(`[update-vendor] ${pkgName} の更新中にエラーが発生しました:`, e.message);
+    console.error(
+      `[update-vendor] ${pkgName} の更新中にエラーが発生しました:`,
+      e.message,
+    );
     hadError = true;
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 }
 
-console.log('\n[update-vendor] 完了。');
-console.log('次の手順で反映を確定させてください:');
-console.log('  1. npm install');
-console.log('  2. npm run compile-story / npm run dev で問題なく動くか確認');
-console.log('  3. 問題無ければ: git add vendor/ package.json package-lock.json && git commit');
+console.log("\n[update-vendor] 完了。");
+console.log("次の手順で反映を確定させてください:");
+console.log("  1. npm install");
+console.log("  2. npm run compile-story / npm run dev で問題なく動くか確認");
+console.log(
+  "  3. 問題無ければ: git add vendor/ package.json package-lock.json && git commit",
+);
 
 if (hadError) process.exit(1);

@@ -2,8 +2,8 @@
   "name": "vnlayer",
   "version": "0.1.0",
   "private": true,
-   "scripts": {
-   "list:tags": "node scripts/list-tags.js",
+  "scripts": {
+    "list:tags": "node scripts/list-tags.js",
     "compile-story": "node scripts/compile-story.js",
     "add:tag": "node scripts/new-tag.js",
     "add:char": "node scripts/new-character.js",
@@ -13,7 +13,7 @@
     "build": "node scripts/build-vnlayer-tsc.js",
     "build:vnlayer": "node scripts/build-vnlayer-standalone.js",
     "build:all": "node scripts/build.js"
-    },
+  },
   "description": "Ink駆動の軽量VN演出レイヤー。Reactコンポーネントとしても、vnlayer.js(script読み込み+API経由)としても使える。",
   "main": "dist/api.js",
   "types": "dist/api.d.ts",
@@ -38,19 +38,26 @@
     "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": false },
-    "react-dom": { "optional": false }
+    "react": {
+      "optional": false
+    },
+    "react-dom": {
+      "optional": false
+    }
   },
   "dependencies": {
-    "inkjs": "file:./vendor/inkjs"
+    "inkjs": "file:./vendor/inkjs",
+    "jotai": "^2.9.0",
+    "jotai-family": "latest"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "react": "^19",
-    "react-dom": "^19",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "esbuild": "^0.24.0",
-    "next": "^15"
+    "next": "^15",
+    "prettier": "^3.9.6",
+    "react": "^19",
+    "react-dom": "^19",
+    "typescript": "^5"
   }
 }

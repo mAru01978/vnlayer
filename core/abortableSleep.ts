@@ -8,12 +8,15 @@
 // 呼び出し側(useStoryEngine.ts)がタグ実行1回(advance()呼び出し1回)ごとに
 // 新しいAbortControllerを用意し、割り込み発生時にcontroller.abort()するだけで、
 // このsleepを使っている待ち処理全部が一斉に早期終了する。
-export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
+export function abortableSleep(
+  ms: number,
+  signal?: AbortSignal,
+): Promise<void> {
   if (signal?.aborted) return Promise.resolve();
 
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
+      signal?.removeEventListener("abort", onAbort);
       resolve();
     }, ms);
 
@@ -22,6 +25,6 @@ export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> 
       resolve();
     };
 
-    signal?.addEventListener('abort', onAbort, { once: true });
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }

@@ -1,4 +1,4 @@
 export declare enum CustomFlags {
-    ParsingString = 1,
-    TagActive = 2
+  ParsingString = 1,
+  TagActive = 2,
 }

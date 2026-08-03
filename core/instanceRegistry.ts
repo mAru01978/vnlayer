@@ -28,11 +28,14 @@
 // どちらでも書ける(mount("#vn2", ...)のような実際のCSSセレクタ側は
 // 今まで通り"#"付きのまま)。
 function normalizeSelector(selector: string): string {
-  return selector.replace(/^[#.@]/, '');
+  return selector.replace(/^[#.@]/, "");
 }
 
 export type EmitTarget = {
-  setContextVars: (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => Promise<void>;
+  setContextVars: (
+    vars: Record<string, unknown>,
+    options?: { notify?: boolean; expose?: boolean },
+  ) => Promise<void>;
 };
 
 const registry = new Map<string, EmitTarget>();
@@ -48,11 +51,13 @@ export function unregisterInstance(selector: string): void {
 export async function emitToInstance(
   selector: string,
   vars: Record<string, unknown>,
-  options?: { notify?: boolean; expose?: boolean }
+  options?: { notify?: boolean; expose?: boolean },
 ): Promise<void> {
   const target = registry.get(normalizeSelector(selector));
   if (!target) {
-    console.warn(`[VNLayer] emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`);
+    console.warn(
+      `[VNLayer] emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`,
+    );
     return;
   }
   await target.setContextVars(vars, options);
