@@ -11,31 +11,51 @@ import { Story as RuntimeStory } from "../../../engine/Story";
 import { SymbolType } from "./SymbolType";
 import { Identifier } from "./Identifier";
 export declare class Story extends FlowBase {
-    static readonly IsReservedKeyword: (name?: string) => boolean;
-    private _errorHandler;
-    private _hadError;
-    private _hadWarning;
-    private _dontFlattenContainers;
-    private _listDefs;
-    get flowLevel(): FlowLevel;
-    get hadError(): boolean;
-    get hadWarning(): boolean;
-    constants: Map<string, Expression>;
-    externals: Map<string, ExternalDeclaration>;
-    countAllVisits: boolean;
-    constructor(toplevelObjects: ParsedObject[], isInclude?: boolean);
-    get typeName(): string;
-    PreProcessTopLevelObjects(topLevelContent: ParsedObject[]): void;
-    readonly ExportRuntime: (errorHandler?: ErrorHandler | null) => RuntimeStory | null;
-    readonly ResolveList: (listName: string) => ListDefinition | null;
-    readonly ResolveListItem: (listName: string | null, itemName: string, source?: ParsedObject | null) => ListElementDefinition | null;
-    readonly FlattenContainersIn: (container: RuntimeContainer) => void;
-    readonly TryFlattenContainer: (container: RuntimeContainer) => void;
-    readonly Error: (message: string, source: ParsedObject | null | undefined, isWarning: boolean | null | undefined) => void;
-    readonly ResetError: () => void;
-    readonly IsExternal: (namedFuncTarget: string) => boolean;
-    readonly AddExternal: (decl: ExternalDeclaration) => void;
-    readonly DontFlattenContainer: (container: RuntimeContainer) => void;
-    readonly NameConflictError: (obj: ParsedObject, name: string, existingObj: ParsedObject, typeNameToPrint: string) => void;
-    readonly CheckForNamingCollisions: (obj: ParsedObject, identifier: Identifier, symbolType: SymbolType, typeNameOverride?: string) => void;
+  static readonly IsReservedKeyword: (name?: string) => boolean;
+  private _errorHandler;
+  private _hadError;
+  private _hadWarning;
+  private _dontFlattenContainers;
+  private _listDefs;
+  get flowLevel(): FlowLevel;
+  get hadError(): boolean;
+  get hadWarning(): boolean;
+  constants: Map<string, Expression>;
+  externals: Map<string, ExternalDeclaration>;
+  countAllVisits: boolean;
+  constructor(toplevelObjects: ParsedObject[], isInclude?: boolean);
+  get typeName(): string;
+  PreProcessTopLevelObjects(topLevelContent: ParsedObject[]): void;
+  readonly ExportRuntime: (
+    errorHandler?: ErrorHandler | null,
+  ) => RuntimeStory | null;
+  readonly ResolveList: (listName: string) => ListDefinition | null;
+  readonly ResolveListItem: (
+    listName: string | null,
+    itemName: string,
+    source?: ParsedObject | null,
+  ) => ListElementDefinition | null;
+  readonly FlattenContainersIn: (container: RuntimeContainer) => void;
+  readonly TryFlattenContainer: (container: RuntimeContainer) => void;
+  readonly Error: (
+    message: string,
+    source: ParsedObject | null | undefined,
+    isWarning: boolean | null | undefined,
+  ) => void;
+  readonly ResetError: () => void;
+  readonly IsExternal: (namedFuncTarget: string) => boolean;
+  readonly AddExternal: (decl: ExternalDeclaration) => void;
+  readonly DontFlattenContainer: (container: RuntimeContainer) => void;
+  readonly NameConflictError: (
+    obj: ParsedObject,
+    name: string,
+    existingObj: ParsedObject,
+    typeNameToPrint: string,
+  ) => void;
+  readonly CheckForNamingCollisions: (
+    obj: ParsedObject,
+    identifier: Identifier,
+    symbolType: SymbolType,
+    typeNameOverride?: string,
+  ) => void;
 }

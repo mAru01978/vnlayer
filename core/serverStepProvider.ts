@@ -1,12 +1,15 @@
-import type { StepProvider } from './StepProvider';
-import type { RunResult } from './types';
+import type { StepProvider } from "./StepProvider";
+import type { RunResult } from "./types";
 
-async function callStoryApi<T = RunResult>(endpoint: string, body: Record<string, unknown>): Promise<T> {
+async function callStoryApi<T = RunResult>(
+  endpoint: string,
+  body: Record<string, unknown>,
+): Promise<T> {
   const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    credentials: 'include', // 別オリジンのサーバーでもcookieセッションを使えるように
+    credentials: "include", // 別オリジンのサーバーでもcookieセッションを使えるように
   });
   if (!res.ok) {
     throw new Error(`story api error: ${res.status}`);
@@ -21,15 +24,25 @@ export type ServerStepProviderOptions = {
   endpoint?: string;
 };
 
-export function createServerStepProvider(options: ServerStepProviderOptions = {}): StepProvider {
-  const endpoint = options.endpoint ?? '/api/story';
+export function createServerStepProvider(
+  options: ServerStepProviderOptions = {},
+): StepProvider {
+  const endpoint = options.endpoint ?? "/api/story";
   return {
-    init: (scenario) => callStoryApi<RunResult>(endpoint, { action: 'init', scenario }),
-    choose: (scenario, index) => callStoryApi<RunResult>(endpoint, { action: 'choose', index, scenario }),
+    init: (scenario) =>
+      callStoryApi<RunResult>(endpoint, { action: "init", scenario }),
+    choose: (scenario, index) =>
+      callStoryApi<RunResult>(endpoint, { action: "choose", index, scenario }),
     idle: async (scenario, varName, value) => {
-      await callStoryApi<{ ok: boolean }>(endpoint, { action: 'idle', scenario, varName, value });
+      await callStoryApi<{ ok: boolean }>(endpoint, {
+        action: "idle",
+        scenario,
+        varName,
+        value,
+      });
     },
-    reset: (scenario) => callStoryApi<RunResult>(endpoint, { action: 'reset', scenario }),
+    reset: (scenario) =>
+      callStoryApi<RunResult>(endpoint, { action: "reset", scenario }),
   };
 }
 

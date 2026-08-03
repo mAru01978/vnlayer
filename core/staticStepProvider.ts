@@ -1,7 +1,7 @@
-import { Story } from 'inkjs';
-import { continueUntilChoice } from './inkStepRunner';
-import type { StepProvider } from './StepProvider';
-import type { RunResult, VisualState } from './types';
+import { Story } from "inkjs";
+import { continueUntilChoice } from "./inkStepRunner";
+import type { StepProvider } from "./StepProvider";
+import type { RunResult, VisualState } from "./types";
 
 // index.html + vnlayer.js + assets(素材・ink) だけで動く運用向けのStepProvider。
 // Next.jsのcookieセッション/replay方式とは違い、ページを開いている間はブラウザの
@@ -26,21 +26,29 @@ type StoryHandle = { story: Story; visual: VisualState };
 // Storyインスタンスは必ず1つしか作られない。
 const liveStoryPromises = new Map<string, Promise<StoryHandle>>();
 
-async function loadStoryJson(scenario: string, dataBaseUrl: string): Promise<Record<string, unknown>> {
+async function loadStoryJson(
+  scenario: string,
+  dataBaseUrl: string,
+): Promise<Record<string, unknown>> {
   const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
   if (!res.ok) {
-    throw new Error(`[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`);
+    throw new Error(
+      `[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`,
+    );
   }
   return res.json();
 }
 
-async function createStoryHandle(scenario: string, dataBaseUrl: string): Promise<StoryHandle> {
+async function createStoryHandle(
+  scenario: string,
+  dataBaseUrl: string,
+): Promise<StoryHandle> {
   const storyJson = await loadStoryJson(scenario, dataBaseUrl);
   const story = new Story(storyJson);
   story.onError = (message: string, type: unknown) => {
     console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
   };
-  return { story, visual: { bg: '', characters: {}, speaker: '' } };
+  return { story, visual: { bg: "", characters: {}, speaker: "" } };
 }
 
 export type StaticStepProviderOptions = {
@@ -49,8 +57,10 @@ export type StaticStepProviderOptions = {
   dataBaseUrl?: string;
 };
 
-export function createStaticStepProvider(options: StaticStepProviderOptions = {}): StepProvider {
-  const dataBaseUrl = options.dataBaseUrl ?? './data';
+export function createStaticStepProvider(
+  options: StaticStepProviderOptions = {},
+): StepProvider {
+  const dataBaseUrl = options.dataBaseUrl ?? "./data";
 
   function ensureStory(scenario: string): Promise<StoryHandle> {
     let handlePromise = liveStoryPromises.get(scenario);
@@ -90,14 +100,14 @@ export function createStaticStepProvider(options: StaticStepProviderOptions = {}
         // 早期に弾いて分かりやすい警告にしておく。
         console.warn(
           `[VNLayer static] choose(${index}) ignored: only ${validCount} choice(s) are currently available ` +
-            `(likely a stale #tick timer firing after the story already advanced).`
+            `(likely a stale #tick timer firing after the story already advanced).`,
         );
         return runAndCache(scenario, handle);
       }
       try {
         handle.story.ChooseChoiceIndex(index);
       } catch (e) {
-        console.warn('[VNLayer static] ChooseChoiceIndex failed:', e);
+        console.warn("[VNLayer static] ChooseChoiceIndex failed:", e);
       }
       return runAndCache(scenario, handle);
     },

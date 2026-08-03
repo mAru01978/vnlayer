@@ -1,14 +1,28 @@
-'use client';
-import { createRoot, type Root } from 'react-dom/client';
-import { createElement } from 'react';
-import VNLayerOverlay, { type VNLayerMode, type VNLayerHandle } from './components/VNLayerOverlay';
-import type { UiAnchor } from './components/StageView';
-import { setCharacterSlots, type CharacterSlot } from './tags/characterSlots';
-import { setBackgroundSlots, type BackgroundSlot } from './tags/backgroundSlots';
-import { setTagConfig, setUiConfig, type UiConfigPatch, setWebLinks } from './tags/index';
-import type { StepProvider } from './core/StepProvider';
-import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
-import { createStaticStepProvider } from './core/staticStepProvider';
+"use client";
+import { createRoot, type Root } from "react-dom/client";
+import { createElement } from "react";
+import VNLayerOverlay, {
+  type VNLayerMode,
+  type VNLayerHandle,
+} from "./components/VNLayerOverlay";
+import type { UiAnchor } from "./components/StageView";
+import { setCharacterSlots, type CharacterSlot } from "./tags/characterSlots";
+import {
+  setBackgroundSlots,
+  type BackgroundSlot,
+} from "./tags/backgroundSlots";
+import {
+  setTagConfig,
+  setUiConfig,
+  type UiConfigPatch,
+  setWebLinks,
+} from "./tags/index";
+import type { StepProvider } from "./core/StepProvider";
+import {
+  serverStepProvider,
+  createServerStepProvider,
+} from "./core/serverStepProvider";
+import { createStaticStepProvider } from "./core/staticStepProvider";
 
 // フェーズ1のゴール: 「VNLayer.mount("#vn", {scenario, mode})」のような
 // 命令的APIを、既存のReactコンポーネント(VNLayerOverlay)の上に薄く被せて提供する。
@@ -62,7 +76,9 @@ function resolveElement(selector: string): Element {
 //   await VNLayer.setContext({...}, "#vn"); // ← "instance not ready"警告が出ない
 function mount(selector: string, options: MountOptions): Promise<void> {
   if (instances.has(selector)) {
-    console.warn(`[VNLayer] "${selector}" is already mounted. Call unmount() first if you want to remount.`);
+    console.warn(
+      `[VNLayer] "${selector}" is already mounted. Call unmount() first if you want to remount.`,
+    );
     return Promise.resolve();
   }
 
@@ -74,7 +90,7 @@ function mount(selector: string, options: MountOptions): Promise<void> {
   return new Promise<void>((resolve) => {
     root.render(
       createElement(VNLayerOverlay, {
-        scenario: options.scenario ?? 'Scenario1',
+        scenario: options.scenario ?? "Scenario1",
         mode: options.mode,
         uiAnchor: options.uiAnchor,
         showUi: options.showUi,
@@ -84,7 +100,7 @@ function mount(selector: string, options: MountOptions): Promise<void> {
           instance.handle = handle;
           resolve();
         },
-      })
+      }),
     );
   });
 }
@@ -122,23 +138,27 @@ function unmount(selector: string): Promise<void> {
 async function setContext(
   vars: Record<string, unknown>,
   selector?: string,
-  options?: { notify?: boolean; expose?: boolean }
+  options?: { notify?: boolean; expose?: boolean },
 ): Promise<void> {
-  const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+  const targets = selector
+    ? [instances.get(selector)].filter(Boolean)
+    : Array.from(instances.values());
 
   if (targets.length === 0) {
-    console.warn('[VNLayer] setContext called but no instance is mounted yet.');
+    console.warn("[VNLayer] setContext called but no instance is mounted yet.");
     return;
   }
 
   await Promise.all(
     targets.map((instance) => {
       if (!instance?.handle) {
-        console.warn('[VNLayer] setContext called before the instance finished initializing; ignoring this call.');
+        console.warn(
+          "[VNLayer] setContext called before the instance finished initializing; ignoring this call.",
+        );
         return Promise.resolve();
       }
       return instance.handle.setContextVars(vars, options);
-    })
+    }),
   );
 }
 
@@ -153,7 +173,10 @@ async function setContext(
 //   const { hp } = await VNLayer.getContext("hp", "#vn");
 //   const vars = await VNLayer.getContext(["hp", "mp"], "#vn");
 //   const all = await VNLayer.getContext(undefined, "#vn"); // exposeされてる値すべて
-async function getContext(varNames?: string | string[], selector?: string): Promise<Record<string, unknown>> {
+async function getContext(
+  varNames?: string | string[],
+  selector?: string,
+): Promise<Record<string, unknown>> {
   let instance: Instance | undefined;
   if (selector) {
     instance = instances.get(selector);
@@ -161,17 +184,24 @@ async function getContext(varNames?: string | string[], selector?: string): Prom
     instance = instances.values().next().value;
   } else {
     console.warn(
-      `[VNLayer] getContext: ${instances.size} instance(s) are mounted; please specify a selector to disambiguate.`
+      `[VNLayer] getContext: ${instances.size} instance(s) are mounted; please specify a selector to disambiguate.`,
     );
     return {};
   }
 
   if (!instance?.handle) {
-    console.warn('[VNLayer] getContext called before the instance finished initializing, or no matching instance is mounted.');
+    console.warn(
+      "[VNLayer] getContext called before the instance finished initializing, or no matching instance is mounted.",
+    );
     return {};
   }
 
-  const names = varNames === undefined ? undefined : Array.isArray(varNames) ? varNames : [varNames];
+  const names =
+    varNames === undefined
+      ? undefined
+      : Array.isArray(varNames)
+        ? varNames
+        : [varNames];
   return instance.handle.getContextVars(names);
 }
 
@@ -200,21 +230,25 @@ type ConfigureOptions = {
 // 何を表示するか・いつ出すかは完全にホスト側またはInk側(本物の選択肢として
 // "+[はじめから] -> home" を書く等)に委ねる形にした。
 async function reset(selector?: string): Promise<void> {
-  const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+  const targets = selector
+    ? [instances.get(selector)].filter(Boolean)
+    : Array.from(instances.values());
 
   if (targets.length === 0) {
-    console.warn('[VNLayer] reset called but no instance is mounted yet.');
+    console.warn("[VNLayer] reset called but no instance is mounted yet.");
     return;
   }
 
   await Promise.all(
     targets.map((instance) => {
       if (!instance?.handle) {
-        console.warn('[VNLayer] reset called before the instance finished initializing; ignoring this call.');
+        console.warn(
+          "[VNLayer] reset called before the instance finished initializing; ignoring this call.",
+        );
         return Promise.resolve();
       }
       return instance.handle.resetStory();
-    })
+    }),
   );
 }
 
@@ -223,7 +257,10 @@ async function reset(selector?: string): Promise<void> {
 // uiだけは notify/setContext と同じ考え方でselectorを渡せる:
 //   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
 //   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
-async function configure(options: ConfigureOptions, selector?: string): Promise<void> {
+async function configure(
+  options: ConfigureOptions,
+  selector?: string,
+): Promise<void> {
   if (options.characterSlots) setCharacterSlots(options.characterSlots);
   if (options.backgroundSlots) setBackgroundSlots(options.backgroundSlots);
   if (options.tags) {
@@ -253,6 +290,6 @@ export const VNLayer = {
 
 // ブラウザで素朴に <script> 読み込みする運用(将来のvnlayer.js)に備えて
 // window.VNLayer にも公開しておく。Next.jsのSSR中(windowが無い環境)では何もしない。
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).VNLayer = VNLayer;
 }

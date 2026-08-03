@@ -1,6 +1,6 @@
-import { registerTag } from '../registry';
+import { registerTag } from "../registry";
 registerTag({
-    key: 'goto',
-    run: ({ args, handlers }) => handlers.onGoto(args.join(':')),
+  key: "goto",
+  run: ({ args, handlers }) => handlers.onGoto(args.join(":")),
 });
 //# sourceMappingURL=goto.js.map

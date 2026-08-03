@@ -1,4 +1,4 @@
-import type { RunResult } from './types';
+import type { RunResult } from "./types";
 
 // 「Inkを1歩進めて、次の選択肢が出るところまでの結果を返す」ための抽象インターフェース。
 // useStoryEngineはこのインターフェースの実装(StepProvider)を受け取って動くだけで、

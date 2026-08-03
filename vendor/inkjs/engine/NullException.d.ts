@@ -8,8 +8,7 @@
  * check the offending value and it it's null, throw this exception using
  * `throwNullException(name: string)`.
  */
-export declare class NullException extends Error {
-}
+export declare class NullException extends Error {}
 /**
  * Throw a NullException.
  *

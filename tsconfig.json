@@ -14,10 +14,15 @@
     "isolatedModules": true,
     "jsx": "react-jsx"
   },
-  "include": ["core", "tags", "components", "context", "scripts", "api.ts", "standalone.ts", "global.d.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "vendor"
-  ]
+  "include": [
+    "core",
+    "tags",
+    "components",
+    "context",
+    "scripts",
+    "api.ts",
+    "standalone.ts",
+    "global.d.ts"
+  ],
+  "exclude": ["node_modules", "dist", "vendor"]
 }
