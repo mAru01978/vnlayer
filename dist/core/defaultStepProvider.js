@@ -6,9 +6,9 @@ import { serverStepProvider } from "./serverStepProvider";
 // - 静的運用(vnlayer.js): standalone.tsが起動時に setDefaultStepProvider(createStaticStepProvider(...)) を呼ぶ
 let current = serverStepProvider;
 export function setDefaultStepProvider(provider) {
-  current = provider;
+    current = provider;
 }
 export function getDefaultStepProvider() {
-  return current;
+    return current;
 }
 //# sourceMappingURL=defaultStepProvider.js.map

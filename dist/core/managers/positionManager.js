@@ -16,28 +16,29 @@ import { atomFamily } from "jotai-family";
 import { getStore } from "../store";
 export const positionOverridesAtomFamily = atomFamily((_atomKey) => atom({}));
 export function setPos(atomKey, name, coords, durationMs) {
-  const store = getStore();
-  const target = positionOverridesAtomFamily(atomKey);
-  const prev = store.get(target);
-  if (coords === "reset") {
-    if (!(name in prev)) return;
-    const next = { ...prev };
-    delete next[name];
-    store.set(target, next);
-    return;
-  }
-  store.set(target, { ...prev, [name]: { ...coords, durationMs } });
+    const store = getStore();
+    const target = positionOverridesAtomFamily(atomKey);
+    const prev = store.get(target);
+    if (coords === "reset") {
+        if (!(name in prev))
+            return;
+        const next = { ...prev };
+        delete next[name];
+        store.set(target, next);
+        return;
+    }
+    store.set(target, { ...prev, [name]: { ...coords, durationMs } });
 }
 export function getPositionOverrides(atomKey) {
-  return getStore().get(positionOverridesAtomFamily(atomKey));
+    return getStore().get(positionOverridesAtomFamily(atomKey));
 }
 // resetStory()用。値を空に戻すだけで、atomFamilyのキャッシュからは消さない。
 export function reset(atomKey) {
-  getStore().set(positionOverridesAtomFamily(atomKey), {});
+    getStore().set(positionOverridesAtomFamily(atomKey), {});
 }
 // unmount用。atomFamilyのキャッシュからこのinstanceId分を完全に削除する
 // (メモリリーク対策。core/useStoryEngine.tsのunmount時cleanupから呼ばれる)。
 export function dispose(atomKey) {
-  positionOverridesAtomFamily.remove(atomKey);
+    positionOverridesAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=positionManager.js.map

@@ -8,20 +8,20 @@ import { getStore } from "../store";
 export const choicesAtomFamily = atomFamily((_atomKey) => atom([]));
 export const choicesHiddenAtomFamily = atomFamily((_atomKey) => atom(false));
 export function setChoices(atomKey, choices) {
-  getStore().set(choicesAtomFamily(atomKey), choices);
+    getStore().set(choicesAtomFamily(atomKey), choices);
 }
 export function getChoices(atomKey) {
-  return getStore().get(choicesAtomFamily(atomKey));
+    return getStore().get(choicesAtomFamily(atomKey));
 }
 export function setChoicesVisible(atomKey, visible) {
-  getStore().set(choicesHiddenAtomFamily(atomKey), !visible);
+    getStore().set(choicesHiddenAtomFamily(atomKey), !visible);
 }
 export function reset(atomKey) {
-  getStore().set(choicesAtomFamily(atomKey), []);
-  getStore().set(choicesHiddenAtomFamily(atomKey), false);
+    getStore().set(choicesAtomFamily(atomKey), []);
+    getStore().set(choicesHiddenAtomFamily(atomKey), false);
 }
 export function dispose(atomKey) {
-  choicesAtomFamily.remove(atomKey);
-  choicesHiddenAtomFamily.remove(atomKey);
+    choicesAtomFamily.remove(atomKey);
+    choicesHiddenAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=choiceManager.js.map

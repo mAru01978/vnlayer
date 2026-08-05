@@ -1,36 +1,31 @@
-"use client";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useAtomValue } from "jotai";
-import { dispatchTag } from "../tags/index";
-import { getUiConfig } from "../tags/uiConfig";
-import { getDefaultStepProvider } from "./defaultStepProvider";
-import { registerInstance, unregisterInstance } from "./instanceRegistry";
-import { getStore } from "./store";
-import {
-  camAtomFamily,
-  shakeAtomFamily,
-  flashAtomFamily,
-  typeSpeedAtomFamily,
-  disposeBasicAtoms,
-} from "./atoms";
-import * as backgroundManager from "./managers/backgroundManager";
-import * as characterManager from "./managers/characterManager";
-import * as speakerManager from "./managers/speakerManager";
-import * as positionManager from "./managers/positionManager";
-import * as messageManager from "./managers/messageManager";
-import * as choiceManager from "./managers/choiceManager";
-import * as backlogManager from "./managers/backlogManager";
-import * as windowVisibilityManager from "./managers/windowVisibilityManager";
-import * as typeManager from "./managers/typeManager";
-import * as navigationManager from "./managers/navigationManager";
-import * as waitManager from "./managers/waitManager";
-import * as contextManager from "./managers/contextManager";
-import type { StepProvider } from "./StepProvider";
-import type { RunResult, StoryEngine } from "./types";
+'use client';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useAtomValue } from 'jotai';
+import { dispatchTag } from '../tags/index';
+import { getUiConfig } from '../tags/uiConfig';
+import { getDefaultStepProvider } from './defaultStepProvider';
+import { registerInstance, unregisterInstance } from './instanceRegistry';
+import { getStore } from './store';
+import { camAtomFamily, shakeAtomFamily, flashAtomFamily, typeSpeedAtomFamily, disposeBasicAtoms } from './atoms';
+import * as backgroundManager from './managers/backgroundManager';
+import * as characterManager from './managers/characterManager';
+import * as speakerManager from './managers/speakerManager';
+import * as positionManager from './managers/positionManager';
+import * as messageManager from './managers/messageManager';
+import * as choiceManager from './managers/choiceManager';
+import * as backlogManager from './managers/backlogManager';
+import * as windowVisibilityManager from './managers/windowVisibilityManager';
+import * as typeManager from './managers/typeManager';
+import * as navigationManager from './managers/navigationManager';
+import * as waitManager from './managers/waitManager';
+import * as contextManager from './managers/contextManager';
+import * as timelineManager from './managers/timelineManager';
+import type { StepProvider } from './StepProvider';
+import type { RunResult, StoryEngine } from './types';
 
-// タグシステム大改修(Jotai導入)フェーズ3: 「useStoryEngine.tsの責務過多を
-// 解消し、タグ追加のたびにここを改修しなくて済むようにする」という狙いで
-// 全面的に書き直した。
+// タグシステム大改修フェーズ3: 「useStoryEngine.tsの責務過多を解消し、タグ
+// 追加のたびにここを改修しなくて済むようにする」という狙いで全面的に
+// 書き直した。
 //
 // 以前はここに「状態(useState)一式」+「25個のメソッドを持つhandlers
 // オブジェクトの実装」が全部ベタ書きされていて、新しいタグを追加するには
@@ -39,16 +34,18 @@ import type { RunResult, StoryEngine } from "./types";
 //     各マネージャーファイルが所有する。
 //   - タグ定義ファイル(tags/defs/{basic,special}/*.ts)は、そのマネージャーを
 //     直接importして呼ぶ(このファイルのhandlersを経由しない)。
+//   - GSAPのtimeline(演出そのもの)もcore/managers/timelineManager.tsが
+//     一元管理する。このファイルは演出の中身を一切知らない。
 //   - このファイルは「ink進行(init/choose/reset)ループの制御」+
 //     「各atomをuseAtomValueで読んでReactに繋ぐ」+「文章行が来た時に
-//     messageManager/backlogManagerへ通知する(タグではなくink本文の
-//     進行そのものが引き金なので、これはここでしか判断できない)」だけに
-//     専念する、薄い調整役になっている。
+//     messageManager/backlogManagerへ通知する」だけに専念する、薄い
+//     調整役になっている。
 //
 // atomKey/instanceIdの使い分けについては tags/registry.ts 冒頭のコメント
 // 参照。ざっくり言うと:
 //   atomKey    … このVNインスタンス専用の状態を隔離するためだけのキー
 //                (instanceId未指定時はuseId()のフォールバック値)。
+//                GSAPのtimelineManagerもこれで隔離する。
 //   instanceId … mount()時に渡した公開スコープ識別子。#ui:...の設定範囲や
 //                全VN共通バックログの判定等、「未指定=グローバル」という
 //                意味を持つ場面で使う(atomKeyとは別物)。
@@ -58,7 +55,7 @@ export function useStoryEngine(
     stepProvider?: StepProvider;
     onNavigate?: (path: string) => void;
     instanceId?: string;
-  } = {},
+  } = {}
 ): StoryEngine {
   const stepProvider = options.stepProvider ?? getDefaultStepProvider();
   const onNavigate = options.onNavigate;
@@ -71,28 +68,18 @@ export function useStoryEngine(
   // 書き込みはタグ(basic/special問わず)か、このフック自身(ink進行に
   // 伴う同期処理)がマネージャー関数を呼んで行う。
   const bg = useAtomValue(backgroundManager.bgAtomFamily(atomKey));
-  const characters = useAtomValue(
-    characterManager.charactersAtomFamily(atomKey),
-  );
+  const characters = useAtomValue(characterManager.charactersAtomFamily(atomKey));
   const speaker = useAtomValue(speakerManager.speakerAtomFamily(atomKey));
   const cam = useAtomValue(camAtomFamily(atomKey));
   const shake = useAtomValue(shakeAtomFamily(atomKey));
   const flash = useAtomValue(flashAtomFamily(atomKey));
   const typeSpeedMs = useAtomValue(typeSpeedAtomFamily(atomKey));
-  const positionOverrides = useAtomValue(
-    positionManager.positionOverridesAtomFamily(atomKey),
-  );
-  const activeMessage = useAtomValue(
-    messageManager.activeMessageAtomFamily(atomKey),
-  );
+  const positionOverrides = useAtomValue(positionManager.positionOverridesAtomFamily(atomKey));
+  const activeMessage = useAtomValue(messageManager.activeMessageAtomFamily(atomKey));
   const choices = useAtomValue(choiceManager.choicesAtomFamily(atomKey));
-  const choicesHidden = useAtomValue(
-    choiceManager.choicesHiddenAtomFamily(atomKey),
-  );
+  const choicesHidden = useAtomValue(choiceManager.choicesHiddenAtomFamily(atomKey));
   const lines = useAtomValue(backlogManager.linesAtomFamily(atomKey));
-  const messageWindowHidden = useAtomValue(
-    windowVisibilityManager.messageWindowHiddenAtomFamily(atomKey),
-  );
+  const messageWindowHidden = useAtomValue(windowVisibilityManager.messageWindowHiddenAtomFamily(atomKey));
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -134,10 +121,7 @@ export function useStoryEngine(
             // setIsProcessing(false)に到達しないまま止まる → 以後choose()が
             // 「処理中」判定でずっと弾かれ続け、クリックしても一切反応しなく
             // なる。1タグ失敗しても残りの処理は続行する。
-            console.warn(
-              `[VNLayer] tag dispatch failed, skipping this tag and continuing: "${tag}"`,
-              e,
-            );
+            console.warn(`[VNLayer] tag dispatch failed, skipping this tag and continuing: "${tag}"`, e);
           }
         }
 
@@ -145,25 +129,13 @@ export function useStoryEngine(
 
         if (step.content) {
           speakerManager.setSpeaker(atomKey, step.speaker);
-          backlogManager.pushLine(
-            atomKey,
-            instanceId,
-            step.speaker,
-            step.content,
-          );
+          backlogManager.pushLine(atomKey, instanceId, step.speaker, step.content);
           const currentTypeSpeed = typeManager.getTypeSpeed(atomKey);
-          messageManager.showMessage(
-            atomKey,
-            step.speaker,
-            step.content,
-            currentTypeSpeed,
-          );
+          messageManager.showMessage(atomKey, step.speaker, step.content, currentTypeSpeed);
 
           if (typeManager.isTypeWaitEnabled(atomKey)) {
-            const typingMs =
-              currentTypeSpeed > 0 ? step.content.length * currentTypeSpeed : 0;
-            const estimatedMs =
-              typingMs + typeManager.getTypeWaitBufferMs(atomKey);
+            const typingMs = currentTypeSpeed > 0 ? step.content.length * currentTypeSpeed : 0;
+            const estimatedMs = typingMs + typeManager.getTypeWaitBufferMs(atomKey);
             if (isStale()) return;
             await waitManager.wait(atomKey, estimatedMs);
           }
@@ -177,10 +149,7 @@ export function useStoryEngine(
         if (onNavigate) {
           onNavigate(pendingGoto);
         } else {
-          console.warn(
-            "[useStoryEngine] goto tag encountered but no onNavigate handler was provided:",
-            pendingGoto,
-          );
+          console.warn('[useStoryEngine] goto tag encountered but no onNavigate handler was provided:', pendingGoto);
         }
       }
 
@@ -194,7 +163,7 @@ export function useStoryEngine(
       isProcessingRef.current = false;
       setIsProcessing(false);
     },
-    [atomKey, instanceId, onNavigate],
+    [atomKey, instanceId, onNavigate]
   );
 
   const init = useCallback(async () => {
@@ -224,14 +193,9 @@ export function useStoryEngine(
       if (isProcessingRef.current) {
         const isAmbient = choices
           .find((c) => c.index === index)
-          ?.tags?.some(
-            (t) =>
-              t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
-          );
+          ?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
         if (!isAmbient) {
-          console.warn(
-            `[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`,
-          );
+          console.warn(`[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`);
         }
         return;
       }
@@ -242,30 +206,20 @@ export function useStoryEngine(
 
       const chosen = choices.find((c) => c.index === index);
       const isAmbientChoice = chosen?.tags?.some(
-        (t) => t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
+        (t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt'
       );
       if (chosen && !isAmbientChoice) {
         const visibleAtChoiceTime = choices.filter(
-          (c) =>
-            !c.tags?.some(
-              (t) =>
-                t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
-            ),
+          (c) => !c.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt')
         );
-        const number =
-          visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
-        backlogManager.pushChoice(
-          atomKey,
-          instanceId,
-          number > 0 ? number : 1,
-          chosen.text,
-        );
+        const number = visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
+        backlogManager.pushChoice(atomKey, instanceId, number > 0 ? number : 1, chosen.text);
       }
 
       const result = await stepProvider.choose(scenario, index);
       await advance(result);
     },
-    [choices, advance, scenario, stepProvider, atomKey, instanceId],
+    [choices, advance, scenario, stepProvider, atomKey, instanceId]
   );
 
   // tick/interrupt(event_loopパターン)の自動choose()。
@@ -274,29 +228,25 @@ export function useStoryEngine(
     // 選択肢が更新されるたび無条件に消費/破棄する(waitManager.
     // consumePendingInterrupt()自体が読み取りと同時にfalseへ戻す)。
     const hadPendingInterrupt = waitManager.consumePendingInterrupt(atomKey);
-    const interruptChoice = choices.find((c) =>
-      c.tags?.some((t) => t.split(":")[0] === "interrupt"),
-    );
+    const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
     if (interruptChoice && hadPendingInterrupt) {
       choose(interruptChoice.index);
       return;
     }
 
-    const tickChoices = choices.filter((c) =>
-      c.tags?.some((t) => t.split(":")[0] === "tick"),
-    );
+    const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(':')[0] === 'tick'));
     if (tickChoices.length === 0) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
     for (const tickChoice of tickChoices) {
-      const tickTag = tickChoice.tags.find((t) => t.split(":")[0] === "tick");
-      const seconds = tickTag ? Number(tickTag.split(":")[1]) : NaN;
+      const tickTag = tickChoice.tags.find((t) => t.split(':')[0] === 'tick');
+      const seconds = tickTag ? Number(tickTag.split(':')[1]) : NaN;
       if (!Number.isFinite(seconds) || seconds <= 0) continue;
 
       timers.push(
         setTimeout(() => {
           choose(tickChoice.index);
-        }, seconds * 1000),
+        }, seconds * 1000)
       );
     }
 
@@ -310,6 +260,9 @@ export function useStoryEngine(
     waitManager.reset(atomKey);
     // #web:gotoの予約が(異常系で)残っていた場合に備えて念のためクリアする。
     navigationManager.reset(atomKey);
+    // 演出中の全GSAP timelineも打ち切る(シーンを最初からやり直す以上、
+    // 前のシーンのシェイク/フラッシュ等が動いたままなのはおかしいため)。
+    timelineManager.reset(atomKey);
 
     backlogManager.reset(atomKey);
     choiceManager.reset(atomKey);
@@ -321,12 +274,7 @@ export function useStoryEngine(
     // 元々存在しない)ため、ここでも同じ範囲(cam/positionOverrides/
     // activeMessage/messageWindowHidden/contextStore)だけをリセットし、
     // 挙動を変えないようにしている。
-    getStore().set(camAtomFamily(atomKey), {
-      target: "",
-      scale: 1,
-      originX: 50,
-      originY: 50,
-    });
+    getStore().set(camAtomFamily(atomKey), { target: '', scale: 1, originX: 50, originY: 50 });
     positionManager.reset(atomKey);
     messageManager.reset(atomKey);
     windowVisibilityManager.reset(atomKey);
@@ -339,23 +287,20 @@ export function useStoryEngine(
   }, [advance, scenario, stepProvider, atomKey]);
 
   const setContextVars = useCallback(
-    async (
-      vars: Record<string, unknown>,
-      options?: { notify?: boolean; expose?: boolean },
-    ) => {
+    async (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => {
       const toWrite = contextManager.prepareWrite(atomKey, vars, options);
       for (const [varName, value] of Object.entries(toWrite)) {
         await stepProvider.idle(scenario, varName, value);
       }
     },
-    [atomKey, scenario, stepProvider],
+    [atomKey, scenario, stepProvider]
   );
 
   const getContextVars = useCallback(
     async (varNames?: string[]): Promise<Record<string, unknown>> => {
       return contextManager.getContextVars(atomKey, varNames);
     },
-    [atomKey],
+    [atomKey]
   );
 
   // web:emit用の自己登録: このVNインスタンスが自分のinstanceId(=mount時の
@@ -368,9 +313,9 @@ export function useStoryEngine(
     return () => unregisterInstance(instanceId);
   }, [instanceId, setContextVars]);
 
-  // タグシステム大改修(Jotai導入)フェーズ3: unmount時、このインスタンス
-  // 専用に作られた全atomFamilyエントリをキャッシュから削除する
-  // (メモリリーク対策。以前はこのcleanup自体が存在しなかった)。
+  // タグシステム大改修フェーズ3: unmount時、このインスタンス専用に作られた
+  // 全atomFamilyエントリ+GSAP timelineをキャッシュ/レジストリから削除する
+  // (メモリリーク対策)。
   useEffect(() => {
     return () => {
       disposeBasicAtoms(atomKey);
@@ -386,6 +331,7 @@ export function useStoryEngine(
       navigationManager.dispose(atomKey);
       waitManager.dispose(atomKey);
       contextManager.dispose(atomKey);
+      timelineManager.dispose(atomKey);
     };
   }, [atomKey]);
 
@@ -410,5 +356,6 @@ export function useStoryEngine(
     setContextVars,
     getContextVars,
     instanceId,
+    atomKey,
   };
 }

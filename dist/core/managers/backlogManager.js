@@ -16,38 +16,38 @@ import { getUiConfig } from "../../tags/uiConfig";
 import { pushGlobalBacklogEntry, clearGlobalBacklog } from "../globalBacklog";
 export const linesAtomFamily = atomFamily((_atomKey) => atom([]));
 function pushEntry(atomKey, instanceId, entry) {
-  const store = getStore();
-  const target = linesAtomFamily(atomKey);
-  store.set(target, [...store.get(target), entry]);
-  if (getUiConfig(instanceId).backlog.mode === "global") {
-    pushGlobalBacklogEntry(entry, instanceId);
-  }
+    const store = getStore();
+    const target = linesAtomFamily(atomKey);
+    store.set(target, [...store.get(target), entry]);
+    if (getUiConfig(instanceId).backlog.mode === "global") {
+        pushGlobalBacklogEntry(entry, instanceId);
+    }
 }
 export function pushLine(atomKey, instanceId, speaker, content) {
-  pushEntry(atomKey, instanceId, { kind: "line", speaker, content });
+    pushEntry(atomKey, instanceId, { kind: "line", speaker, content });
 }
 export function pushChoice(atomKey, instanceId, number, text) {
-  pushEntry(atomKey, instanceId, { kind: "choice", number, text });
+    pushEntry(atomKey, instanceId, { kind: "choice", number, text });
 }
 export function getLines(atomKey) {
-  return getStore().get(linesAtomFamily(atomKey));
+    return getStore().get(linesAtomFamily(atomKey));
 }
 // #ui:backlog:clear 用。実効設定がmode:'global'なら全VN共通のバックログも
 // クリアする(perInstanceならこのインスタンスのlinesだけをクリアする)。
 export function clear(atomKey, instanceId) {
-  getStore().set(linesAtomFamily(atomKey), []);
-  if (getUiConfig(instanceId).backlog.mode === "global") {
-    clearGlobalBacklog();
-  }
+    getStore().set(linesAtomFamily(atomKey), []);
+    if (getUiConfig(instanceId).backlog.mode === "global") {
+        clearGlobalBacklog();
+    }
 }
 // resetStory()用。注意: 全VN共通のバックログ(core/globalBacklog.ts)は、
 // 他のVNインスタンスの分も含んだ共有ログのため、このインスタンス1つの
 // resetでは意図的にクリアしない(#ui:backlog:clearによる明示的なクリアのみ
 // クリア対象にする、という以前からの設計判断を踏襲)。
 export function reset(atomKey) {
-  getStore().set(linesAtomFamily(atomKey), []);
+    getStore().set(linesAtomFamily(atomKey), []);
 }
 export function dispose(atomKey) {
-  linesAtomFamily.remove(atomKey);
+    linesAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=backlogManager.js.map
