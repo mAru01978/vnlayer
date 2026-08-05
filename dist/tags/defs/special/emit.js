@@ -35,27 +35,23 @@ import { emitToInstance } from "../../../core/instanceRegistry";
 // という設計そのものと噛み合わない(他インスタンスをターゲットにする)ため、
 // specialタグとして現状維持。
 registerTag({
-  key: "emit",
-  run: ({ args }) => {
-    const [selector, varName, rawValue] = args;
-    if (!selector || !varName) {
-      console.warn(
-        `[VNLayer] emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`,
-      );
-      return;
-    }
-    let value = rawValue;
-    if (isNumeric(rawValue)) {
-      value = Number(rawValue);
-    } else {
-      const on = parseOnOff(rawValue);
-      if (on !== undefined) value = on;
-    }
-    emitToInstance(
-      selector,
-      { [varName]: value },
-      { notify: true, expose: false },
-    );
-  },
+    key: "emit",
+    run: ({ args }) => {
+        const [selector, varName, rawValue] = args;
+        if (!selector || !varName) {
+            console.warn(`[VNLayer] emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`);
+            return;
+        }
+        let value = rawValue;
+        if (isNumeric(rawValue)) {
+            value = Number(rawValue);
+        }
+        else {
+            const on = parseOnOff(rawValue);
+            if (on !== undefined)
+                value = on;
+        }
+        emitToInstance(selector, { [varName]: value }, { notify: true, expose: false });
+    },
 });
 //# sourceMappingURL=emit.js.map

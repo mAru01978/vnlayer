@@ -113,6 +113,7 @@ export function createStaticStepProvider(
     },
     async idle(scenario, varName, value) {
       const handle = await ensureStory(scenario);
+
       // idle()のvalueは呼び出し側(ホストページ)が任意の値を渡せる設計上unknown型。
       // inkjsのvariablesStateは緩い型(実質any)で受け取る前提なので、ここで明示キャストする。
       handle.story.variablesState[varName] = value as any;

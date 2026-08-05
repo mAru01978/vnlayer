@@ -6,15 +6,15 @@ import { atomFamily } from "jotai-family";
 import { getStore } from "../store";
 export const speakerAtomFamily = atomFamily((_atomKey) => atom(""));
 export function setSpeaker(atomKey, name) {
-  getStore().set(speakerAtomFamily(atomKey), name);
+    getStore().set(speakerAtomFamily(atomKey), name);
 }
 export function getSpeaker(atomKey) {
-  return getStore().get(speakerAtomFamily(atomKey));
+    return getStore().get(speakerAtomFamily(atomKey));
 }
 export function reset(atomKey) {
-  getStore().set(speakerAtomFamily(atomKey), "");
+    getStore().set(speakerAtomFamily(atomKey), "");
 }
 export function dispose(atomKey) {
-  speakerAtomFamily.remove(atomKey);
+    speakerAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=speakerManager.js.map

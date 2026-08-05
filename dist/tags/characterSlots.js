@@ -7,12 +7,12 @@
 // 静的運用: VNLayer.configure({ characterSlots: {...} }) で注入する。
 let slots = {};
 export function setCharacterSlots(next) {
-  slots = { ...slots, ...next };
+    slots = { ...slots, ...next };
 }
 export function getCharacterSlot(name) {
-  return slots[name];
+    return slots[name];
 }
 export function getAllCharacterSlots() {
-  return slots;
+    return slots;
 }
 //# sourceMappingURL=characterSlots.js.map

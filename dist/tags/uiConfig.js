@@ -15,28 +15,28 @@
 // 真偽値は全てon/off(boolean)で統一している。true/falseという値そのものは
 // タグの引数としては使わない(タグ設計方針: 数値・小数・意味のあるラベルのみ)。
 const defaultUiConfig = {
-  messageWindow: {
-    interactive: true,
-    offset: 130,
-    autoHideOnCharHide: true,
-    autoHideOnBgChange: true,
-  },
-  choice: {
-    spacing: 8,
-    anchor: undefined,
-    offset: 130,
-    interactive: true,
-    autoClearOnChoose: true,
-  },
-  backlog: {
-    mode: "perInstance",
-    show: true,
-    anchor: undefined,
-    offset: undefined,
-  },
-  character: { clickable: true },
-  font: {},
-  stage: { stickToViewport: true, heightPx: undefined, widthPx: undefined },
+    messageWindow: {
+        interactive: true,
+        offset: 130,
+        autoHideOnCharHide: true,
+        autoHideOnBgChange: true,
+    },
+    choice: {
+        spacing: 8,
+        anchor: undefined,
+        offset: 130,
+        interactive: true,
+        autoClearOnChoose: true,
+    },
+    backlog: {
+        mode: "perInstance",
+        show: true,
+        anchor: undefined,
+        offset: undefined,
+    },
+    character: { clickable: true },
+    font: {},
+    stage: { stickToViewport: true, heightPx: undefined, widthPx: undefined },
 };
 const GLOBAL_SCOPE = "__global__";
 // スコープ(グローバルは特別なキー、インスタンス別は選択肢文字列そのまま)ごとに
@@ -44,45 +44,47 @@ const GLOBAL_SCOPE = "__global__";
 // 「そのスコープで明示的に設定した項目だけ」がグローバルの上に重なるようにする。
 const patchesByScope = new Map();
 function mergeSection(base, patch) {
-  return patch ? { ...base, ...patch } : base;
+    return patch ? { ...base, ...patch } : base;
 }
 function mergePatch(base, patch) {
-  if (!patch) return base;
-  return {
-    messageWindow: mergeSection(base.messageWindow, patch.messageWindow),
-    choice: mergeSection(base.choice, patch.choice),
-    backlog: mergeSection(base.backlog, patch.backlog),
-    character: mergeSection(base.character, patch.character),
-    font: mergeSection(base.font, patch.font),
-    stage: mergeSection(base.stage, patch.stage),
-  };
+    if (!patch)
+        return base;
+    return {
+        messageWindow: mergeSection(base.messageWindow, patch.messageWindow),
+        choice: mergeSection(base.choice, patch.choice),
+        backlog: mergeSection(base.backlog, patch.backlog),
+        character: mergeSection(base.character, patch.character),
+        font: mergeSection(base.font, patch.font),
+        stage: mergeSection(base.stage, patch.stage),
+    };
 }
 function computeGlobal() {
-  return mergePatch(defaultUiConfig, patchesByScope.get(GLOBAL_SCOPE));
+    return mergePatch(defaultUiConfig, patchesByScope.get(GLOBAL_SCOPE));
 }
 // scopeを省略(またはundefined)するとグローバル設定を更新する
 // (=すべてのVNインスタンスに影響する既定値)。
 // scopeにセレクタ文字列("#vn"等)を渡すと、そのインスタンスだけの
 // 上書き設定として記録される(グローバル設定はそのまま、他のVNには影響しない)。
 export function setUiConfig(patch, scope) {
-  const key = scope ?? GLOBAL_SCOPE;
-  const existing = patchesByScope.get(key) ?? {};
-  patchesByScope.set(key, {
-    messageWindow: { ...existing.messageWindow, ...patch.messageWindow },
-    choice: { ...existing.choice, ...patch.choice },
-    backlog: { ...existing.backlog, ...patch.backlog },
-    character: { ...existing.character, ...patch.character },
-    font: { ...existing.font, ...patch.font },
-    stage: { ...existing.stage, ...patch.stage },
-  });
+    const key = scope ?? GLOBAL_SCOPE;
+    const existing = patchesByScope.get(key) ?? {};
+    patchesByScope.set(key, {
+        messageWindow: { ...existing.messageWindow, ...patch.messageWindow },
+        choice: { ...existing.choice, ...patch.choice },
+        backlog: { ...existing.backlog, ...patch.backlog },
+        character: { ...existing.character, ...patch.character },
+        font: { ...existing.font, ...patch.font },
+        stage: { ...existing.stage, ...patch.stage },
+    });
 }
 // scopeを省略するとグローバル設定(全VN共通の既定値)を返す。
 // scopeを指定すると、グローバル設定の上にそのインスタンス専用の上書きを
 // 重ねた「実効設定」を返す(そのインスタンス専用の上書きが無い項目は
 // グローバルの値がそのまま使われる)。
 export function getUiConfig(scope) {
-  const global = computeGlobal();
-  if (!scope) return global;
-  return mergePatch(global, patchesByScope.get(scope));
+    const global = computeGlobal();
+    if (!scope)
+        return global;
+    return mergePatch(global, patchesByScope.get(scope));
 }
 //# sourceMappingURL=uiConfig.js.map
