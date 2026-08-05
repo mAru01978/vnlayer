@@ -2,7 +2,7 @@
 // 本番で素材が揃ったら realRenderer.tsx を新しく作り、importを1行差し替えるだけで
 // 全体の見た目を切り替えられるようにする。
 
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 export type CharacterState = {
   expression: string;
@@ -16,6 +16,11 @@ export type Slot = { originX: number; originY: number; durationMs?: number };
 
 export type BackgroundProps = {
   bg: string;
+  // タグシステム大改修(GSAP導入)フェーズで追加。このVNインスタンス専用の
+  // 状態隔離キー。core/managers/timelineManager.tsへGSAP timelineを
+  // 登録する際のキーとして使う(#timeline:pause等が「このインスタンスの
+  // 演出だけ」を対象にできるようにするため)。
+  atomKey: string;
 };
 
 export type CharacterSpriteProps = {
@@ -30,6 +35,8 @@ export type CharacterSpriteProps = {
   // クリックが拾えるようpointerEvents:'auto'を自分自身に設定すること
   // (親のステージ全体はoverlayモードでpointerEvents:'none'になっているため)。
   onClick?: () => void;
+  // BackgroundPropsのatomKeyと同じ(core/managers/timelineManager.ts登録用)。
+  atomKey: string;
 };
 
 export type MessageBubbleProps = {
@@ -43,9 +50,7 @@ export type MessageBubbleProps = {
   fontFamily?: string;
   fontSizePx?: number;
   // #ui:messageWindow:offset:<px> で設定される、キャラのoriginY(%)から
-  // 吹き出し下端までの距離(px)。以前は%固定(originY - 26%)だったため、
-  // stickToViewport:off + stage.heightPx併用時にstageの実高さが変わると
-  // 間隔が異常になる問題があった。px単位に統一して設定可能にしてある。
+  // 吹き出し下端までの距離(px、既定130)。
   offsetPx: number;
 };
 
@@ -69,6 +74,8 @@ export type ChoiceButtonProps = {
 export type FlashOverlayProps = {
   color: string;
   durationMs: number;
+  // BackgroundPropsのatomKeyと同じ(core/managers/timelineManager.ts登録用)。
+  atomKey: string;
 };
 
 export type StageRenderer = {

@@ -28,23 +28,21 @@
 // どちらでも書ける(mount("#vn2", ...)のような実際のCSSセレクタ側は
 // 今まで通り"#"付きのまま)。
 function normalizeSelector(selector) {
-  return selector.replace(/^[#.@]/, "");
+    return selector.replace(/^[#.@]/, "");
 }
 const registry = new Map();
 export function registerInstance(selector, target) {
-  registry.set(normalizeSelector(selector), target);
+    registry.set(normalizeSelector(selector), target);
 }
 export function unregisterInstance(selector) {
-  registry.delete(normalizeSelector(selector));
+    registry.delete(normalizeSelector(selector));
 }
 export async function emitToInstance(selector, vars, options) {
-  const target = registry.get(normalizeSelector(selector));
-  if (!target) {
-    console.warn(
-      `[VNLayer] emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`,
-    );
-    return;
-  }
-  await target.setContextVars(vars, options);
+    const target = registry.get(normalizeSelector(selector));
+    if (!target) {
+        console.warn(`[VNLayer] emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`);
+        return;
+    }
+    await target.setContextVars(vars, options);
 }
 //# sourceMappingURL=instanceRegistry.js.map

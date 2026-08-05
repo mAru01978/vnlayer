@@ -22,19 +22,13 @@ import { getDefaultOnNavigate } from "../core/defaultNavigate";
 // (未設定ならlocation.href代入、Next.js運用でNextNavigationBridgeをマウント
 // していればrouter.push)が使われる。
 const StoryContext = createContext(null);
-export const StoryProvider = ({
-  children,
-  scenario = "Scenario1",
-  stepProvider,
-  onNavigate,
-  instanceId,
-}) => {
-  const engine = useStoryEngine(scenario, {
-    stepProvider,
-    onNavigate: onNavigate ?? getDefaultOnNavigate(),
-    instanceId,
-  });
-  return _jsx(StoryContext.Provider, { value: engine, children: children });
+export const StoryProvider = ({ children, scenario = "Scenario1", stepProvider, onNavigate, instanceId, }) => {
+    const engine = useStoryEngine(scenario, {
+        stepProvider,
+        onNavigate: onNavigate ?? getDefaultOnNavigate(),
+        instanceId,
+    });
+    return (_jsx(StoryContext.Provider, { value: engine, children: children }));
 };
 export const useStory = () => useContext(StoryContext);
 //# sourceMappingURL=StoryContext.js.map

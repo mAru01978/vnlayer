@@ -1,1 +1,1 @@
-{"version":3,"file":"sprite.d.ts","sourceRoot":"","sources":["../../../../tags/defs/special/sprite.ts"],"names":[],"mappings":"AAoCA,MAAM,MAAM,YAAY,GAAG;IAAE,UAAU,EAAE,MAAM,CAAC,MAAM,EAAE;QAAE,OAAO,EAAE,MAAM,CAAC;QAAC,OAAO,EAAE,MAAM,CAAA;KAAE,CAAC,CAAA;CAAE,CAAC"}
+{"version":3,"file":"sprite.d.ts","sourceRoot":"","sources":["../../../../tags/defs/special/sprite.ts"],"names":[],"mappings":"AAoCA,MAAM,MAAM,YAAY,GAAG;IACzB,UAAU,EAAE,MAAM,CAAC,MAAM,EAAE;QAAE,OAAO,EAAE,MAAM,CAAC;QAAC,OAAO,EAAE,MAAM,CAAA;KAAE,CAAC,CAAC;CAClE,CAAC"}
