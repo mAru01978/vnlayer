@@ -9,6 +9,6 @@
 // 触れば、Reactツリー側のuseAtom/useAtomValueと自動的に同期する。
 import { getDefaultStore } from "jotai";
 export function getStore() {
-  return getDefaultStore();
+    return getDefaultStore();
 }
 //# sourceMappingURL=store.js.map

@@ -15,19 +15,17 @@
 // setDefaultOnNavigate(path => router.push(path)) が登録される。
 // 何も登録されていない場合(=静的運用時など)は location.href を使う。
 let current = (path) => {
-  if (typeof window !== "undefined") {
-    window.location.href = path;
-  } else {
-    console.warn(
-      "[VNLayer] onNavigate fallback called in a non-browser environment:",
-      path,
-    );
-  }
+    if (typeof window !== "undefined") {
+        window.location.href = path;
+    }
+    else {
+        console.warn("[VNLayer] onNavigate fallback called in a non-browser environment:", path);
+    }
 };
 export function setDefaultOnNavigate(fn) {
-  current = fn;
+    current = fn;
 }
 export function getDefaultOnNavigate() {
-  return current;
+    return current;
 }
 //# sourceMappingURL=defaultNavigate.js.map

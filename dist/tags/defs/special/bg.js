@@ -11,13 +11,13 @@ import { setBackground } from "../../../core/managers/backgroundManager";
 // 実装はcore/managers/backgroundManager.tsに委譲。autoHideOnBgChange
 // (場面転換時に吹き出しを自動で消す)の判定もそちら側の責務。
 registerTag({
-  key: "bg",
-  run: ({ args, handlers }) => {
-    const [name, mode, value] = args;
-    if (mode === "color" && value) {
-      setBackgroundSlots({ [name]: { color: value } });
-    }
-    setBackground(handlers.atomKey, handlers.instanceId, name);
-  },
+    key: "bg",
+    run: ({ args, handlers }) => {
+        const [name, mode, value] = args;
+        if (mode === "color" && value) {
+            setBackgroundSlots({ [name]: { color: value } });
+        }
+        setBackground(handlers.atomKey, handlers.instanceId, name);
+    },
 });
 //# sourceMappingURL=bg.js.map

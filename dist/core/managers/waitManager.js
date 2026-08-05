@@ -15,26 +15,26 @@ import { abortableSleep } from "../abortableSleep";
 const batches = new Map();
 const pendingInterrupt = new Map();
 function getBatch(atomKey) {
-  let batch = batches.get(atomKey);
-  if (!batch) {
-    batch = { generation: 0, controller: null };
-    batches.set(atomKey, batch);
-  }
-  return batch;
+    let batch = batches.get(atomKey);
+    if (!batch) {
+        batch = { generation: 0, controller: null };
+        batches.set(atomKey, batch);
+    }
+    return batch;
 }
 // 新しいバッチ(advance()の1回の呼び出し)を開始し、その世代番号を返す。
 // 呼び出し側はこの番号を保持しておき、isStale(atomKey, myGeneration)で
 // 「自分より新しいバッチが始まっていないか」を随時チェックする。
 export function beginBatch(atomKey) {
-  const batch = getBatch(atomKey);
-  batch.generation += 1;
-  return batch.generation;
+    const batch = getBatch(atomKey);
+    batch.generation += 1;
+    return batch.generation;
 }
 export function isStale(atomKey, generation) {
-  return getBatch(atomKey).generation !== generation;
+    return getBatch(atomKey).generation !== generation;
 }
 export function getCurrentGeneration(atomKey) {
-  return getBatch(atomKey).generation;
+    return getBatch(atomKey).generation;
 }
 // 中断可能な待ち。#wait:等のタグ処理中に呼ばれる想定。
 // 呼び出しごとに新しいAbortControllerを発行する: バッチ全体で1つの
@@ -44,38 +44,38 @@ export function getCurrentGeneration(atomKey) {
 // interrupt()は「今まさに実行中のwait」だけに効き、まだ始まっていない
 // 後続のwaitには影響しなくなる。
 export function wait(atomKey, ms) {
-  const batch = getBatch(atomKey);
-  const controller = new AbortController();
-  batch.controller = controller;
-  return abortableSleep(ms, controller.signal);
+    const batch = getBatch(atomKey);
+    const controller = new AbortController();
+    batch.controller = controller;
+    return abortableSleep(ms, controller.signal);
 }
 // notify()相当。実行中のwait/type_wait推定待ちを即座に打ち切り、
 // 「割り込み要求があった」ことを記録する(event_loop等の#interrupt付き
 // 選択肢に辿り着き次第それを自動選択するために、core/useStoryEngine.ts
 // 側がconsumePendingInterrupt()で消費する)。
 export function interrupt(atomKey) {
-  pendingInterrupt.set(atomKey, true);
-  getBatch(atomKey).controller?.abort();
+    pendingInterrupt.set(atomKey, true);
+    getBatch(atomKey).controller?.abort();
 }
 // 呼ぶと同時に「消費」してfalseへ戻す。保留フラグは「次に選択肢が提示される
 // この1回」でしか有効ではない(以前からの設計、core/useStoryEngine.tsの
 // tick/interrupt処理useEffectのコメント参照)。
 export function consumePendingInterrupt(atomKey) {
-  const value = pendingInterrupt.get(atomKey) ?? false;
-  pendingInterrupt.set(atomKey, false);
-  return value;
+    const value = pendingInterrupt.get(atomKey) ?? false;
+    pendingInterrupt.set(atomKey, false);
+    return value;
 }
 // resetStory()用。進行中の古いバッチがあってもstale扱いにし、以後の
 // 待ちも打ち切る。
 export function reset(atomKey) {
-  const batch = getBatch(atomKey);
-  batch.generation += 1;
-  batch.controller?.abort();
-  pendingInterrupt.set(atomKey, false);
+    const batch = getBatch(atomKey);
+    batch.generation += 1;
+    batch.controller?.abort();
+    pendingInterrupt.set(atomKey, false);
 }
 export function dispose(atomKey) {
-  getBatch(atomKey).controller?.abort();
-  batches.delete(atomKey);
-  pendingInterrupt.delete(atomKey);
+    getBatch(atomKey).controller?.abort();
+    batches.delete(atomKey);
+    pendingInterrupt.delete(atomKey);
 }
 //# sourceMappingURL=waitManager.js.map
