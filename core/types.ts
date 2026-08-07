@@ -36,6 +36,30 @@ export type StepEntry = { speaker: string; content: string; tags: string[] };
 export type VisualState = { bg: string; characters: Record<string, CharacterState>; speaker: string };
 export type RunResult = { steps: StepEntry[]; choices: Choice[]; visual: VisualState };
 
+// setContextVars(vars, options?)の第2引数。
+//   notify   … 各キーに"${key}_seq"を自動生成・インクリメントして一緒に
+//              書き込み、実行中の#wait:/type_wait待ちを即座に打ち切り、
+//              演出中の全GSAP timelineも一時停止する(core/managers/
+//              waitManager.ts参照)。event_loop等の#interrupt付き選択肢に
+//              辿り着き次第それを自動選択する。
+//   expose   … falseにするとgetContextVars()から見えなくなる(既定true)。
+//   keyNames … vars内のネストしたオブジェクトを「${親キー}_${子キー}」の
+//              ようなink変数名にフラット化する際、既定の命名を上書きする
+//              ための対応表。varsと同じ構造で、上書きしたい葉の値だけ
+//              文字列(使いたい変数名)にする。
+//              例: setContext({ weather: { temp: 22.2, text: "晴れ" } },
+//                    sel, { keyNames: { weather: { temp: 'w_temp' } } })
+//                  → w_temp = 22.2 (上書き) / weather_text = "晴れ" (既定)
+//              衝突チェックは行わない(単に読みやすくするための糖衣構文で、
+//              実質的にはink変数を自分で定義するのと同じことをしているだけ、
+//              という位置づけのため)。
+export type SetContextKeyNames = { [key: string]: string | SetContextKeyNames };
+export type SetContextOptions = {
+  notify?: boolean;
+  expose?: boolean;
+  keyNames?: SetContextKeyNames;
+};
+
 // useStoryEngineが返す値の形。VNLayer/components側はこれだけを見て描画する
 // (StepProviderの実装がサーバー版か静的版かを一切意識しない)。
 export type StoryEngine = {
@@ -60,17 +84,8 @@ export type StoryEngine = {
   flash: { color: string; durationMs: number } | null;
   typeSpeedMs: number;
   // api-refactor-1/2: 外部(VNLayer.setContext等)から一方通行でInk変数へ値を
-  // 反映するための口。
-  //   setContextVars(vars)
-  //     → 値を書き込むだけ。既定(expose:true)でgetContextVars()から見える
-  //       ようになる。
-  //   setContextVars(vars, { notify: true })
-  //     → 上記に加え、渡した各キーに"${key}_seq"を自動生成・インクリメント
-  //       して書き込み、実行中の#wait:/type_wait待ちを即座に打ち切り、
-  //       event_loop等の#interrupt付き選択肢に辿り着き次第それを自動選択する。
-  //   setContextVars(vars, { expose: false })
-  //     → Inkへは書き込むが、getContextVars()からは見えないようにする。
-  setContextVars: (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => Promise<void>;
+  // 反映するための口。SetContextOptions参照。
+  setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
   // api-refactor-2: setContextVarsの読み取り版。setContextVarsで(expose:false
   // でなく)書き込まれた値の写しを返す。varNames省略時はexposeされている
   // 値すべてを返す。ink本体には問い合わせない(サーバー往復が発生しない)。

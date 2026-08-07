@@ -1,8 +1,9 @@
-"use client";
-import { useEffect, useRef } from "react";
-import { StoryProvider, useStory } from "../context/StoryContext";
-import type { StepProvider } from "../core/StepProvider";
-import StageView, { type StageMode, type UiAnchor } from "./StageView";
+'use client';
+import { useEffect, useRef } from 'react';
+import { StoryProvider, useStory } from '../context/StoryContext';
+import type { StepProvider } from '../core/StepProvider';
+import type { SetContextOptions } from '../core/types';
+import StageView, { type StageMode, type UiAnchor } from './StageView';
 
 export type VNLayerMode = StageMode;
 
@@ -12,10 +13,7 @@ export type VNLayerMode = StageMode;
 // 従来通りVNLayer.notify()という名前のAPIを提供し続けるので、利用者からは
 // 見た目上の変化はない)。
 export type VNLayerHandle = {
-  setContextVars: (
-    vars: Record<string, unknown>,
-    options?: { notify?: boolean; expose?: boolean },
-  ) => Promise<void>;
+  setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
   // api-refactor-2: VNLayer.getContext()用
   getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
   resetStory: () => Promise<void>;
@@ -45,11 +43,7 @@ export type VNLayerOverlayProps = {
 // 橋渡しするだけの非表示コンポーネント。engineオブジェクト自体は毎レンダー
 // 新しく作られるが、handle経由で呼べば常に最新のsetContextVars/resetStoryを
 // 呼び出せるようにしてある(onReadyは初回マウント時に1回だけ呼ぶ)。
-function EngineBridge({
-  onReady,
-}: {
-  onReady?: (handle: VNLayerHandle) => void;
-}) {
+function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }) {
   const engine = useStory();
   const engineRef = useRef(engine);
   engineRef.current = engine;
@@ -59,8 +53,7 @@ function EngineBridge({
     if (notifiedRef.current || !onReady) return;
     notifiedRef.current = true;
     onReady({
-      setContextVars: (vars, options) =>
-        engineRef.current!.setContextVars(vars, options),
+      setContextVars: (vars, options) => engineRef.current!.setContextVars(vars, options),
       getContextVars: (varNames) => engineRef.current!.getContextVars(varNames),
       resetStory: () => engineRef.current!.resetStory(),
     });
@@ -74,23 +67,9 @@ function EngineBridge({
 // <VNLayerOverlay scenario="BlogIntro" mode="overlay" /> をどのページに置いても
 // それだけでそのシナリオ用のエンジン一式が独立して動く。
 // (旧VNLayer.tsxと同じ役割。描画自体はStageViewに一本化されている)
-export default function VNLayerOverlay({
-  scenario = "Scenario1",
-  mode,
-  uiAnchor,
-  showUi,
-  stepProvider,
-  onNavigate,
-  onReady,
-  instanceId,
-}: VNLayerOverlayProps) {
+export default function VNLayerOverlay({ scenario = 'Scenario1', mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }: VNLayerOverlayProps) {
   return (
-    <StoryProvider
-      scenario={scenario}
-      stepProvider={stepProvider}
-      onNavigate={onNavigate}
-      instanceId={instanceId}
-    >
+    <StoryProvider scenario={scenario} stepProvider={stepProvider} onNavigate={onNavigate} instanceId={instanceId}>
       <EngineBridge onReady={onReady} />
       <StageView mode={mode} uiAnchor={uiAnchor} showUi={showUi} />
     </StoryProvider>

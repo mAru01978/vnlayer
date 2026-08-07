@@ -38,6 +38,7 @@ export type MessageBubbleProps = {
     fontFamily?: string;
     fontSizePx?: number;
     offsetPx: number;
+    atomKey: string;
 };
 export type NarratorCaptionProps = {
     content: string;

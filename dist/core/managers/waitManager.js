@@ -11,7 +11,11 @@
 //
 // #wait:/#cam(resolveWaitMs)/type_wait推定待ち等、「途中でnotify()により
 // 即座に打ち切られてほしい待ち」は全部ここのwait()を経由する。
-import { abortableSleep } from "../abortableSleep";
+//
+// #interrupt付き選択肢への割り込み時に演出(GSAP timeline)もpause/resumeする
+// 処理は、ここではなくcore/useStoryEngine.tsのtick/interrupt処理useEffect側に
+// ある(理由は下のinterrupt()のコメント参照)。
+import { abortableSleep } from '../abortableSleep';
 const batches = new Map();
 const pendingInterrupt = new Map();
 function getBatch(atomKey) {
@@ -53,6 +57,15 @@ export function wait(atomKey, ms) {
 // 「割り込み要求があった」ことを記録する(event_loop等の#interrupt付き
 // 選択肢に辿り着き次第それを自動選択するために、core/useStoryEngine.ts
 // 側がconsumePendingInterrupt()で消費する)。
+//
+// 修正メモ: 以前はここでtimelineManager.pauseAll()も呼んでいたが、
+// interrupt()はnotify:trueのsetContext全般(マウス追従によるgaze更新等、
+// 高頻度に呼ばれるものも含む)で毎回発火するため、「#interrupt付き選択肢に
+// 実際に割り込まれた瞬間」以外の大多数の呼び出しでも演出が毎回一瞬
+// pauseされてしまい、gazeのようにnotify経由で頻繁に更新される演出が
+// カクつく原因になっていた。pauseAll/resumeAllの呼び出しは、実際に
+// #interrupt付き選択肢へ割り込む瞬間(core/useStoryEngine.tsのtick/
+// interrupt処理useEffect)側だけに絞った。
 export function interrupt(atomKey) {
     pendingInterrupt.set(atomKey, true);
     getBatch(atomKey).controller?.abort();

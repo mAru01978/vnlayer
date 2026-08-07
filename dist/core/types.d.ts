@@ -60,6 +60,14 @@ export type RunResult = {
     choices: Choice[];
     visual: VisualState;
 };
+export type SetContextKeyNames = {
+    [key: string]: string | SetContextKeyNames;
+};
+export type SetContextOptions = {
+    notify?: boolean;
+    expose?: boolean;
+    keyNames?: SetContextKeyNames;
+};
 export type StoryEngine = {
     lines: LineEntry[];
     choices: Choice[];
@@ -81,10 +89,7 @@ export type StoryEngine = {
         durationMs: number;
     } | null;
     typeSpeedMs: number;
-    setContextVars: (vars: Record<string, unknown>, options?: {
-        notify?: boolean;
-        expose?: boolean;
-    }) => Promise<void>;
+    setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
     getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
     instanceId?: string;
     atomKey: string;
