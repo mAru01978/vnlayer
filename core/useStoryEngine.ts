@@ -21,7 +21,7 @@ import * as waitManager from './managers/waitManager';
 import * as contextManager from './managers/contextManager';
 import * as timelineManager from './managers/timelineManager';
 import type { StepProvider } from './StepProvider';
-import type { RunResult, StoryEngine } from './types';
+import type { RunResult, SetContextOptions, StoryEngine } from './types';
 
 // タグシステム大改修フェーズ3: 「useStoryEngine.tsの責務過多を解消し、タグ
 // 追加のたびにここを改修しなくて済むようにする」という狙いで全面的に
@@ -230,7 +230,16 @@ export function useStoryEngine(
     const hadPendingInterrupt = waitManager.consumePendingInterrupt(atomKey);
     const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
     if (interruptChoice && hadPendingInterrupt) {
-      choose(interruptChoice.index);
+      // 実際に#interrupt付き選択肢へ割り込む、この瞬間だけ演出中の全
+      // GSAP timelineを一時停止する(notify:trueの全呼び出しで毎回pauseする
+      // と、gazeのようにnotify経由で頻繁に更新される演出がカクつくため、
+      // ここに絞った。core/managers/waitManager.tsのinterrupt()のコメント
+      // 参照)。割り込み処理(このchoose()が引き起こすadvance())が完了した
+      // タイミングで再開する。
+      timelineManager.pauseAll(atomKey);
+      choose(interruptChoice.index).then(() => {
+        timelineManager.resumeAll(atomKey);
+      });
       return;
     }
 
@@ -287,7 +296,7 @@ export function useStoryEngine(
   }, [advance, scenario, stepProvider, atomKey]);
 
   const setContextVars = useCallback(
-    async (vars: Record<string, unknown>, options?: { notify?: boolean; expose?: boolean }) => {
+    async (vars: Record<string, unknown>, options?: SetContextOptions) => {
       const toWrite = contextManager.prepareWrite(atomKey, vars, options);
       for (const [varName, value] of Object.entries(toWrite)) {
         await stepProvider.idle(scenario, varName, value);

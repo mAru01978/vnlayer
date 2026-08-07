@@ -8,6 +8,7 @@ import { setBackgroundSlots, type BackgroundSlot } from './tags/backgroundSlots'
 import { setTagConfig, setUiConfig, type UiConfigPatch, setWebLinks } from './tags/index';
 import { setAnimAssets, type AnimAssetConfig } from './tags/animAssets';
 import { setSpriteAssets, type SpriteAssetConfig } from './tags/spriteAssets';
+import type { SetContextOptions } from './core/types';
 import type { StepProvider } from './core/StepProvider';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
@@ -124,7 +125,7 @@ function unmount(selector: string): Promise<void> {
 async function setContext(
   vars: Record<string, unknown>,
   selector?: string,
-  options?: { notify?: boolean; expose?: boolean }
+  options?: SetContextOptions
 ): Promise<void> {
   const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
 
