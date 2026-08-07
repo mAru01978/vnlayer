@@ -11,25 +11,34 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
 // 設計方針1: 単発の動きであっても、生の gsap.to()/fromTo() を直接呼ぶのでは
 // なく、必ず gsap.timeline() を経由して組み立てる(tl.to(...)のように)。
 // 単発tweenをtimelineの0秒目に1本積むだけなら実行結果(タイミング/非同期の
-// 挙動)は生のtweenと変わらないが、こうしておくと:
-//   - kill/pause/再生速度変更などの制御口が「timelineインスタンス1つ」に
-//     常に統一される
-//   - 後から「このtimelineにもう1ステップ足したい」となった時、
-//     書き方を変えずにtl.to(...)を1行追加するだけで済む
-//   - gsap.set()(即時反映)とtl.to()(tween)を同じtimeline内で順序立てて
-//     並べられる
-// という理由から、このファイル全体でtimelineを基本の組み立て方にしている。
+// 挙動)は生のtweenと変わらないが、こうしておくと、kill/pause/再生速度変更
+// などの制御口が「timelineインスタンス1つ」に常に統一され、後から
+// 「このtimelineにもう1ステップ足したい」となった時も書き方を変えずに
+// 済む。このファイル全体でtimelineを基本の組み立て方にしている。
 //
 // 設計方針2: 作った全timelineは必ずcore/managers/timelineManager.tsに
-// register(atomKey, name, timeline)する。これにより#timeline:pause/resume/
-// kill:@name や #wait:timeline が、このコンポーネントの中身を一切知らずに
-// 演出を横断制御できる。killする時は必ず timelineManager.unregister() も
-// 呼ぶこと(呼ばないと#wait:timelineが完了しないtimelineを待ち続ける)。
+// register(atomKey, name, timeline)する。killする時は必ず
+// timelineManager.unregister()も呼ぶこと(呼ばないと#wait:timelineが
+// 完了しないtimelineを待ち続ける)。
 //
-// 重要な設計原則: GSAPが直接操作する値(tweenの途中経過)はReactの
-// state/atomには一切書き戻さない。refで掴んだDOM要素を直接操作するだけに
-// 留め、Reactの再描画サイクルとは独立させている(コマ送り中のimg.srcの
-// 差し替え、動画のcurrentTime操作等も同様)。
+// 設計方針3(重要・過去のバグ修正込み): GSAPがtweenで動かすCSSプロパティ
+// (left/top/rotate等)は、Reactの再描画のたびに書き換わるJSXのstyleとして
+// 「も」渡してはいけない。渡してしまうと、propsが変わった瞬間にReact自身が
+// 先にその値を確定値へ書き換えてしまい、直後に走るGSAPのtweenが
+// 「もう目的地に着いている状態からtargetへ」tweenすることになり、
+// 見た目上は移動距離ゼロ=瞬間移動になる(#s:...:pos:...が「一瞬で移動して
+// しまう」不具合の原因だった)。対策として、position/rotateはマウント
+// 直後だけgsap.set()で初期値を入れ、以後は一切JSXのstyleに書かず、
+// GSAPのtweenだけが値を書き換える唯一の主体になるようにしている。
+//
+// 設計方針4(視線矢印の回転、過去のバグ修正込み): 角度は-180〜180度の
+// 範囲で計算される(Math.atan2の性質上)ため、178度→-178度のように
+// 符号が反転する瞬間、何も考えずにその生の値へtweenすると「一番近い道」
+// ではなく「ぐるっと逆回りする」長い経路でtweenしてしまい、視線が
+// キャラの周りを何度も回転して見える不具合になっていた。直前に実際に
+// 設定した回転値(ラップアラウンドしていない、360度を超えてもよい
+// 連続値)を覚えておき、そこから見て最短経路になるよう目標値を
+// 都度補正してからtweenする。
 import { useRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -45,12 +54,18 @@ const BG_COLORS = {
     izakaya_main_closed: '#4a4a4a',
 };
 // キャラの立ち位置(originX/originY、%)から視線ターゲット(gaze.x/gaze.y、%)への
-// 向きを角度(度)で返す。ステージが正方形でない場合の縦横比の歪みは無視した
-// 簡易計算(モック確認用としては十分)。
+// 向きを角度(度、-180〜180)で返す。ステージが正方形でない場合の縦横比の
+// 歪みは無視した簡易計算(モック確認用としては十分)。
 function computeGazeAngleDeg(fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
     return (Math.atan2(dy, dx) * 180) / Math.PI;
+}
+// rawTargetDeg(-180〜180の生の角度)を、prevDeg(360度を超えてもよい連続値)
+// から見て最短経路になるよう補正した「連続値としての」角度に変換する。
+function shortestRotationTo(prevDeg, rawTargetDeg) {
+    const delta = ((rawTargetDeg - prevDeg + 540) % 360) - 180;
+    return prevDeg + delta;
 }
 function resolveBgVisual(bg) {
     // # bg:name:color:... やVNLayer.configure({backgroundSlots})で定義された
@@ -106,15 +121,20 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
     const gazeTlRef = useRef(null);
     const sequenceTlRef = useRef(null);
     const reverseTlRef = useRef(null);
+    // GSAPが唯一の書き込み主体であるべき値の「今の実際の状態」をここで
+    // 追跡する(Reactのstate/propsではなく、このref自身が正)。
+    const hasPositionedRef = useRef(false);
+    const currentRotationRef = useRef(null);
     // 表示する見た目の解決優先順位: #anim中の素材(動いている最中) >
     // #sで登録された表情ごとの静止画 > モック(色付き四角+ラベル)。
     const animAsset = getAnimAsset(name, state.expression, state.motion);
     const spriteAsset = !animAsset ? getSpriteAsset(name, state.expression) : undefined;
     const hasRealAsset = Boolean(animAsset || spriteAsset);
     const gazeAngle = state.gaze ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y) : null;
-    // 位置移動(#s:...:pos:...)。CSS transitionではdurationMsを反映できない
-    // ため、GSAPに明示的なdurationを渡す。overwrite:'auto'で、移動完了前に
-    // 次の移動指示が来ても衝突なく上書きする。
+    // 位置移動(#s:...:pos:...)。初回マウント時はgsap.set()で即座に配置し
+    // (アニメーションさせない)、以後の変化だけをtweenする。CSS transitionでは
+    // durationMsを反映できないため、GSAPに明示的なdurationを渡す。
+    // overwrite:'auto'で、移動完了前に次の移動指示が来ても衝突なく上書きする。
     useGSAP(() => {
         if (positionTlRef.current) {
             positionTlRef.current.kill();
@@ -125,13 +145,19 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
         const tl = gsap.timeline();
         positionTlRef.current = tl;
         timelineManager.register(atomKey, `pos:${name}`, tl);
-        tl.to(rootRef.current, {
-            left: `${slot.originX}%`,
-            top: `${slot.originY}%`,
-            duration: (slot.durationMs ?? 500) / 1000,
-            ease: 'power2.out',
-            overwrite: 'auto',
-        });
+        if (!hasPositionedRef.current) {
+            hasPositionedRef.current = true;
+            tl.set(rootRef.current, { left: `${slot.originX}%`, top: `${slot.originY}%` });
+        }
+        else {
+            tl.to(rootRef.current, {
+                left: `${slot.originX}%`,
+                top: `${slot.originY}%`,
+                duration: (slot.durationMs ?? 500) / 1000,
+                ease: 'power2.out',
+                overwrite: 'auto',
+            });
+        }
         return () => {
             tl.kill();
             timelineManager.unregister(atomKey, tl);
@@ -139,17 +165,32 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
     }, [slot.originX, slot.originY, slot.durationMs, atomKey, name]);
     // 視線矢印の回転。transform全体ではなく、CSSの独立した`rotate`プロパティ
     // だけをtweenする(位置決め用のtranslateとは別軸なので競合しない)。
+    // 初回出現時はgsap.set()で即座に向け、以後は最短経路になるよう補正した
+    // 角度へtweenする(shortestRotationTo参照)。gazeが無くなったら
+    // (キャラが視線を外す/矢印がアンマウントされる)、次回また現れた時に
+    // 「そこから最短経路」で始められるよう、追跡している回転値をリセットする。
     useGSAP(() => {
         if (gazeTlRef.current) {
             gazeTlRef.current.kill();
             timelineManager.unregister(atomKey, gazeTlRef.current);
         }
-        if (!arrowRef.current || gazeAngle === null)
+        if (!arrowRef.current || gazeAngle === null) {
+            currentRotationRef.current = null;
             return;
+        }
+        const isFirstAppearance = currentRotationRef.current === null;
+        const prevRotation = currentRotationRef.current ?? gazeAngle;
+        const targetRotation = shortestRotationTo(prevRotation, gazeAngle);
+        currentRotationRef.current = targetRotation;
         const tl = gsap.timeline();
         gazeTlRef.current = tl;
         timelineManager.register(atomKey, `gaze:${name}`, tl);
-        tl.to(arrowRef.current, { rotate: gazeAngle, duration: 0.15, ease: 'power1.out', overwrite: 'auto' });
+        if (isFirstAppearance) {
+            tl.set(arrowRef.current, { rotate: targetRotation });
+        }
+        else {
+            tl.to(arrowRef.current, { rotate: targetRotation, duration: 0.15, ease: 'power1.out', overwrite: 'auto' });
+        }
         return () => {
             tl.kill();
             timelineManager.unregister(atomKey, tl);
@@ -250,8 +291,8 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
     }, [animAsset, state.motion, state.animLoop, state.animReverse, state.animSpeed, atomKey, name]);
     return (_jsxs(_Fragment, { children: [_jsxs("div", { ref: rootRef, onClick: onClick, style: {
                     position: 'absolute',
-                    left: `${slot.originX}%`,
-                    top: `${slot.originY}%`,
+                    // left/topはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
+                    // 唯一の主体。上のコメント「設計方針3」参照)。
                     transform: 'translate(-50%, -50%)',
                     width: 80,
                     height: 140,
@@ -277,7 +318,8 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
                     left: `${slot.originX}%`,
                     top: `${slot.originY}%`,
                     transform: 'translate(-50%, -50%) translateY(-84px)',
-                    rotate: `${gazeAngle}deg`,
+                    // rotateはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
+                    // 唯一の主体。上のコメント「設計方針3・4」参照)。
                     width: 0,
                     height: 0,
                     borderTop: '6px solid transparent',
@@ -287,7 +329,48 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
                     zIndex: 6,
                 } }))] }));
 }
-function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx, offsetPx }) {
+function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx, offsetPx, atomKey }) {
+    const rootRef = useRef(null);
+    const positionTlRef = useRef(null);
+    const hasPositionedRef = useRef(false);
+    // 修正メモ: 以前はここもCSS transitionでleft/topを動かしていた。
+    // CharacterSprite側の位置移動をGSAP(power2.outイージング)に切り替えた
+    // 際、こちらだけCSSの既定イージング(ease、power2.outとは形が違う
+    // 曲線)のまま残してしまい、同じdurationでも移動中の位置が食い違って
+    // 「キャラは滑らかに動くのに吹き出しだけ全然ついてこない/遅れて追いつく」
+    // というズレが発生していた(#s:...:pos:...の指定時間を長くしても
+    // ズレの見た目が目立つだけで解消しなかったのはこれが原因)。
+    // CharacterSprite側と全く同じtweenパラメータ(duration/ease/overwrite)を
+    // 使うことで、GSAPの同じ内部クロックに乗って完全に同じ軌道を描くように
+    // した(設計方針3・CharacterSprite側のコメントも参照)。
+    useGSAP(() => {
+        if (positionTlRef.current) {
+            positionTlRef.current.kill();
+            timelineManager.unregister(atomKey, positionTlRef.current);
+        }
+        if (!rootRef.current)
+            return;
+        const tl = gsap.timeline();
+        positionTlRef.current = tl;
+        timelineManager.register(atomKey, `bubble:${speaker}`, tl);
+        if (!hasPositionedRef.current) {
+            hasPositionedRef.current = true;
+            tl.set(rootRef.current, { left: `${slot.originX}%`, top: `calc(${slot.originY}% - ${offsetPx}px)` });
+        }
+        else {
+            tl.to(rootRef.current, {
+                left: `${slot.originX}%`,
+                top: `calc(${slot.originY}% - ${offsetPx}px)`,
+                duration: (slot.durationMs ?? 500) / 1000,
+                ease: 'power2.out',
+                overwrite: 'auto',
+            });
+        }
+        return () => {
+            tl.kill();
+            timelineManager.unregister(atomKey, tl);
+        };
+    }, [slot.originX, slot.originY, slot.durationMs, offsetPx, atomKey, speaker]);
     return (_jsxs(_Fragment, { children: [_jsx("style", { children: `
         .vnlayer-scroll-hidden {
           scrollbar-width: none; /* Firefox */
@@ -296,10 +379,10 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
         .vnlayer-scroll-hidden::-webkit-scrollbar {
           display: none; /* Chrome/Safari */
         }
-      ` }), _jsxs("div", { onClick: onClick, className: "vnlayer-scroll-hidden", style: {
+      ` }), _jsxs("div", { ref: rootRef, onClick: onClick, className: "vnlayer-scroll-hidden", style: {
                     position: 'absolute',
-                    left: `${slot.originX}%`,
-                    top: `calc(${slot.originY}% - ${offsetPx}px)`,
+                    // left/topはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
+                    // 唯一の主体。CharacterSprite側の「設計方針3」コメント参照)。
                     transform: 'translate(-50%, -100%)',
                     maxWidth: 220,
                     maxHeight: '70%',
@@ -314,7 +397,7 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
                     lineHeight: 1.5,
                     cursor: revealedCount < content.length ? 'pointer' : 'default',
                     opacity: visible ? 1 : 0,
-                    transition: `opacity 800ms ease, left ${slot.durationMs ?? 500}ms ease, top ${slot.durationMs ?? 500}ms ease`,
+                    transition: 'opacity 800ms ease',
                     zIndex: 5,
                 }, children: [speaker && _jsx("div", { style: { fontSize: 11, opacity: 0.6, marginBottom: 2 }, children: speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap' }, children: content.slice(0, revealedCount) }), _jsx("div", { style: {
                             position: 'absolute',

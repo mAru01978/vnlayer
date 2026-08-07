@@ -52,6 +52,11 @@ export type MessageBubbleProps = {
   // #ui:messageWindow:offset:<px> で設定される、キャラのoriginY(%)から
   // 吹き出し下端までの距離(px、既定130)。
   offsetPx: number;
+  // BackgroundPropsのatomKeyと同じ(core/managers/timelineManager.ts登録用)。
+  // 位置移動をCharacterSpriteと全く同じGSAPパラメータ(duration/ease)で
+  // tweenするために必要(#s:...:pos:...でキャラと吹き出しが同じ速度で
+  // 追従するようにするため。下のmockRenderer.tsxのコメント参照)。
+  atomKey: string;
 };
 
 export type NarratorCaptionProps = {

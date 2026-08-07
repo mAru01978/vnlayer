@@ -196,7 +196,16 @@ export function useStoryEngine(scenario, options = {}) {
         const hadPendingInterrupt = waitManager.consumePendingInterrupt(atomKey);
         const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
         if (interruptChoice && hadPendingInterrupt) {
-            choose(interruptChoice.index);
+            // 実際に#interrupt付き選択肢へ割り込む、この瞬間だけ演出中の全
+            // GSAP timelineを一時停止する(notify:trueの全呼び出しで毎回pauseする
+            // と、gazeのようにnotify経由で頻繁に更新される演出がカクつくため、
+            // ここに絞った。core/managers/waitManager.tsのinterrupt()のコメント
+            // 参照)。割り込み処理(このchoose()が引き起こすadvance())が完了した
+            // タイミングで再開する。
+            timelineManager.pauseAll(atomKey);
+            choose(interruptChoice.index).then(() => {
+                timelineManager.resumeAll(atomKey);
+            });
             return;
         }
         const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(':')[0] === 'tick'));

@@ -423,6 +423,7 @@ export default function StageView({
                     fontFamily={uiConfig.font.family}
                     fontSizePx={uiConfig.font.sizePx}
                     offsetPx={uiConfig.messageWindow.offset}
+                    atomKey={story.atomKey}
                   />
                 </div>
               );

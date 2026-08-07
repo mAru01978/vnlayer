@@ -5,6 +5,7 @@ import { type BackgroundSlot } from './tags/backgroundSlots';
 import { type UiConfigPatch } from './tags/index';
 import { type AnimAssetConfig } from './tags/animAssets';
 import { type SpriteAssetConfig } from './tags/spriteAssets';
+import type { SetContextOptions } from './core/types';
 import type { StepProvider } from './core/StepProvider';
 import { createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
@@ -17,10 +18,7 @@ type MountOptions = {
 };
 declare function mount(selector: string, options: MountOptions): Promise<void>;
 declare function unmount(selector: string): Promise<void>;
-declare function setContext(vars: Record<string, unknown>, selector?: string, options?: {
-    notify?: boolean;
-    expose?: boolean;
-}): Promise<void>;
+declare function setContext(vars: Record<string, unknown>, selector?: string, options?: SetContextOptions): Promise<void>;
 declare function getContext(varNames?: string | string[], selector?: string): Promise<Record<string, unknown>>;
 type ConfigureOptions = {
     characterSlots?: Record<string, CharacterSlot>;
