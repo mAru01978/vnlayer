@@ -1,6 +1,7 @@
 import { registerTag } from "../../registry";
 import { isNumeric, parseOnOff } from "../../numericOrLabel";
 import { emitToInstance } from "../../../core/instanceRegistry";
+import { reportError, TagDispatchError } from "../../../core/errors";
 // #emit はVN間イベント連携専用のタグ。他の「このVNインスタンス自身」を
 // 操作する各種タグ(#s, #bg, #cam等)と違い、#emitだけは指定した別の
 // VNインスタンス(selector、mount()時に渡したものと同じ文字列)へ向けて
@@ -39,7 +40,7 @@ registerTag({
     run: ({ args }) => {
         const [selector, varName, rawValue] = args;
         if (!selector || !varName) {
-            console.warn(`[VNLayer] emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`);
+            reportError(new TagDispatchError(`emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`));
             return;
         }
         let value = rawValue;
