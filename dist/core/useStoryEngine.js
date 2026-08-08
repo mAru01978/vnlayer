@@ -20,6 +20,8 @@ import * as navigationManager from './managers/navigationManager';
 import * as waitManager from './managers/waitManager';
 import * as contextManager from './managers/contextManager';
 import * as timelineManager from './managers/timelineManager';
+import * as interruptManager from './managers/interruptManager';
+import { TagDispatchError, reportError } from './errors';
 // タグシステム大改修フェーズ3: 「useStoryEngine.tsの責務過多を解消し、タグ
 // 追加のたびにここを改修しなくて済むようにする」という狙いで全面的に
 // 書き直した。
@@ -33,6 +35,11 @@ import * as timelineManager from './managers/timelineManager';
 //     直接importして呼ぶ(このファイルのhandlersを経由しない)。
 //   - GSAPのtimeline(演出そのもの)もcore/managers/timelineManager.tsが
 //     一元管理する。このファイルは演出の中身を一切知らない。
+//   - #interrupt(SwitchFlow経由の割り込み)もcore/managers/interruptManager.ts
+//     が状態(許可/pending/キュー)を持ち、実際のStory操作は各StepProvider
+//     実装(staticStepProvider.ts等)側で行う。このファイルは
+//     stepProvider.onPush()を購読して、割り込みで発生したRunResultを
+//     通常のadvance()経由でタグ処理・バックログ等へ反映するだけ。
 //   - このファイルは「ink進行(init/choose/reset)ループの制御」+
 //     「各atomをuseAtomValueで読んでReactに繋ぐ」+「文章行が来た時に
 //     messageManager/backlogManagerへ通知する」だけに専念する、薄い
@@ -42,7 +49,9 @@ import * as timelineManager from './managers/timelineManager';
 // 参照。ざっくり言うと:
 //   atomKey    … このVNインスタンス専用の状態を隔離するためだけのキー
 //                (instanceId未指定時はuseId()のフォールバック値)。
-//                GSAPのtimelineManagerもこれで隔離する。
+//                GSAPのtimelineManagerもこれで隔離する。#interruptの
+//                StepProvider側でのStory分離キーとしても使う
+//                (core/staticStepProvider.ts参照)。
 //   instanceId … mount()時に渡した公開スコープ識別子。#ui:...の設定範囲や
 //                全VN共通バックログの判定等、「未指定=グローバル」という
 //                意味を持つ場面で使う(atomKeyとは別物)。
@@ -104,7 +113,7 @@ export function useStoryEngine(scenario, options = {}) {
                     // setIsProcessing(false)に到達しないまま止まる → 以後choose()が
                     // 「処理中」判定でずっと弾かれ続け、クリックしても一切反応しなく
                     // なる。1タグ失敗しても残りの処理は続行する。
-                    console.warn(`[VNLayer] tag dispatch failed, skipping this tag and continuing: "${tag}"`, e);
+                    reportError(new TagDispatchError(`tag dispatch failed, skipping this tag and continuing: "${tag}"`, { cause: e }));
                 }
             }
             if (isStale())
@@ -146,7 +155,7 @@ export function useStoryEngine(scenario, options = {}) {
     const init = useCallback(async () => {
         if (isProcessingRef.current)
             return;
-        const result = await stepProvider.init(scenario);
+        const result = await stepProvider.init(scenario, atomKey);
         await advance(result);
         setHasLoadedOnce(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,6 +171,19 @@ export function useStoryEngine(scenario, options = {}) {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scenario]);
+    // #interrupt(SwitchFlow経由の割り込み)は、init/choose/resetのレスポンスを
+    // 介さず非同期に新しいRunResultをpushしてくる(core/managers/interruptManager.ts
+    // 参照)。対応しているStepProvider実装(現状はstaticStepProviderのみ、
+    // core/serverStepProvider.tsは未対応)であれば購読しておき、pushされたら
+    // 通常のadvance()経由でタグ処理・バックログ等へ反映する。
+    useEffect(() => {
+        if (!stepProvider.onPush)
+            return;
+        const unsubscribe = stepProvider.onPush(atomKey, (result) => {
+            advance(result);
+        });
+        return () => unsubscribe();
+    }, [stepProvider, atomKey, advance]);
     const choose = useCallback(async (index) => {
         // isProcessing(State)ではなくisProcessingRefを見る。Stateはコミットが
         // 非同期なので、短時間に連続でchoose()が呼ばれるケースでは古い値の
@@ -185,7 +207,7 @@ export function useStoryEngine(scenario, options = {}) {
             const number = visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
             backlogManager.pushChoice(atomKey, instanceId, number > 0 ? number : 1, chosen.text);
         }
-        const result = await stepProvider.choose(scenario, index);
+        const result = await stepProvider.choose(scenario, index, atomKey);
         await advance(result);
     }, [choices, advance, scenario, stepProvider, atomKey, instanceId]);
     // tick/interrupt(event_loopパターン)の自動choose()。
@@ -250,13 +272,13 @@ export function useStoryEngine(scenario, options = {}) {
         // シナリオを最初からやり直す以上、setContextで書き込んだ(exposeされた)
         // 値の写しも古い情報になるためクリアする。
         contextManager.reset(atomKey);
-        const result = await stepProvider.reset(scenario);
+        const result = await stepProvider.reset(scenario, atomKey);
         await advance(result);
     }, [advance, scenario, stepProvider, atomKey]);
     const setContextVars = useCallback(async (vars, options) => {
         const toWrite = contextManager.prepareWrite(atomKey, vars, options);
         for (const [varName, value] of Object.entries(toWrite)) {
-            await stepProvider.idle(scenario, varName, value);
+            await stepProvider.idle(scenario, varName, value, atomKey);
         }
     }, [atomKey, scenario, stepProvider]);
     const getContextVars = useCallback(async (varNames) => {
@@ -273,8 +295,8 @@ export function useStoryEngine(scenario, options = {}) {
         return () => unregisterInstance(instanceId);
     }, [instanceId, setContextVars]);
     // タグシステム大改修フェーズ3: unmount時、このインスタンス専用に作られた
-    // 全atomFamilyエントリ+GSAP timelineをキャッシュ/レジストリから削除する
-    // (メモリリーク対策)。
+    // 全atomFamilyエントリ+GSAP timeline+#interrupt許可/pending/キューを
+    // キャッシュ/レジストリから削除する(メモリリーク対策)。
     useEffect(() => {
         return () => {
             disposeBasicAtoms(atomKey);
@@ -291,6 +313,7 @@ export function useStoryEngine(scenario, options = {}) {
             waitManager.dispose(atomKey);
             contextManager.dispose(atomKey);
             timelineManager.dispose(atomKey);
+            interruptManager.dispose(atomKey);
         };
     }, [atomKey]);
     return {

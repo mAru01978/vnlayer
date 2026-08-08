@@ -1,42 +1,66 @@
 import { Story } from "inkjs";
 import { continueUntilChoice } from "./inkStepRunner";
-// 重要: ここはStoryHandleそのものではなく「作成中のPromise」をキャッシュする。
-// 以前はStoryHandle確定後にしかMapへ書き込んでいなかったため、
-// fetch(story.json)の完了を待っている間にensureStory()が2回目・3回目と
-// 呼ばれると、どちらも「まだキャッシュに無い」と判定してStoryインスタンスを
-// 別々に2つ作ってしまうことがあった(初期化が短時間に連続で走るケースで発生)。
-// Promiseを同期的に(fetchの前に)Mapへ入れておけば、後続の呼び出しは
-// fetch完了を待たずにその場で同じPromiseに相乗りするので、
-// Storyインスタンスは必ず1つしか作られない。
+import { StoryLoadError, StoryRuntimeError, reportError } from "./errors";
+import * as interruptManager from "./managers/interruptManager";
 const liveStoryPromises = new Map();
+// #interrupt(SwitchFlow)がinit/choose/resetのレスポンスを介さず非同期に
+// pushしてくるRunResultの購読先。キーはcacheKey()と同じ。
+const pushHandlers = new Map();
+// atomKeyを渡された場合はVNインスタンス単位でStoryを分離する(1VNインスタンス
+// = 1つの生きたStory、という#interrupt実装が前提とするモデルに合わせるため。
+// これにより、同じscenarioを複数のVNインスタンスで同時にmountしても
+// 互いのChooseChoiceIndex等が混ざらなくなる)。
+// atomKey未指定(StepProviderをReact無しで直接使うレアケース)の場合のみ、
+// scenario単独をキーにする以前の挙動にフォールバックする。
+function cacheKey(scenario, atomKey) {
+    return atomKey ?? scenario;
+}
 async function loadStoryJson(scenario, dataBaseUrl) {
     const res = await fetch(`${dataBaseUrl}/${scenario}/story.json`);
     if (!res.ok) {
-        throw new Error(`[VNLayer static] failed to load story.json for "${scenario}": ${res.status}`);
+        throw new StoryLoadError(`failed to load story.json for "${scenario}": ${res.status}`);
     }
     return res.json();
 }
-async function createStoryHandle(scenario, dataBaseUrl) {
+async function createStoryHandle(scenario, dataBaseUrl, key) {
     const storyJson = await loadStoryJson(scenario, dataBaseUrl);
     const story = new Story(storyJson);
+    // ink 1.0以降、story.onErrorをバインドしないとエラー時に例外がスローされる
+    // (公式に必須級として推奨されている)。VNLayer全体のエラー報告口
+    // (core/errors.ts)へ集約する。
     story.onError = (message, type) => {
-        console.warn(`[VNLayer static onError:${scenario}] (${type}) ${message}`);
+        reportError(new StoryRuntimeError(`[${scenario}] (${type}) ${message}`));
     };
-    return { story, visual: { bg: "", characters: {}, speaker: "" } };
+    const handle = { story, visual: { bg: "", characters: {}, speaker: "" } };
+    // #interrupt(SwitchFlow+ObserveVariable)用に、このStoryインスタンスを
+    // 操作する権限(host)をinterruptManagerへ渡す。
+    interruptManager.attachStory(key, {
+        story,
+        getVisual: () => handle.visual,
+        setVisual: (v) => {
+            handle.visual = v;
+        },
+        pushResult: (result) => {
+            pushHandlers.get(key)?.forEach((cb) => cb(result));
+        },
+    });
+    return handle;
 }
 export function createStaticStepProvider(options = {}) {
     const dataBaseUrl = options.dataBaseUrl ?? "./data";
-    function ensureStory(scenario) {
-        let handlePromise = liveStoryPromises.get(scenario);
+    function ensureStory(scenario, atomKey) {
+        const key = cacheKey(scenario, atomKey);
+        let handlePromise = liveStoryPromises.get(key);
         if (!handlePromise) {
             // fetchが完了する前に(同期的に)Mapへ登録するのがポイント。
             // これでこの直後に来る2回目の呼び出しも、新しくStoryを作らず
             // このPromiseを待つだけになる。
-            handlePromise = createStoryHandle(scenario, dataBaseUrl);
-            liveStoryPromises.set(scenario, handlePromise);
+            handlePromise = createStoryHandle(scenario, dataBaseUrl, key);
+            liveStoryPromises.set(key, handlePromise);
             handlePromise.catch(() => {
                 // 初期化に失敗したら、次回リトライできるようキャッシュを解放する。
-                liveStoryPromises.delete(scenario);
+                liveStoryPromises.delete(key);
+                interruptManager.dispose(key);
             });
         }
         return handlePromise;
@@ -47,41 +71,67 @@ export function createStaticStepProvider(options = {}) {
         return result;
     }
     return {
-        async init(scenario) {
-            const handle = await ensureStory(scenario);
+        async init(scenario, atomKey) {
+            const handle = await ensureStory(scenario, atomKey);
             return runAndCache(scenario, handle);
         },
-        async choose(scenario, index) {
-            const handle = await ensureStory(scenario);
+        async choose(scenario, index, atomKey) {
+            const handle = await ensureStory(scenario, atomKey);
+            const key = cacheKey(scenario, atomKey);
             const validCount = handle.story.currentChoices.length;
             if (index < 0 || index >= validCount) {
                 // #tick等で複数の選択肢に同時にタイマーを張っている場合、一番早く経過した
                 // ものが既にストーリーを先に進めた後で、後発のタイマーが古いindexのまま
                 // choose()を呼んでしまうことがある(競合状態)。実害は無い(古い呼び出しは
                 // 単に無視して現在の状態を返すだけ)が、inkjs内部の例外に頼らず、ここで
-                // 早期に弾いて分かりやすい警告にしておく。
-                console.warn(`[VNLayer static] choose(${index}) ignored: only ${validCount} choice(s) are currently available ` +
-                    `(likely a stale #tick timer firing after the story already advanced).`);
+                // 早期に弾いて分かりやすいエラーとして報告しておく。
+                // 注意: currentChoicesは「今アクティブなフロー」のものを見る
+                // (#interrupt中は割り込みflow自身の選択肢になる。SwitchFlowの仕様)。
+                reportError(new StoryRuntimeError(`choose(${index}) ignored: only ${validCount} choice(s) are currently available ` +
+                    `(likely a stale #tick timer firing after the story already advanced).`));
                 return runAndCache(scenario, handle);
             }
             try {
                 handle.story.ChooseChoiceIndex(index);
             }
             catch (e) {
-                console.warn("[VNLayer static] ChooseChoiceIndex failed:", e);
+                reportError(new StoryRuntimeError("ChooseChoiceIndex failed", { cause: e }));
             }
-            return runAndCache(scenario, handle);
+            const result = runAndCache(scenario, handle);
+            // #interrupt(SwitchFlow)対応: 今選んだ選択肢が割り込みflow自身のもの
+            // だった場合、そのflowがまだ続くか(=result.choicesが割り込みflow側の
+            // 続きの選択肢)、ちょうど尽きたか(=元フローへ自動で戻す)をここで
+            // 判定する。割り込み中でなければ何もせずresultをそのまま返す。
+            const resumed = interruptManager.resumeDefaultFlowIfInterruptFinished(key, handle.story, result);
+            handle.visual = resumed.visual;
+            return resumed;
         },
-        async idle(scenario, varName, value) {
-            const handle = await ensureStory(scenario);
+        async idle(scenario, varName, value, atomKey) {
+            const handle = await ensureStory(scenario, atomKey);
             // idle()のvalueは呼び出し側(ホストページ)が任意の値を渡せる設計上unknown型。
             // inkjsのvariablesStateは緩い型(実質any)で受け取る前提なので、ここで明示キャストする。
+            // この書き込みが#interrupt側で張っているObserveVariableの発火トリガーにもなる。
             handle.story.variablesState[varName] = value;
         },
-        async reset(scenario) {
-            liveStoryPromises.delete(scenario);
-            const handle = await ensureStory(scenario);
+        async reset(scenario, atomKey) {
+            const key = cacheKey(scenario, atomKey);
+            liveStoryPromises.delete(key);
+            // 直前までの#interrupt許可/pending/キューは、シナリオを最初から
+            // やり直す以上いったん破棄する(古いknot名を指したままだと事故るため)。
+            interruptManager.dispose(key);
+            const handle = await ensureStory(scenario, atomKey);
             return runAndCache(scenario, handle);
+        },
+        onPush(atomKey, callback) {
+            let set = pushHandlers.get(atomKey);
+            if (!set) {
+                set = new Set();
+                pushHandlers.set(atomKey, set);
+            }
+            set.add(callback);
+            return () => {
+                set.delete(callback);
+            };
         },
     };
 }

@@ -11,6 +11,7 @@ import './defs/special/ui';
 import './defs/special/web';
 import './defs/special/emit';
 import './defs/special/timeline';
+import './defs/special/interrupt';
 import type { TagHandlers } from './registry';
 export declare function dispatchTag(tag: string, handlers: TagHandlers): Promise<void>;
 export { setTagConfig, getTagConfig, registerTag, registerAlias, registerBasicTag, warnUnknownTag } from './registry';

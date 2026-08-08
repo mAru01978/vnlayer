@@ -27,6 +27,7 @@
 // ink側では # emit:vn2:varName:value / # emit:@vn2:varName:value の
 // どちらでも書ける(mount("#vn2", ...)のような実際のCSSセレクタ側は
 // 今まで通り"#"付きのまま)。
+import { reportError, TagDispatchError } from "./errors";
 function normalizeSelector(selector) {
     return selector.replace(/^[#.@]/, "");
 }
@@ -40,7 +41,7 @@ export function unregisterInstance(selector) {
 export async function emitToInstance(selector, vars, options) {
     const target = registry.get(normalizeSelector(selector));
     if (!target) {
-        console.warn(`[VNLayer] emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`);
+        reportError(new TagDispatchError(`emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`));
         return;
     }
     await target.setContextVars(vars, options);

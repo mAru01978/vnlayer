@@ -1,5 +1,6 @@
 import { registerTag, warnUnknownTag } from '../../registry';
 import * as timelineManager from '../../../core/managers/timelineManager';
+import { reportError, TagDispatchError } from '../../../core/errors';
 // GSAPのtimeline(core/managers/timelineManager.ts)を横断的に制御するタグ。
 // #waitと違い、こちらはink本文の進行そのものは一切止めない
 // (演出だけを止める/再開する/強制終了する)。
@@ -31,7 +32,7 @@ registerTag({
                 break;
             case 'kill':
                 if (!name) {
-                    console.warn('[VNLayer] timeline:kill の書式が不正です(# timeline:kill:<name>): ' + args.join(':'));
+                    reportError(new TagDispatchError(`timeline:kill の書式が不正です(# timeline:kill:<name>): ${args.join(':')}`));
                     break;
                 }
                 timelineManager.killByName(atomKey, name);
