@@ -32,6 +32,7 @@ export type TagHandlers = {
 import type { PrimitiveAtom } from "jotai";
 import { getStore } from "../core/store";
 import * as waitManager from "../core/managers/waitManager";
+import { reportError, TagDispatchError } from "../core/errors";
 
 export type TagRunContext<TConfig> = {
   args: string[];
@@ -104,8 +105,12 @@ export function getTagConfig<T = any>(key: string): T | undefined {
 // handlers.onUnknownTag?.(...)経由で呼んでいたが、これも「状態を書き換える」
 // わけではない単なる診断出力なので、handlersから外して直接importできる
 // 関数にした。
+// 修正メモ: 以前はconsole.warn直書きだったが、core/errors.tsのエラー型
+// 階層に寄せた(TagDispatchError)。多くのタグ定義ファイルがこの関数を
+// 経由して不正な引数を報告しているため、ここを直すだけで横断的に
+// 「タグの引数エラー」がVNLayerError系として一貫した形で報告されるようになる。
 export function warnUnknownTag(tag: string): void {
-  console.warn("[VNLayer] unknown tag or invalid arguments:", tag);
+  reportError(new TagDispatchError(`unknown tag or invalid arguments: ${tag}`));
 }
 
 export async function runTag(

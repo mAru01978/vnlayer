@@ -12,7 +12,7 @@
 // tags/defs/を2つのフォルダに分けている。
 //   tags/defs/basic/   … registerBasicTag()で書くタグ(#shake/#cam/#flash/#gaze)。
 //   tags/defs/special/ … 複数の分岐/副作用先を持つタグ(#s/#anim/#ui/#web/
-//                        #emit/#bg/#wait/#type/#timeline)。registerTag(
+//                        #emit/#bg/#wait/#type/#timeline/#interrupt)。registerTag(
 //                        {run:...})で書くが、実装自体はcore/managers/の
 //                        関数呼び出しに終始し、core/useStoryEngine.tsは
 //                        経由しない。
@@ -33,6 +33,7 @@ import './defs/special/ui';
 import './defs/special/web';
 import './defs/special/emit';
 import './defs/special/timeline';
+import './defs/special/interrupt';
 import { runTag } from './registry';
 function parseTag(tag) {
     const [key, ...args] = tag.split(':').map((s) => s.trim());
