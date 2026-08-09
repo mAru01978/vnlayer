@@ -21,9 +21,15 @@ import { getDefaultOnNavigate } from "../core/defaultNavigate";
 // onNavigateを明示的に渡さなかった場合はcore/defaultNavigate.tsの既定値
 // (未設定ならlocation.href代入、Next.js運用でNextNavigationBridgeをマウント
 // していればrouter.push)が使われる。
+//
+// 用語メモ(2026-08-08、Scenario→Clip改称): propは`clip`に統一。既定値の
+// 文字列"Scenario1"自体は単なる例示(実際にはホストアプリのdata/以下の
+// フォルダ名と一致させる必要がある)なので、識別子名の改称に合わせて
+// 値そのものを変える必要はない(既存のdata/Scenario1/のようなフォルダ名を
+// リネームする義務はない)。
 const StoryContext = createContext(null);
-export const StoryProvider = ({ children, scenario = "Scenario1", stepProvider, onNavigate, instanceId, }) => {
-    const engine = useStoryEngine(scenario, {
+export const StoryProvider = ({ children, clip = "Scenario1", stepProvider, onNavigate, instanceId, }) => {
+    const engine = useStoryEngine(clip, {
         stepProvider,
         onNavigate: onNavigate ?? getDefaultOnNavigate(),
         instanceId,

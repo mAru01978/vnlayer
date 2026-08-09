@@ -1,13 +1,13 @@
 {
   "name": "vnlayer",
-  "version": "0.4.0",
-   "scripts": {
+  "version": "0.5.0",
+ "scripts": {
    "list:tags": "node scripts/list-tags.js",
     "compile-story": "node scripts/compile-story.js",
     "add:tag": "node scripts/new-tag.js",
     "add:char": "node scripts/new-character.js",
     "add:scene": "node scripts/new-scene.js",
-    "add:scenario": "node scripts/new-scenario.js",
+    "add:clip": "node scripts/new-clip.js",
     "convert:anim": "node scripts/convert-anim-webp-to-webm.js",
     "menu": "node scripts/menu.js",
     "build": "node scripts/build-vnlayer-tsc.js",

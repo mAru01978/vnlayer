@@ -4,7 +4,7 @@ import { useAtomValue } from 'jotai';
 import { dispatchTag } from '../tags/index';
 import { getUiConfig } from '../tags/uiConfig';
 import { getDefaultStepProvider } from './defaultStepProvider';
-import { registerInstance, unregisterInstance } from './instanceRegistry';
+import { registerInstance, unregisterInstance, registerSelf, unregisterSelf } from './instanceRegistry';
 import { getStore } from './store';
 import { camAtomFamily, shakeAtomFamily, flashAtomFamily, typeSpeedAtomFamily, disposeBasicAtoms } from './atoms';
 import * as backgroundManager from './managers/backgroundManager';
@@ -59,7 +59,7 @@ import type { RunResult, SetContextOptions, StoryEngine } from './types';
 //                全VN共通バックログの判定等、「未指定=グローバル」という
 //                意味を持つ場面で使う(atomKeyとは別物)。
 export function useStoryEngine(
-  scenario: string,
+  clip: string,
   options: {
     stepProvider?: StepProvider;
     onNavigate?: (path: string) => void;
@@ -182,22 +182,22 @@ export function useStoryEngine(
 
   const init = useCallback(async () => {
     if (isProcessingRef.current) return;
-    const result = await stepProvider.init(scenario, atomKey);
+    const result = await stepProvider.init(clip, atomKey);
     await advance(result);
     setHasLoadedOnce(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario, stepProvider]);
+  }, [clip, stepProvider]);
 
   // React 18のStrictMode(Next.jsのdevサーバーでは既定で有効)は、マウント時に
   // effectをわざと2回実行する(mount→cleanup→mountを1瞬でシミュレートする)。
-  // シナリオごとに1回だけ実行済みかを覚えておき、2回目の呼び出しは無視する。
-  const initedScenarioRef = useRef<string | null>(null);
+  // クリップごとに1回だけ実行済みかを覚えておき、2回目の呼び出しは無視する。
+  const initedClipRef = useRef<string | null>(null);
   useEffect(() => {
-    if (initedScenarioRef.current === scenario) return;
-    initedScenarioRef.current = scenario;
+    if (initedClipRef.current === clip) return;
+    initedClipRef.current = clip;
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario]);
+  }, [clip]);
 
   // #interrupt(SwitchFlow経由の割り込み)は、init/choose/resetのレスポンスを
   // 介さず非同期に新しいRunResultをpushしてくる(core/managers/interruptManager.ts
@@ -243,10 +243,10 @@ export function useStoryEngine(
         backlogManager.pushChoice(atomKey, instanceId, number > 0 ? number : 1, chosen.text);
       }
 
-      const result = await stepProvider.choose(scenario, index, atomKey);
+      const result = await stepProvider.choose(clip, index, atomKey);
       await advance(result);
     },
-    [choices, advance, scenario, stepProvider, atomKey, instanceId]
+    [choices, advance, clip, stepProvider, atomKey, instanceId]
   );
 
   // tick/interrupt(event_loopパターン)の自動choose()。
@@ -314,22 +314,22 @@ export function useStoryEngine(
     positionManager.reset(atomKey);
     messageManager.reset(atomKey);
     windowVisibilityManager.reset(atomKey);
-    // シナリオを最初からやり直す以上、setContextで書き込んだ(exposeされた)
+    // クリップを最初からやり直す以上、setContextで書き込んだ(exposeされた)
     // 値の写しも古い情報になるためクリアする。
     contextManager.reset(atomKey);
 
-    const result = await stepProvider.reset(scenario, atomKey);
+    const result = await stepProvider.reset(clip, atomKey);
     await advance(result);
-  }, [advance, scenario, stepProvider, atomKey]);
+  }, [advance, clip, stepProvider, atomKey]);
 
   const setContextVars = useCallback(
     async (vars: Record<string, unknown>, options?: SetContextOptions) => {
       const toWrite = contextManager.prepareWrite(atomKey, vars, options);
       for (const [varName, value] of Object.entries(toWrite)) {
-        await stepProvider.idle(scenario, varName, value, atomKey);
+        await stepProvider.idle(clip, varName, value, atomKey);
       }
     },
-    [atomKey, scenario, stepProvider]
+    [atomKey, clip, stepProvider]
   );
 
   const getContextVars = useCallback(
@@ -339,15 +339,26 @@ export function useStoryEngine(
     [atomKey]
   );
 
-  // web:emit用の自己登録: このVNインスタンスが自分のinstanceId(=mount時の
-  // selector)でcore/instanceRegistry.tsに自己登録しておくことで、他の
-  // VNインスタンスの#emit:<このinstanceId>:...タグから見つけてもらえる
-  // ようになる。instanceIdが無い場合は登録しない。
+  // #emit(他VN宛、3引数形)用の自己登録: このVNインスタンスが自分の
+  // instanceId(=mount時のselector)でcore/instanceRegistry.tsに自己登録
+  // しておくことで、他のVNインスタンスの#emit:<このinstanceId>:...タグから
+  // 見つけてもらえるようになる。instanceIdが無い場合は登録しない
+  // (他VNから名指しでemitできる対象は、公開スコープ識別子を持つインスタンス
+  // だけ、という以前からの設計)。
   useEffect(() => {
     if (!instanceId) return;
     registerInstance(instanceId, { setContextVars });
     return () => unregisterInstance(instanceId);
   }, [instanceId, setContextVars]);
+
+  // #emit(同一Ink=自分自身宛、2引数形)用の自己登録: instanceIdの有無に
+  // 関わらず、必ず自分のatomKeyで登録しておく(#interruptを同じinkファイル
+  // 内から起点にする用途等、instanceId未指定のインスタンスでも自己通知
+  // だけは動く必要があるため)。
+  useEffect(() => {
+    registerSelf(atomKey, { setContextVars });
+    return () => unregisterSelf(atomKey);
+  }, [atomKey, setContextVars]);
 
   // タグシステム大改修フェーズ3: unmount時、このインスタンス専用に作られた
   // 全atomFamilyエントリ+GSAP timeline+#interrupt許可/pending/キューを
