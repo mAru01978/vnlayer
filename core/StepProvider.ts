@@ -10,17 +10,24 @@ import type { RunResult } from "./types";
 //   - staticStepProvider.ts … ブラウザ内でinkjsを直接実行する
 //     (index.html + vnlayer.js だけで動く静的運用向け)
 //
+// 用語メモ(2026-08-08、Scenario→Clip改称): 以前「Scenario」と呼んでいた
+// 単位(1本のInk本文+それに紐づくstory.json)は、スクリプトというほど固定的
+// でもなく、かといってイベント駆動な使い方もできる(#interrupt等)、という
+// 性質がFlashの「クリップ」に近いという判断からClipへ改称した。JS(vnlayer.js)
+// 側・React側どちらのAPIも指定キーは統一して `clip` になる(以前の
+// `scenario` は完全に置き換え、両立はさせない)。
+//
 // atomKey(第2/第3引数、省略可): #interrupt(SwitchFlow経由の割り込み、
 // core/managers/interruptManager.ts参照)がVNインスタンス単位でStoryを
 // 分離・監視する必要があるため追加した識別子。Reactを経由しない直接利用
 // (StepProviderをReact無しで叩く場合)では省略してよく、その場合は
-// scenario単独をキーにする以前の挙動にフォールバックする(実装依存)。
+// clip単独をキーにする以前の挙動にフォールバックする(実装依存)。
 export interface StepProvider {
-  init(scenario: string, atomKey?: string): Promise<RunResult>;
-  choose(scenario: string, index: number, atomKey?: string): Promise<RunResult>;
+  init(clip: string, atomKey?: string): Promise<RunResult>;
+  choose(clip: string, index: number, atomKey?: string): Promise<RunResult>;
   // Ink本文の進行には触れない、一方通行の変数書き込み(アイドル演出・setContext用)
-  idle(scenario: string, varName: string, value: unknown, atomKey?: string): Promise<void>;
-  reset(scenario: string, atomKey?: string): Promise<RunResult>;
+  idle(clip: string, varName: string, value: unknown, atomKey?: string): Promise<void>;
+  reset(clip: string, atomKey?: string): Promise<RunResult>;
   // #interrupt(SwitchFlow経由の割り込み)のように、init/choose/resetの
   // レスポンスを介さず「非同期に」新しいRunResultが発生する場合の購読口。
   // 対応していない実装(サーバー版等、現状は未対応)ではundefinedのままでよく、

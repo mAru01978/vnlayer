@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 // 任意の場所から実行可能にし、コマンドライン引数で data ディレクトリの指定を必須にしたスクリプト
+// (2026-08-08、Scenario→Clip改称: 内部変数名/ログ文言をclip呼びに統一。
+//  対象を探す条件自体は変わらず「story.inkを含むdata直下のフォルダ」)
 // 使用例: node scripts/compile-story.js ./data
 //     node scripts/compile-story.js /path/to/my/custom/data
 
@@ -37,38 +39,38 @@ if (!fs.existsSync(dataDir)) {
   process.exit(1);
 }
 
-const scenarioDirs = fs
+const clipDirs = fs
   .readdirSync(dataDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => path.join(dataDir, entry.name))
   .filter((dir) => fs.existsSync(path.join(dir, "story.ink")));
 
-if (scenarioDirs.length === 0) {
+if (clipDirs.length === 0) {
   console.error(
-    `指定されたディレクトリ (${dataDir}) 以下に story.ink を含むシナリオフォルダが見つかりませんでした。`,
+    `指定されたディレクトリ (${dataDir}) 以下に story.ink を含むクリップフォルダが見つかりませんでした。`,
   );
   process.exit(1);
 }
 
 let hadError = false;
 
-for (const dir of scenarioDirs) {
-  const scenarioName = path.basename(dir);
+for (const dir of clipDirs) {
+  const clipName = path.basename(dir);
   const storyInk = path.join(dir, "story.ink");
   const storyJsonPath = path.join(dir, "story.json");
 
-  console.log(`\n[compile-story] "${scenarioName}" をコンパイルしています...`);
+  console.log(`\n[compile-story] "${clipName}" をコンパイルしています...`);
   try {
     execSync(`npx inkjs -o "${storyJsonPath}" "${storyInk}"`, {
       stdio: "inherit",
       cwd: execCwd,
     });
     stripBOM(storyJsonPath);
-    console.log(`[compile-story] "${scenarioName}" 完了。`);
+    console.log(`[compile-story] "${clipName}" 完了。`);
   } catch (e) {
     hadError = true;
     console.error(
-      `[compile-story] "${scenarioName}" のコンパイルに失敗しました。`,
+      `[compile-story] "${clipName}" のコンパイルに失敗しました。`,
     );
   }
 }

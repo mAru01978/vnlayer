@@ -1,3 +1,4 @@
+import { StoryRuntimeError, reportError } from "./errors";
 // このファイルはinkjsのStory APIだけに依存し、fsやserver-only、fetch等には
 // 一切触れない。そのため:
 //   - lib/story/server/engine.ts (Next.jsサーバー、Node環境)
@@ -6,9 +7,14 @@
 // 片方にしか反映されない事故が起きるため(実際に過去そうなった)、必ずここを共有すること。
 // #s は「話者+表情+位置+表示/非表示」の統合タグ。話者抽出(currentSpeakerForLine)
 // のためだけに特別扱いしていた以前と違い、今はremainingTagsからも除外しない
-// (表情/pos/hideの反映はtags/defs/s.tsのrun()側で行うため、dispatchTagにも
+// (表情/pos/hideの反映はtags/defs/special/sprite.tsのrun()側で行うため、dispatchTagにも
 // 渡す必要がある)。
 // _ref を使っていたタグ(cam:zoom:_ref 等)は、呼び出し側が解決済みの値で渡すこと。
+//
+// #bg廃止メモ(2026-08-08): #bgは#s:bgへ統合された(tags/defs/special/sprite.ts
+// 参照)。「bg」は#s用の予約済み疑似キャラ名であり、実在のキャラクターでは
+// ないため、話者抽出(sTags)からは除外し、visual.characters側にも書き込まない
+// (代わりにvisual.bgを直接更新する)。
 export function continueUntilChoice(story, initialVisual) {
     const steps = [];
     let currentSpeakerForLine = initialVisual.speaker;
@@ -46,6 +52,9 @@ export function continueUntilChoice(story, initialVisual) {
                 return [key, ...resolvedRest].join(":");
             });
             // 話者抽出は解決済みのsタグから行う(2番目のセグメントが話者名)。
+            // 「bg」は#s用の予約済み疑似キャラ名(背景切り替え用)なので、
+            // 話者候補からは除外する(# s:bg:... で話者が「bg」になってしまう
+            // 事故を防ぐ)。
             // 重要: inkjsは文章を挟まない連続したタグ行を1回のContinue()に
             // まとめてcurrentTagsとして返すことがある(例: 前の知の末尾の
             // # s:alice:hide と、-> 診断先の知の先頭の # s:mika:normal が
@@ -54,20 +63,25 @@ export function continueUntilChoice(story, initialVisual) {
             // 固定されてしまうバグになるため、必ず「最後に見つかったsタグ」を
             // 採用する(後に書かれたものが優先される、というinkスクリプトの
             // 上から下への読み方と一致させる)。
-            const sTags = remainingTags.filter((t) => t.split(":")[0] === "s");
+            const sTags = remainingTags.filter((t) => {
+                const parts = t.split(":");
+                return parts[0] === "s" && parts[1] !== "bg";
+            });
             if (sTags.length > 0) {
                 currentSpeakerForLine = sTags[sTags.length - 1].split(":")[1];
             }
             for (const tag of remainingTags) {
                 const [key, ...rest] = tag.split(":");
-                if (key === "bg") {
-                    visual.bg = rest[0] ?? "";
-                }
-                else if (key === "s") {
+                if (key === "s") {
                     // # s:name / # s:name:hide / # s:name:pos:... / # s:name:<表情>
+                    // # s:bg:<背景名> (#bg統合分岐、疑似キャラ名)
                     const [name, mode] = rest;
                     if (!name || mode === undefined)
                         continue; // 話者だけの指定は見た目に影響しない
+                    if (name === "bg") {
+                        visual.bg = mode;
+                        continue;
+                    }
                     if (mode === "hide") {
                         delete visual.characters[name];
                     }
@@ -155,7 +169,7 @@ export function continueUntilChoice(story, initialVisual) {
         }
     }
     catch (e) {
-        console.warn("[inkStepRunner] runtime error during Continue(), stopping here:", e);
+        reportError(new StoryRuntimeError("runtime error during Continue(), stopping here", { cause: e }));
     }
     const choices = story.currentChoices.map((c, i) => ({
         text: c.text,

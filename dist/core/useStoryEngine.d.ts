@@ -1,6 +1,6 @@
 import type { StepProvider } from './StepProvider';
 import type { StoryEngine } from './types';
-export declare function useStoryEngine(scenario: string, options?: {
+export declare function useStoryEngine(clip: string, options?: {
     stepProvider?: StepProvider;
     onNavigate?: (path: string) => void;
     instanceId?: string;

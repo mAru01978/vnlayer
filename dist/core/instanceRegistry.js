@@ -27,11 +27,24 @@
 // ink側では # emit:vn2:varName:value / # emit:@vn2:varName:value の
 // どちらでも書ける(mount("#vn2", ...)のような実際のCSSセレクタ側は
 // 今まで通り"#"付きのまま)。
+//
+// 追記(#emit自己通知拡張): # emit:<varName>:<value>(selectorを省略した
+// 2引数形)は「同一Ink(自分自身)への通知」として扱う。#interruptを同じink
+// ファイル内から起点にしたい場合、素のink代入(~ pending_x = 1)でも
+// story.ObserveVariableは発火する(inkjs的にはそれで十分)が、#emitの
+// 2引数形を使うと VNLayer.setContext(..., {notify:true}) と同じ経路
+// (_seq自動採番/#wait・type_wait待ちの即時打ち切り/event_loopの#interrupt
+// 付き選択肢への自動遷移マーク)にも一緒に乗る。他VNへの送信(selector必須)
+// とは別のMap(selfRegistry、atomKeyキー)で持つ — instanceId(公開スコープ
+// 識別子、mount()時に省略されうる)とは値空間が別物なので、混ざらないように
+// 完全に分離してある。
 import { reportError, TagDispatchError } from "./errors";
 function normalizeSelector(selector) {
     return selector.replace(/^[#.@]/, "");
 }
 const registry = new Map();
+// atomKey単位の自己登録用(instanceId未指定のインスタンスでも必ず動く)。
+const selfRegistry = new Map();
 export function registerInstance(selector, target) {
     registry.set(normalizeSelector(selector), target);
 }
@@ -42,6 +55,22 @@ export async function emitToInstance(selector, vars, options) {
     const target = registry.get(normalizeSelector(selector));
     if (!target) {
         reportError(new TagDispatchError(`emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`));
+        return;
+    }
+    await target.setContextVars(vars, options);
+}
+// core/useStoryEngine.ts側が、instanceIdの有無に関わらず必ず自分の
+// atomKeyで自己登録する(# emit:<varName>:<value> の2引数=自己通知形用)。
+export function registerSelf(atomKey, target) {
+    selfRegistry.set(atomKey, target);
+}
+export function unregisterSelf(atomKey) {
+    selfRegistry.delete(atomKey);
+}
+export async function emitToSelf(atomKey, vars, options) {
+    const target = selfRegistry.get(atomKey);
+    if (!target) {
+        reportError(new TagDispatchError(`emit: instance not ready yet (atomKey "${atomKey}")`));
         return;
     }
     await target.setContextVars(vars, options);
