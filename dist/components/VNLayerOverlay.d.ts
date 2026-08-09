@@ -9,7 +9,7 @@ export type VNLayerHandle = {
     resetStory: () => Promise<void>;
 };
 export type VNLayerOverlayProps = {
-    scenario?: string;
+    clip?: string;
     mode: VNLayerMode;
     uiAnchor?: UiAnchor;
     showUi?: boolean;
@@ -18,5 +18,5 @@ export type VNLayerOverlayProps = {
     onReady?: (handle: VNLayerHandle) => void;
     instanceId?: string;
 };
-export default function VNLayerOverlay({ scenario, mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }: VNLayerOverlayProps): import("react").JSX.Element;
+export default function VNLayerOverlay({ clip, mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }: VNLayerOverlayProps): import("react").JSX.Element;
 //# sourceMappingURL=VNLayerOverlay.d.ts.map

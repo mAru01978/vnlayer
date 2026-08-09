@@ -11,16 +11,17 @@
 // basic/special分離: 「1つのatomへの書き込みだけで完結するか」を基準に、
 // tags/defs/を2つのフォルダに分けている。
 //   tags/defs/basic/   … registerBasicTag()で書くタグ(#shake/#cam/#flash/#gaze)。
-//   tags/defs/special/ … 複数の分岐/副作用先を持つタグ(#s/#anim/#ui/#web/
-//                        #emit/#bg/#wait/#type/#timeline/#interrupt)。registerTag(
-//                        {run:...})で書くが、実装自体はcore/managers/の
-//                        関数呼び出しに終始し、core/useStoryEngine.tsは
-//                        経由しない。
+//   tags/defs/special/ … 複数の分岐/副作用先を持つタグ(#s [背景切り替えの
+//                        #s:bgも含む]/#anim/#ui/#web/#emit/#wait/#type/
+//                        #timeline/#interrupt)。registerTag({run:...})で
+//                        書くが、実装自体はcore/managers/の関数呼び出しに
+//                        終始し、core/useStoryEngine.tsは経由しない。
+//                        #bgは2026-08-08に#s:bgへ統合され廃止された
+//                        (tags/defs/special/sprite.ts参照)。
 // 新しいタグを追加するときは、まず「1つのatomへの書き込みだけで済むか」を
 // 考え、済むならbasic/に1ファイル足すだけでよい。複雑ならspecial/に置き、
 // 必要に応じてcore/managers/に新しいマネージャーを追加する
 // (どちらのケースでもcore/useStoryEngine.tsは触らない)。
-import './defs/special/bg';
 import './defs/special/sprite';
 import './defs/special/anim';
 import './defs/basic/cam';

@@ -29,21 +29,21 @@ export function createServerStepProvider(
 ): StepProvider {
   const endpoint = options.endpoint ?? "/api/story";
   return {
-    init: (scenario, atomKey) =>
-      callStoryApi<RunResult>(endpoint, { action: "init", scenario, atomKey }),
-    choose: (scenario, index, atomKey) =>
-      callStoryApi<RunResult>(endpoint, { action: "choose", index, scenario, atomKey }),
-    idle: async (scenario, varName, value, atomKey) => {
+    init: (clip, atomKey) =>
+      callStoryApi<RunResult>(endpoint, { action: "init", clip, atomKey }),
+    choose: (clip, index, atomKey) =>
+      callStoryApi<RunResult>(endpoint, { action: "choose", index, clip, atomKey }),
+    idle: async (clip, varName, value, atomKey) => {
       await callStoryApi<{ ok: boolean }>(endpoint, {
         action: "idle",
-        scenario,
+        clip,
         varName,
         value,
         atomKey,
       });
     },
-    reset: (scenario, atomKey) =>
-      callStoryApi<RunResult>(endpoint, { action: "reset", scenario, atomKey }),
+    reset: (clip, atomKey) =>
+      callStoryApi<RunResult>(endpoint, { action: "reset", clip, atomKey }),
     // #interrupt(SwitchFlow経由のpush)はサーバー版のリクエスト/レスポンス
     // 方式とは相性が悪い(サーバー側でStoryを常駐させ、WebSocket等のpush経路が
     // 必要になる)ため、現状は未対応。onPushを実装しないことで

@@ -36,7 +36,7 @@ function mount(selector, options) {
     instances.set(selector, instance);
     return new Promise((resolve) => {
         root.render(createElement(VNLayerOverlay, {
-            scenario: options.scenario ?? 'Scenario1',
+            clip: options.clip ?? 'Scenario1',
             mode: options.mode,
             uiAnchor: options.uiAnchor,
             showUi: options.showUi,

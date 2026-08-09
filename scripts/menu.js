@@ -62,12 +62,13 @@ const MENU_ITEMS = [
       ]),
   },
   {
-    label: "新しいシナリオを追加(new-scenario.js)",
+    // 2026-08-08、Scenario→Clip改称: new-scenario.js → new-clip.js
+    label: "新しいクリップを追加(new-clip.js)",
     run: async () => {
-      const scenarioName = await askQuestion(
-        "シナリオ名を入力してください(例: Scenario2): ",
+      const clipName = await askQuestion(
+        "クリップ名を入力してください(例: Clip2): ",
       );
-      if (!scenarioName) {
+      if (!clipName) {
         console.log("入力が空だったので中断しました。");
         return;
       }
@@ -78,8 +79,8 @@ const MENU_ITEMS = [
 
       runDirect([
         "node",
-        path.join(__dirname, "new-scenario.js"),
-        scenarioName,
+        path.join(__dirname, "new-clip.js"),
+        clipName,
         targetDataDir,
       ]);
     },
