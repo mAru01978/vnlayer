@@ -26,10 +26,10 @@ function EngineBridge({ onReady }) {
     return null;
 }
 // StoryProviderをこのコンポーネント自身が内包しているので、
-// <VNLayerOverlay scenario="BlogIntro" mode="overlay" /> をどのページに置いても
-// それだけでそのシナリオ用のエンジン一式が独立して動く。
+// <VNLayerOverlay clip="BlogIntro" mode="overlay" /> をどのページに置いても
+// それだけでそのクリップ用のエンジン一式が独立して動く。
 // (旧VNLayer.tsxと同じ役割。描画自体はStageViewに一本化されている)
-export default function VNLayerOverlay({ scenario = 'Scenario1', mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }) {
-    return (_jsxs(StoryProvider, { scenario: scenario, stepProvider: stepProvider, onNavigate: onNavigate, instanceId: instanceId, children: [_jsx(EngineBridge, { onReady: onReady }), _jsx(StageView, { mode: mode, uiAnchor: uiAnchor, showUi: showUi })] }));
+export default function VNLayerOverlay({ clip = 'Scenario1', mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }) {
+    return (_jsxs(StoryProvider, { clip: clip, stepProvider: stepProvider, onNavigate: onNavigate, instanceId: instanceId, children: [_jsx(EngineBridge, { onReady: onReady }), _jsx(StageView, { mode: mode, uiAnchor: uiAnchor, showUi: showUi })] }));
 }
 //# sourceMappingURL=VNLayerOverlay.js.map

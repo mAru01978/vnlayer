@@ -10,4 +10,10 @@ export declare function emitToInstance(selector: string, vars: Record<string, un
     notify?: boolean;
     expose?: boolean;
 }): Promise<void>;
+export declare function registerSelf(atomKey: string, target: EmitTarget): void;
+export declare function unregisterSelf(atomKey: string): void;
+export declare function emitToSelf(atomKey: string, vars: Record<string, unknown>, options?: {
+    notify?: boolean;
+    expose?: boolean;
+}): Promise<void>;
 //# sourceMappingURL=instanceRegistry.d.ts.map

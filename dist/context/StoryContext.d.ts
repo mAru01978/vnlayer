@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
 import type { StepProvider } from "../core/StepProvider";
-export declare const StoryProvider: ({ children, scenario, stepProvider, onNavigate, instanceId, }: {
+export declare const StoryProvider: ({ children, clip, stepProvider, onNavigate, instanceId, }: {
     children: ReactNode;
-    scenario?: string;
+    clip?: string;
     stepProvider?: StepProvider;
     onNavigate?: (path: string) => void;
     instanceId?: string;

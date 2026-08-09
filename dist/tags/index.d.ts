@@ -1,4 +1,3 @@
-import './defs/special/bg';
 import './defs/special/sprite';
 import './defs/special/anim';
 import './defs/basic/cam';

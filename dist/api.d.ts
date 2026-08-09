@@ -10,7 +10,7 @@ import type { StepProvider } from './core/StepProvider';
 import { createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
 type MountOptions = {
-    scenario?: string;
+    clip?: string;
     mode: VNLayerMode;
     uiAnchor?: UiAnchor;
     showUi?: boolean;

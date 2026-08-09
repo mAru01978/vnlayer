@@ -13,16 +13,23 @@ import type { StepProvider } from './core/StepProvider';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
 
-// フェーズ1のゴール: 「VNLayer.mount("#vn", {scenario, mode})」のような
+// フェーズ1のゴール: 「VNLayer.mount("#vn", {clip, mode})」のような
 // 命令的APIを、既存のReactコンポーネント(VNLayerOverlay)の上に薄く被せて提供する。
 // 中身は今までと同じReactツリーなので、Next.js運用時の挙動は一切変わらない。
 //
 // フェーズ2(vnlayer.js化)では、このファイル+core/+tags/+components/一式を
 // inkjs・React・ReactDOM・gsapごとesbuild/rollupで1ファイルにバンドルし、
 // window.VNLayer = api としてグローバル公開する想定。
+//
+// 用語メモ(2026-08-08、Scenario→Clip改称): 以前「Scenario」と呼んでいた
+// 単位(1本のInk本文+それに紐づくstory.json)は、スクリプトというほど固定的
+// でもなく、かといってイベント駆動な使い方もできる(#interrupt等)、という
+// 性質がFlashの「クリップ」に近いという判断からClipへ改称した。
+// VNLayer.mount()の指定キーは `clip` になる(vnlayer.js側・React側どちらの
+// APIも統一。以前の `scenario` キーは完全に置き換え、両立はさせない)。
 
 type MountOptions = {
-  scenario?: string;
+  clip?: string;
   mode: VNLayerMode;
   // mode:"overlay"を複数同時にmountする場合(例: 左キャラ用/右キャラ用)、
   // バックログボタン・選択肢・ユーザー発言欄が同じ角に重ならないよう、
@@ -35,7 +42,7 @@ type MountOptions = {
   // vnlayer.js単体バンドルならstaticStepProvider)を使う。
   // このmountインスタンスだけ「fetch経由」か「ブラウザ内で直接inkjs実行」かを
   // 個別に指定したい場合はここに渡す。
-  //   例: VNLayer.mount("#vn", { scenario, mode, stepProvider: createStaticStepProvider() })
+  //   例: VNLayer.mount("#vn", { clip, mode, stepProvider: createStaticStepProvider() })
   stepProvider?: StepProvider;
 };
 
@@ -77,7 +84,7 @@ function mount(selector: string, options: MountOptions): Promise<void> {
   return new Promise<void>((resolve) => {
     root.render(
       createElement(VNLayerOverlay, {
-        scenario: options.scenario ?? 'Scenario1',
+        clip: options.clip ?? 'Scenario1',
         mode: options.mode,
         uiAnchor: options.uiAnchor,
         showUi: options.showUi,

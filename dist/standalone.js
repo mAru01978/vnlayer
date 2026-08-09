@@ -4,12 +4,15 @@
 // index.html側の使い方:
 //   <script src="vnlayer.js"></script>
 //   <script>
-//     VNLayer.mount("#vn", { scenario: "Scenario1", mode: "overlay" });
+//     VNLayer.mount("#vn", { clip: "Scenario1", mode: "overlay" });
 //     VNLayer.setContext({ seconds: new Date().getSeconds() });
 //   </script>
 //
-// data/<scenario>/story.json は vnlayer.js と同じ階層に data/ フォルダごと
+// data/<clip>/story.json は vnlayer.js と同じ階層に data/ フォルダごと
 // 置いておく(dataBaseUrlはVNLayer.configureや後述の window.VNLAYER_DATA_BASE_URL で変更可)。
+// (2026-08-08、Scenario→Clip改称: 指定キーは`clip`。data/以下の実フォルダ名
+// 自体は単なる文字列一致なので、既存の"Scenario1"のようなフォルダ名を
+// リネームする義務はない)
 import { createStaticStepProvider } from "./core/staticStepProvider";
 import { setDefaultStepProvider } from "./core/defaultStepProvider";
 import "./api"; // side-effect: window.VNLayer を公開する
