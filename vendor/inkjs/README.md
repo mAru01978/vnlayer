@@ -11,23 +11,23 @@ inkjs is fully compatible with the original version, has zero dependency and wor
 ## Table of content
 
 - [](#)
-  - [Table of content](#table-of-content)
-  - [Installation](#installation)
-  - [Quickstart](#quickstart)
-  - [Working with a JSON file](#working-with-a-json-file)
-  - [Using node.js](#using-nodejs)
-    - [Loading inkjs](#loading-inkjs)
-    - [Loading a json file](#loading-a-json-file)
-    - [Starting a story](#starting-a-story)
-  - [Differences with the C# API](#differences-with-the-c-api)
-    - [Getting and setting ink variables](#getting-and-setting-ink-variables)
-    - [Getting the output text when calling `EvaluateFunction`](#getting-the-output-text-when-calling-evaluatefunction)
-  - [Using TypeScript](#using-typescript)
-  - [Compiler](#compiler)
-    - [inkjs-compiler.js](#inkjs-compilerjs)
-    - [online compiler](#online-compiler)
-    - [Differences with the C# Compiler](#differences-with-the-c-compiler)
-  - [Compatibility table](#compatibility-table)
+	- [Table of content](#table-of-content)
+	- [Installation](#installation)
+	- [Quickstart](#quickstart)
+	- [Working with a JSON file](#working-with-a-json-file)
+	- [Using node.js](#using-nodejs)
+		- [Loading inkjs](#loading-inkjs)
+		- [Loading a json file](#loading-a-json-file)
+		- [Starting a story](#starting-a-story)
+	- [Differences with the C# API](#differences-with-the-c-api)
+		- [Getting and setting ink variables](#getting-and-setting-ink-variables)
+		- [Getting the output text when calling `EvaluateFunction`](#getting-the-output-text-when-calling-evaluatefunction)
+	- [Using TypeScript](#using-typescript)
+	- [Compiler](#compiler)
+		- [inkjs-compiler.js](#inkjs-compilerjs)
+		- [online compiler](#online-compiler)
+		- [Differences with the C# Compiler](#differences-with-the-c-compiler)
+	- [Compatibility table](#compatibility-table)
 
 ## Installation
 
@@ -55,14 +55,14 @@ If you frequently need to update your story, pasting the content into `story.js`
 Once the server is running, use the [other boilerplate](https://github.com/y-lohse/inkjs/blob/master/templates/browser_with_server) and place your story content inside `story.json`. Behind the scenes, the only difference is that we load the JSON file via ajax before creating the story:
 
 ```javascript
-fetch("story.json")
-  .then(function (response) {
-    return response.text();
-  })
-  .then(function (storyContent) {
-    story = new inkjs.Story(storyContent);
-    continueStory();
-  });
+fetch('story.json')
+	.then(function (response) {
+		return response.text();
+	})
+	.then(function (storyContent) {
+		story = new inkjs.Story(storyContent);
+		continueStory();
+	});
 ```
 
 ## Using node.js
@@ -73,18 +73,15 @@ You can find some boilerplate code for node.js [here](https://github.com/y-lohse
 
 #### require
 
-You can require the module:
-
-```javascript
-var Story = require("inkjs").Story;
+You can require the module: 
+```javascript 
+var Story = require('inkjs').Story;
 ```
 
 #### import
-
-You can use import style:
-
+You can use import style: 
 ```javascript
-import { Story } from "inkjs";
+import { Story } from 'inkjs';
 ```
 
 ### Loading a json file
@@ -92,14 +89,14 @@ import { Story } from "inkjs";
 You can load the json file using a simple call to `require`:
 
 ```javascript
-var json = require("./ink_file.json");
+var json = require('./ink_file.json');
 ```
 
 You can also load it using `fs`. In that case, please note that inklecate outputs a json file encoded **with** BOM, and node isn't very good at handling that.
 
 ```javascript
-var fs = require("fs");
-var json = fs.readFileSync("./ink_file.json", "UTF-8").replace(/^\uFEFF/, ""); //strips the BOM
+var fs = require('fs');
+var json = fs.readFileSync('./ink_file.json', 'UTF-8').replace(/^\uFEFF/, ''); //strips the BOM
 ```
 
 ### Starting a story
@@ -124,10 +121,10 @@ There are a few very minor API differences between ink C# and inkjs:
 On platforms that do not support [ES2015 Proxies](https://kangax.github.io/compat-table/es6/) (basically node.js v5, IE 11, Safari 9 and everything below), you can't directly read and write variables to the story state. Instead you will have to use the `$` function:
 
 ```javascript
-_inkStory.variablesState.$("player_health", 100);
+_inkStory.variablesState.$('player_health', 100);
 //instead of _inkStory.variablesState["player_health"] = 100;
 
-var health = _inkStory.variablesState.$("player_health");
+var health = _inkStory.variablesState.$('player_health');
 //instead of var health = _inkStory.variablesState["player_health"];
 ```
 
@@ -136,14 +133,14 @@ var health = _inkStory.variablesState.$("player_health");
 `EvaluateFunction()` lets you evaluate an ink function from within your javascript. The "normal" call is the same than in C#:
 
 ```javascript
-var result = EvaluateFunction("my_ink_function", ["arg1", "arg2"]);
+var result = EvaluateFunction('my_ink_function', ['arg1', 'arg2']);
 //result is the return value of my_ink_function("arg1", "arg2")
 ```
 
 However, if you also wish to retrieve the text that `my_ink_function` output, you need to call it like this:
 
 ```javascript
-var result = EvaluateFunction("my_ink_function", ["arg1", "arg2"], true);
+var result = EvaluateFunction('my_ink_function', ['arg1', 'arg2'], true);
 //now result is an object with two properties:
 // result.returned is the return value of my_ink_function("arg1", "arg2")
 // result.output is the text that was written to the output while the function was evaluated
@@ -172,7 +169,7 @@ Alternatively, you can call it using `npx inkjs`
 ### online compiler
 
 ```javascript
-const inkjs = require("inkjs/full"); //the `full` submodule contains the Compiler
+const inkjs = require("inkjs/full") //the `full` submodule contains the Compiler
 const story = new inkjs.Compiler(`Hello World`).Compile();
 // story is an inkjs.Story that can be played right away
 
@@ -191,7 +188,7 @@ See [Differences with the C# Compiler](docs/compiler-differences.md).
 Inkjs is also packaged to be usable with typescript imports, the main classes (`Story`, `InkList`, `Compiler`) are available under the `/types`submodule.
 
 ```ts
-import { Story, Compiler } from "inkjs/types"; // shortcut
+import { Story, Compiler } from 'inkjs/types'; // shortcut
 
 let story: Story;
 let compiler: Compiler;
@@ -200,11 +197,12 @@ let compiler: Compiler;
 It is also possible to import deeply nested classes if needed
 
 ```ts
-import { Story } from "inkjs/engine/Story";
-import { Compiler } from "inkjs/compiler/Compiler";
+import { Story } from 'inkjs/engine/Story';
+import { Compiler } from 'inkjs/compiler/Compiler';
 
-import { Choice } from "inkjs/engine/Choice";
-import { Identifier } from "inkjs/compiler/Parser/ParsedHierarchy/Identifier";
+import { Choice } from 'inkjs/engine/Choice'
+import { Identifier } from 'inkjs/compiler/Parser/ParsedHierarchy/Identifier';
+
 ```
 
 ## Compatibility table

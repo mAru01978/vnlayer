@@ -11,13 +11,13 @@ const Object_1 = require("./Object");
 // there's a tag embedded in it. See how ControlCommand.EndString
 // is implemented in Story.cs for more details + comment
 class Tag extends Object_1.InkObject {
-  constructor(tagText) {
-    super();
-    this.text = tagText.toString() || "";
-  }
-  toString() {
-    return "# " + this.text;
-  }
+    constructor(tagText) {
+        super();
+        this.text = tagText.toString() || "";
+    }
+    toString() {
+        return "# " + this.text;
+    }
 }
 exports.Tag = Tag;
 //# sourceMappingURL=Tag.js.map

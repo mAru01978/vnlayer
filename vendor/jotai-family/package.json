@@ -1,0 +1,91 @@
+{
+  "name": "jotai-family",
+  "description": "👻👨‍👩‍👧‍👦",
+  "version": "1.1.0",
+  "type": "module",
+  "author": "Daishi Kato",
+  "contributors": [
+    "Daishi Kato (https://github.com/dai-shi)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jotaijs/jotai-family.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jotaijs/jotai-family/issues"
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "src",
+    "dist"
+  ],
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "build": "rm -rf dist && pnpm run '/^build:.*/'",
+    "build:esm": "tsc -p tsconfig.esm.json && tsc-alias -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "fix": "pnpm run '/^fix:.*/'",
+    "fix:format": "prettier --write .",
+    "fix:lint": "eslint --config ./eslint.config.ts --fix .",
+    "pretest": "pnpm build",
+    "test": "pnpm run \"/^test:.*/\"",
+    "test:format": "prettier --list-different .",
+    "test:types": "tsc --noEmit",
+    "test:lint": "eslint .",
+    "test:spec": "vitest run"
+  },
+  "keywords": [
+    "jotai",
+    "react",
+    "family",
+    "collections",
+    "atoms"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "happy-dom": "^20.0.11",
+    "jiti": "^2.6.1",
+    "jotai": "3.0.0-alpha.0",
+    "prettier": "^3.7.4",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1",
+    "vite": "^7.2.6",
+    "vitest": "^4.0.15"
+  },
+  "peerDependencies": {
+    "jotai": ">=2.9.0"
+  },
+  "engines": {
+    "node": ">=12.20.0"
+  }
+}
