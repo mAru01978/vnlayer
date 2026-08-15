@@ -44,10 +44,10 @@
   },
   "dependencies": {
     "inkjs": "file:./vendor/inkjs",
-    "jotai": "^2.9.0",
-    "jotai-family": "latest",
-    "gsap": "^3.13.0",
-    "@gsap/react": "^2.1.1"
+    "jotai": "file:./vendor/jotai",
+    "jotai-family": "file:./vendor/jotai-family",
+    "gsap": "file:./vendor/gsap",
+    "@gsap/react": "file:./vendor/@gsap/react"
   },
   "devDependencies": {
     "typescript": "^5",

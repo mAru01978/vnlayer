@@ -1,77 +1,74 @@
 import { ListDefinition } from "./ListDefinition";
 import { Story } from "./Story";
 export declare class InkListItem implements IInkListItem {
-  readonly originName: string | null;
-  readonly itemName: string | null;
-  constructor(originName: string | null, itemName: string | null);
-  constructor(fullName: string | null);
-  static get Null(): InkListItem;
-  get isNull(): boolean;
-  get fullName(): string;
-  toString(): string;
-  Equals(obj: InkListItem): boolean;
-  /**
-   * Returns a shallow clone of the current instance.
-   */
-  copy(): InkListItem;
-  /**
-   * Returns a `SerializedInkListItem` representing the current
-   * instance. The result is intended to be used as a key inside a Map.
-   */
-  serialized(): SerializedInkListItem;
-  /**
-   * Reconstructs a `InkListItem` from the given SerializedInkListItem.
-   */
-  static fromSerializedKey(key: SerializedInkListItem): InkListItem;
-  /**
-   * Determines whether the given item is sufficiently `InkListItem`-like
-   * to be used as a template when reconstructing the InkListItem.
-   */
-  private static isLikeInkListItem;
+    readonly originName: string | null;
+    readonly itemName: string | null;
+    constructor(originName: string | null, itemName: string | null);
+    constructor(fullName: string | null);
+    static get Null(): InkListItem;
+    get isNull(): boolean;
+    get fullName(): string;
+    toString(): string;
+    Equals(obj: InkListItem): boolean;
+    /**
+     * Returns a shallow clone of the current instance.
+     */
+    copy(): InkListItem;
+    /**
+     * Returns a `SerializedInkListItem` representing the current
+     * instance. The result is intended to be used as a key inside a Map.
+     */
+    serialized(): SerializedInkListItem;
+    /**
+     * Reconstructs a `InkListItem` from the given SerializedInkListItem.
+     */
+    static fromSerializedKey(key: SerializedInkListItem): InkListItem;
+    /**
+     * Determines whether the given item is sufficiently `InkListItem`-like
+     * to be used as a template when reconstructing the InkListItem.
+     */
+    private static isLikeInkListItem;
 }
 export declare class InkList extends Map<SerializedInkListItem, number> {
-  origins: ListDefinition[] | null;
-  _originNames: string[] | null;
-  constructor();
-  constructor(otherList: InkList);
-  constructor(singleOriginListName: string, originStory: Story);
-  constructor(singleElement: KeyValuePair<InkListItem, number>);
-  static FromString(myListItem: string, originStory: Story): InkList;
-  AddItem(
-    itemOrItemName: InkListItem | string | null,
-    storyObject?: Story | null,
-  ): undefined;
-  ContainsItemNamed(itemName: string | null): boolean;
-  ContainsKey(key: InkListItem): boolean;
-  Add(key: InkListItem, value: number): void;
-  Remove(key: InkListItem): boolean;
-  get Count(): number;
-  get originOfMaxItem(): ListDefinition | null;
-  get originNames(): string[];
-  SetInitialOriginName(initialOriginName: string): void;
-  SetInitialOriginNames(initialOriginNames: string[]): void;
-  get maxItem(): KeyValuePair<InkListItem, number>;
-  get minItem(): KeyValuePair<InkListItem, number>;
-  get inverse(): InkList;
-  get all(): InkList;
-  Union(otherList: InkList): InkList;
-  Intersect(otherList: InkList): InkList;
-  HasIntersection(otherList: InkList): boolean;
-  Without(listToRemove: InkList): InkList;
-  Contains(key: string): boolean;
-  Contains(otherList: InkList): boolean;
-  GreaterThan(otherList: InkList): boolean;
-  GreaterThanOrEquals(otherList: InkList): boolean;
-  LessThan(otherList: InkList): boolean;
-  LessThanOrEquals(otherList: InkList): boolean;
-  MaxAsList(): InkList;
-  MinAsList(): InkList;
-  ListWithSubRange(minBound: any, maxBound: any): InkList;
-  Equals(otherInkList: InkList): boolean;
-  get orderedItems(): KeyValuePair<InkListItem, number>[];
-  get singleItem(): InkListItem | null;
-  toString(): string;
-  valueOf(): number;
+    origins: ListDefinition[] | null;
+    _originNames: string[] | null;
+    constructor();
+    constructor(otherList: InkList);
+    constructor(singleOriginListName: string, originStory: Story);
+    constructor(singleElement: KeyValuePair<InkListItem, number>);
+    static FromString(myListItem: string, originStory: Story): InkList;
+    AddItem(itemOrItemName: InkListItem | string | null, storyObject?: Story | null): undefined;
+    ContainsItemNamed(itemName: string | null): boolean;
+    ContainsKey(key: InkListItem): boolean;
+    Add(key: InkListItem, value: number): void;
+    Remove(key: InkListItem): boolean;
+    get Count(): number;
+    get originOfMaxItem(): ListDefinition | null;
+    get originNames(): string[];
+    SetInitialOriginName(initialOriginName: string): void;
+    SetInitialOriginNames(initialOriginNames: string[]): void;
+    get maxItem(): KeyValuePair<InkListItem, number>;
+    get minItem(): KeyValuePair<InkListItem, number>;
+    get inverse(): InkList;
+    get all(): InkList;
+    Union(otherList: InkList): InkList;
+    Intersect(otherList: InkList): InkList;
+    HasIntersection(otherList: InkList): boolean;
+    Without(listToRemove: InkList): InkList;
+    Contains(key: string): boolean;
+    Contains(otherList: InkList): boolean;
+    GreaterThan(otherList: InkList): boolean;
+    GreaterThanOrEquals(otherList: InkList): boolean;
+    LessThan(otherList: InkList): boolean;
+    LessThanOrEquals(otherList: InkList): boolean;
+    MaxAsList(): InkList;
+    MinAsList(): InkList;
+    ListWithSubRange(minBound: any, maxBound: any): InkList;
+    Equals(otherInkList: InkList): boolean;
+    get orderedItems(): KeyValuePair<InkListItem, number>[];
+    get singleItem(): InkListItem | null;
+    toString(): string;
+    valueOf(): number;
 }
 /**
  * In the original C# code, `InkListItem` was defined as value type, meaning
@@ -103,11 +100,11 @@ export type SerializedInkListItem = string;
  * key (`SerializedInkListItem`)
  */
 interface IInkListItem {
-  readonly originName: string | null;
-  readonly itemName: string | null;
+    readonly originName: string | null;
+    readonly itemName: string | null;
 }
 export interface KeyValuePair<K, V> {
-  Key: K;
-  Value: V;
+    Key: K;
+    Value: V;
 }
 export {};
