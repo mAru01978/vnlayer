@@ -11,7 +11,8 @@ exports.throwNullException = exports.NullException = void 0;
  * check the offending value and it it's null, throw this exception using
  * `throwNullException(name: string)`.
  */
-class NullException extends Error {}
+class NullException extends Error {
+}
 exports.NullException = NullException;
 /**
  * Throw a NullException.
@@ -19,7 +20,7 @@ exports.NullException = NullException;
  * @param name a short description of the offending value (often its name within the code).
  */
 function throwNullException(name) {
-  throw new NullException(`${name} is null or undefined`);
+    throw new NullException(`${name} is null or undefined`);
 }
 exports.throwNullException = throwNullException;
 //# sourceMappingURL=NullException.js.map
