@@ -2,13 +2,15 @@
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import VNLayerOverlay from './components/VNLayerOverlay';
-import { setCharacterSlots } from './tags/characterSlots';
-import { setBackgroundSlots } from './tags/backgroundSlots';
+import { setSpriteAssets } from './tags/spriteAssets';
 import { setTagConfig, setUiConfig, setWebLinks } from './tags/index';
 import { setAnimAssets } from './tags/animAssets';
-import { setSpriteAssets } from './tags/spriteAssets';
+import { setAssetsConfig } from './tags/assetsConfig';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
+import { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
+import { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
+import { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
 const instances = new Map();
 function resolveElement(selector) {
     const el = document.querySelector(selector);
@@ -19,9 +21,10 @@ function resolveElement(selector) {
 }
 // mount()はPromiseを返す。resolveされるのは「そのインスタンスのStoryProviderが
 // マウントされ、setContext/notify/reset等を安全に呼べる状態になった」時点
-// (=EngineBridgeのonReadyが発火した時点)。Ink本文の初回ロード(fetch/inkjs実行)
-// 自体の完了までは待たない(それを待つと「表示はされているがまだ値を送れない」
-// 期間が無くなる代わりに、mount自体が遅く見えてしまうため)。
+// (=EngineBridgeのonReadyが発火した時点)。Ink本文の初回ロード(fetch/inkjs実行、
+// および簡易セーブからの復元)自体の完了までは待たない(それを待つと
+// 「表示はされているがまだ値を送れない」期間が無くなる代わりに、mount自体が
+// 遅く見えてしまうため)。
 // これにより、以下のように順序を保証しながら書ける:
 //   await VNLayer.mount("#vn", {...});
 //   await VNLayer.setContext({...}, "#vn"); // ← "instance not ready"警告が出ない
@@ -37,10 +40,11 @@ function mount(selector, options) {
     return new Promise((resolve) => {
         root.render(createElement(VNLayerOverlay, {
             clip: options.clip ?? 'Scenario1',
-            mode: options.mode,
+            mode: options.mode ?? 'overlay',
             uiAnchor: options.uiAnchor,
             showUi: options.showUi,
             stepProvider: options.stepProvider,
+            saveProvider: options.saveProvider,
             instanceId: selector,
             onReady: (handle) => {
                 instance.handle = handle;
@@ -129,7 +133,9 @@ async function getContext(varNames, selector) {
 // それだとJavaScriptの文言もボタンの見た目もVNLayer側に固定されてしまう。
 // 今はJS側(ホストページの好きなボタン・好きなタイミング)から呼べるようにし、
 // 何を表示するか・いつ出すかは完全にホスト側またはInk側(本物の選択肢として
-// "+[はじめから] -> home" を書く等)に委ねる形にした。
+// "+[はじめから] -> home" を書く等)に委ねる形にした。保存されている簡易
+// セーブも(saveProviderが設定されていれば)一緒にクリアされる
+// (core/useStoryEngine.tsのresetStory()参照)。
 async function reset(selector) {
     const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
     if (targets.length === 0) {
@@ -150,10 +156,15 @@ async function reset(selector) {
 //   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
 //   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
 async function configure(options, selector) {
-    if (options.characterSlots)
-        setCharacterSlots(options.characterSlots);
-    if (options.backgroundSlots)
-        setBackgroundSlots(options.backgroundSlots);
+    if (options.assets) {
+        const { sprite, anim, ...globalAssetsConfig } = options.assets;
+        if (Object.keys(globalAssetsConfig).length > 0)
+            setAssetsConfig(globalAssetsConfig);
+        if (sprite)
+            setSpriteAssets(sprite);
+        if (anim)
+            setAnimAssets(anim);
+    }
     if (options.tags) {
         for (const [key, partial] of Object.entries(options.tags)) {
             setTagConfig(key, partial);
@@ -163,10 +174,6 @@ async function configure(options, selector) {
         setUiConfig(options.ui, selector);
     if (options.webLinks)
         setWebLinks(options.webLinks);
-    if (options.animAssets)
-        setAnimAssets(options.animAssets);
-    if (options.spriteAssets)
-        setSpriteAssets(options.spriteAssets);
 }
 export const VNLayer = {
     mount,
@@ -182,6 +189,10 @@ export const VNLayer = {
     serverStepProvider,
     createServerStepProvider,
     createStaticStepProvider,
+    // 簡易セーブ機能用(core/SaveProvider.ts参照)。既定はcreateLocalStorageSaveProvider()。
+    createLocalStorageSaveProvider,
+    createCookieSaveProvider,
+    createServerSaveProvider,
 };
 // ブラウザで素朴に <script> 読み込みする運用(将来のvnlayer.js)に備えて
 // window.VNLayer にも公開しておく。Next.jsのSSR中(windowが無い環境)では何もしない。

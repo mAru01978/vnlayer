@@ -45,10 +45,9 @@ export async function dispatchTag(tag, handlers) {
     await runTag(key, args, handlers);
 }
 export { setTagConfig, getTagConfig, registerTag, registerAlias, registerBasicTag, warnUnknownTag } from './registry';
-export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
-export { setBackgroundSlots, setBackgroundResolver, getBackgroundSlot, getAllBackgroundSlots } from './backgroundSlots';
-export { setSpriteAssets, setSpriteAssetResolver, getSpriteAsset, getAllSpriteAssets } from './spriteAssets';
-export { setAnimAssets, setAnimAssetResolver, getAnimAsset, getAllAnimAssets } from './animAssets';
-export { setUiConfig, getUiConfig } from './uiConfig';
+export { setSpriteAssets, getCharacterSlot, getAllCharacterSlots, getBackgroundSlot, getAllBackgroundSlots, resolveSpriteSrc, subscribeSpriteAssets, getSpriteAssetsVersion, } from './spriteAssets';
+export { setAnimAssets, setAnimAssetResolver, getAnimAsset, getAllAnimAssets, subscribeAnimAssets, getAnimAssetsVersion, } from './animAssets';
+export { setAssetsConfig, getAssetsConfig, subscribeAssetsConfig, getAssetsConfigVersion, } from './assetsConfig';
+export { setUiConfig, getUiConfig, subscribeUiConfig, getUiConfigVersion, getAllUiConfigPatches, restoreUiConfigPatches } from './uiConfig';
 export { setWebLinks, getWebLink } from './webLinks';
 //# sourceMappingURL=index.js.map

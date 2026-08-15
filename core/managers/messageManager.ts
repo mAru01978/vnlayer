@@ -54,7 +54,20 @@ export function showMessage(
     content,
     fadeIn,
     typeSpeedMs,
+    // 通常表示は常にタイプライターアニメーションから始める
+    // (startRevealedは簡易セーブ復元専用のフラグなのでここでは付けない)。
+    startRevealed: false,
   });
+}
+
+// 簡易セーブ機能(core/SaveProvider.ts)の復元専用。保存時点のactiveMessageを
+// そのまま書き戻す。startRevealedは呼び出し側(core/useStoryEngine.ts)が
+// 「保存時点で#type:wait:onにより表示が完了していたか」を判定して渡す
+// (components/StageView.tsx側がこのフラグを見てタイプライター演出の
+// スキップ可否を決める)。
+export function restoreMessage(atomKey: string, message: ActiveMessage): void {
+  clearTransientTimer(atomKey);
+  getStore().set(activeMessageAtomFamily(atomKey), message);
 }
 
 // #ui:messageWindow:mode:hide/transient/persist 用。

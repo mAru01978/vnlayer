@@ -2,6 +2,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useStoryEngine } from "../core/useStoryEngine";
 import type { StepProvider } from "../core/StepProvider";
+import type { SaveProvider } from "../core/SaveProvider";
 import { getDefaultOnNavigate } from "../core/defaultNavigate";
 
 // 修正メモ(切り出し対応): 以前はここで data/characterSlots.json を直接importして
@@ -37,6 +38,7 @@ export const StoryProvider = ({
   children,
   clip = "Scenario1",
   stepProvider,
+  saveProvider,
   onNavigate,
   instanceId,
 }: {
@@ -44,6 +46,10 @@ export const StoryProvider = ({
   clip?: string;
   // 明示的に渡した場合のみそちらを使う(未指定ならcore側の既定Providerを使う)
   stepProvider?: StepProvider;
+  // 簡易セーブ機能。省略時はcore/defaultSaveProvider.tsの既定値
+  // (localStorage)を使う。nullを渡すとこのインスタンスはセーブ/ロードを
+  // 一切行わない。
+  saveProvider?: SaveProvider | null;
   onNavigate?: (path: string) => void;
   // このVNインスタンス自身の識別子(通常はmount()時のselector)。
   // #ui:...タグの設定をこのインスタンスだけにスコープするために使う。
@@ -51,6 +57,7 @@ export const StoryProvider = ({
 }) => {
   const engine = useStoryEngine(clip, {
     stepProvider,
+    saveProvider,
     onNavigate: onNavigate ?? getDefaultOnNavigate(),
     instanceId,
   });

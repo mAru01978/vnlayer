@@ -3,15 +3,15 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CS
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { useStory } from '../context/StoryContext';
-import { getCharacterSlot } from '../tags/characterSlots';
-import { getUiConfig } from '../tags/uiConfig';
+import { getCharacterSlot } from '../tags/spriteAssets';
+import { getUiConfig, subscribeUiConfig, getUiConfigVersion } from '../tags/uiConfig';
 import { getGlobalBacklogEntries, subscribeGlobalBacklog } from '../core/globalBacklog';
 import * as timelineManager from '../core/managers/timelineManager';
-import { mockRenderer } from './mockRenderer';
+import { Renderer } from './Renderer';
 
 gsap.registerPlugin(useGSAP);
 
-const renderer = mockRenderer;
+const renderer = Renderer;
 const BUBBLE_FADE_MS = 800;
 
 export type StageMode = 'full' | 'overlay';
@@ -40,6 +40,19 @@ export default function StageView({
     getGlobalBacklogEntries,
     getGlobalBacklogEntries
   );
+
+  // 修正メモ(2026-08-08、簡易セーブ機能追加に伴う修正): tags/uiConfig.ts
+  // は以前Reactの再描画を一切トリガーしない素朴なモジュールスコープのMapで、
+  // getUiConfig(...)は毎回ここで直接呼んで読むだけだった。通常再生では
+  // 大量のタグ処理(≒多くのJotai atom書き込み=多くの再描画)が連鎖するため
+  // 気づきにくかったが、簡易セーブからの復元(atom書き込みが最小限)や、
+  // mount後に非同期でVNLayer.configure({ui:...})を呼ぶケースでは
+  // 「値は更新されているのに画面に反映されない/後から突然反映される」
+  // 挙動として表面化していた。値そのもの(オブジェクト参照は毎回変わる)
+  // ではなく「変わったかどうか」を示すversion番号を購読することで、
+  // 変化があれば必ず再描画されるようにする(下のgetUiConfig(...)呼び出し
+  // 自体は今まで通り素朴な関数呼び出しのままでよい)。
+  useSyncExternalStore(subscribeUiConfig, getUiConfigVersion, getUiConfigVersion);
 
   type BubbleEntry = { content: string; revealedCount: number; visible: boolean; typeSpeedMs: number; fadeIn?: boolean };
   const [bubbles, setBubbles] = useState<Record<string, BubbleEntry>>({});
@@ -77,7 +90,12 @@ export default function StageView({
         ...prev,
         [newSpeaker]: {
           content: activeMessage.content,
-          revealedCount: 0,
+          // 簡易セーブからの復元時、保存時点で#type:wait:onにより表示が
+          // 完了していた(startRevealed:true)場合は、タイプライター演出を
+          // スキップしていきなり全文表示する。それ以外(通常表示、または
+          // 復元だがtype:wait:offで完了状況が不明だった場合)は従来通り
+          // revealedCount:0から始める。
+          revealedCount: activeMessage.startRevealed ? activeMessage.content.length : 0,
           visible: false,
           typeSpeedMs: activeMessage.typeSpeedMs ?? 30,
           fadeIn: activeMessage.fadeIn,
@@ -373,8 +391,7 @@ export default function StageView({
       )}
 
       <div ref={shakeRef} style={stageStyle}>
-        {!isOverlay && <renderer.Background bg={bg} atomKey={story.atomKey} />}
-
+       <renderer.Background bg={bg} atomKey={story.atomKey} />
         <div
           ref={camRef}
           style={{ position: 'absolute', inset: 0, pointerEvents: isOverlay ? 'none' : undefined }}

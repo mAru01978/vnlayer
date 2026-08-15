@@ -3,15 +3,18 @@ import { createRoot, type Root } from 'react-dom/client';
 import { createElement } from 'react';
 import VNLayerOverlay, { type VNLayerMode, type VNLayerHandle } from './components/VNLayerOverlay';
 import type { UiAnchor } from './components/StageView';
-import { setCharacterSlots, type CharacterSlot } from './tags/characterSlots';
-import { setBackgroundSlots, type BackgroundSlot } from './tags/backgroundSlots';
+import { setSpriteAssets, type SpriteCharacterConfig } from './tags/spriteAssets';
 import { setTagConfig, setUiConfig, type UiConfigPatch, setWebLinks } from './tags/index';
 import { setAnimAssets, type AnimAssetConfig } from './tags/animAssets';
-import { setSpriteAssets, type SpriteAssetConfig } from './tags/spriteAssets';
+import { setAssetsConfig, type AssetsGlobalConfig } from './tags/assetsConfig';
 import type { SetContextOptions } from './core/types';
 import type { StepProvider } from './core/StepProvider';
+import type { SaveProvider } from './core/SaveProvider';
 import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
 import { createStaticStepProvider } from './core/staticStepProvider';
+import { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
+import { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
+import { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
 
 // フェーズ1のゴール: 「VNLayer.mount("#vn", {clip, mode})」のような
 // 命令的APIを、既存のReactコンポーネント(VNLayerOverlay)の上に薄く被せて提供する。
@@ -27,10 +30,19 @@ import { createStaticStepProvider } from './core/staticStepProvider';
 // 性質がFlashの「クリップ」に近いという判断からClipへ改称した。
 // VNLayer.mount()の指定キーは `clip` になる(vnlayer.js側・React側どちらの
 // APIも統一。以前の `scenario` キーは完全に置き換え、両立はさせない)。
+//
+// 既定値メモ(2026-08-08、簡易セーブ機能追加): mount()は追加設定なしでも
+// 「静的実行(createStaticStepProvider) + ローカルストレージ簡易セーブ
+// (createLocalStorageSaveProvider)」で動く。つまり
+//   await VNLayer.mount("#vn", { clip: "Alice" });
+// これだけで、サーバー無しでも進行状況の簡易セーブ/自動ロードまで含めて動く。
+// サーバー実行にしたい/セーブ先をCookieや自前サーバーに変えたい場合は
+// stepProvider/saveProviderを明示的に渡す(下記MountOptions参照)。
 
 type MountOptions = {
   clip?: string;
-  mode: VNLayerMode;
+  // 省略時は'overlay'。
+  mode?: VNLayerMode;
   // mode:"overlay"を複数同時にmountする場合(例: 左キャラ用/右キャラ用)、
   // バックログボタン・選択肢・ユーザー発言欄が同じ角に重ならないよう、
   // 片方を'left'、もう片方を'right'(既定)にする。
@@ -38,12 +50,15 @@ type MountOptions = {
   // false にすると操作UI一式(バックログ/選択肢/発言欄)を出さない。
   // 背景・キャラ・吹き出しの演出だけを行う「装飾専用インスタンス」向け。
   showUi?: boolean;
-  // 省略時はその時点の既定StepProvider(Next.js版api.tsならserverStepProvider、
-  // vnlayer.js単体バンドルならstaticStepProvider)を使う。
-  // このmountインスタンスだけ「fetch経由」か「ブラウザ内で直接inkjs実行」かを
-  // 個別に指定したい場合はここに渡す。
-  //   例: VNLayer.mount("#vn", { clip, mode, stepProvider: createStaticStepProvider() })
+  // 省略時は既定のstaticStepProvider(dataBaseUrl:"./data")を使う。
+  // このmountインスタンスだけ「fetch経由」か「サーバーAPI経由」かを個別に
+  // 指定したい場合はここに渡す。
+  //   例: VNLayer.mount("#vn", { clip, stepProvider: VNLayer.serverStepProvider })
   stepProvider?: StepProvider;
+  // 省略時は既定のcreateLocalStorageSaveProvider()を使う。
+  //   例: VNLayer.mount("#vn", { clip, saveProvider: VNLayer.createCookieSaveProvider() })
+  // nullを渡すとこのインスタンスはセーブ/ロードを一切行わない。
+  saveProvider?: SaveProvider | null;
 };
 
 type Instance = {
@@ -64,9 +79,10 @@ function resolveElement(selector: string): Element {
 
 // mount()はPromiseを返す。resolveされるのは「そのインスタンスのStoryProviderが
 // マウントされ、setContext/notify/reset等を安全に呼べる状態になった」時点
-// (=EngineBridgeのonReadyが発火した時点)。Ink本文の初回ロード(fetch/inkjs実行)
-// 自体の完了までは待たない(それを待つと「表示はされているがまだ値を送れない」
-// 期間が無くなる代わりに、mount自体が遅く見えてしまうため)。
+// (=EngineBridgeのonReadyが発火した時点)。Ink本文の初回ロード(fetch/inkjs実行、
+// および簡易セーブからの復元)自体の完了までは待たない(それを待つと
+// 「表示はされているがまだ値を送れない」期間が無くなる代わりに、mount自体が
+// 遅く見えてしまうため)。
 // これにより、以下のように順序を保証しながら書ける:
 //   await VNLayer.mount("#vn", {...});
 //   await VNLayer.setContext({...}, "#vn"); // ← "instance not ready"警告が出ない
@@ -85,10 +101,11 @@ function mount(selector: string, options: MountOptions): Promise<void> {
     root.render(
       createElement(VNLayerOverlay, {
         clip: options.clip ?? 'Scenario1',
-        mode: options.mode,
+        mode: options.mode ?? 'overlay',
         uiAnchor: options.uiAnchor,
         showUi: options.showUi,
         stepProvider: options.stepProvider,
+        saveProvider: options.saveProvider,
         instanceId: selector,
         onReady: (handle: VNLayerHandle) => {
           instance.handle = handle;
@@ -197,16 +214,31 @@ async function getContext(varNames?: string | string[], selector?: string): Prom
 // 許可済みリンクのホワイトリスト(inkのソース上に生URLを書けない制約の回避も兼ねる)。
 // animAssetsは#anim:<キャラ>:motion:<モーション名>が実際に何を表示するか
 // (連番画像かwebm動画か)を解決するための素材レジストリ(tags/animAssets.ts参照)。
-// 未登録のキャラ/モーションはcomponents/mockRenderer.tsxが今まで通りの
+// 未登録のキャラ/モーションはcomponents/Renderer.tsxが(fallbackToMock設定に従い)
+// モック表示(色付き四角+ラベル)にフォールバックするか、AssetErrorを報告して
 // モック表示(色付き四角+ラベル)にフォールバックする。
+// 素材統合(2026-08-09): characterSlots/backgroundSlots/animAssets/
+// spriteAssetsという個別のoptionsは廃止し、assetsという1つの名前空間へ
+// まとめた(VNLayer.configure({ assets: {...}, tags: {...}, ui: {...},
+// webLinks: {...} })のように使う)。
+//   assets.basePath/source/resolveLocal/fallbackToMock … 素材共通設定
+//     (tags/assetsConfig.ts参照。source:'local'はNext.js等、fetchが
+//     publicフォルダのものしか取れない環境向けの回避策)。
+//   assets.sprite … 静止画系全般(キャラの表情立ち絵も背景も含む)。
+//     旧characterSlots(立ち位置)+backgroundSlots(色/画像)+旧spriteAssets
+//     (表情画像)を統合したもの(tags/spriteAssets.ts参照)。
+//   assets.anim … モーション(連番画像/単一動画)。旧animAssetsのまま
+//     (tags/animAssets.ts参照)、ただし素材ごとのsource上書きにも対応。
+type ConfigureAssetsOptions = AssetsGlobalConfig & {
+  sprite?: Record<string, SpriteCharacterConfig>;
+  anim?: Record<string, Record<string, AnimAssetConfig>>;
+};
+
 type ConfigureOptions = {
-  characterSlots?: Record<string, CharacterSlot>;
-  backgroundSlots?: Record<string, BackgroundSlot>;
+  assets?: ConfigureAssetsOptions;
   tags?: Record<string, Record<string, unknown>>;
   ui?: UiConfigPatch;
   webLinks?: Record<string, string>;
-  animAssets?: Record<string, Record<string, AnimAssetConfig>>;
-  spriteAssets?: Record<string, Record<string, SpriteAssetConfig>>;
 };
 
 // VNLayer.reset(selector?)
@@ -215,7 +247,9 @@ type ConfigureOptions = {
 // それだとJavaScriptの文言もボタンの見た目もVNLayer側に固定されてしまう。
 // 今はJS側(ホストページの好きなボタン・好きなタイミング)から呼べるようにし、
 // 何を表示するか・いつ出すかは完全にホスト側またはInk側(本物の選択肢として
-// "+[はじめから] -> home" を書く等)に委ねる形にした。
+// "+[はじめから] -> home" を書く等)に委ねる形にした。保存されている簡易
+// セーブも(saveProviderが設定されていれば)一緒にクリアされる
+// (core/useStoryEngine.tsのresetStory()参照)。
 async function reset(selector?: string): Promise<void> {
   const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
 
@@ -241,8 +275,12 @@ async function reset(selector?: string): Promise<void> {
 //   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
 //   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
 async function configure(options: ConfigureOptions, selector?: string): Promise<void> {
-  if (options.characterSlots) setCharacterSlots(options.characterSlots);
-  if (options.backgroundSlots) setBackgroundSlots(options.backgroundSlots);
+  if (options.assets) {
+    const { sprite, anim, ...globalAssetsConfig } = options.assets;
+    if (Object.keys(globalAssetsConfig).length > 0) setAssetsConfig(globalAssetsConfig);
+    if (sprite) setSpriteAssets(sprite);
+    if (anim) setAnimAssets(anim);
+  }
   if (options.tags) {
     for (const [key, partial] of Object.entries(options.tags)) {
       setTagConfig(key, partial);
@@ -250,8 +288,6 @@ async function configure(options: ConfigureOptions, selector?: string): Promise<
   }
   if (options.ui) setUiConfig(options.ui, selector);
   if (options.webLinks) setWebLinks(options.webLinks);
-  if (options.animAssets) setAnimAssets(options.animAssets);
-  if (options.spriteAssets) setSpriteAssets(options.spriteAssets);
 }
 
 export const VNLayer = {
@@ -268,6 +304,10 @@ export const VNLayer = {
   serverStepProvider,
   createServerStepProvider,
   createStaticStepProvider,
+  // 簡易セーブ機能用(core/SaveProvider.ts参照)。既定はcreateLocalStorageSaveProvider()。
+  createLocalStorageSaveProvider,
+  createCookieSaveProvider,
+  createServerSaveProvider,
 };
 
 // ブラウザで素朴に <script> 読み込みする運用(将来のvnlayer.js)に備えて

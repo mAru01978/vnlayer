@@ -44,6 +44,7 @@ export type ActiveMessage = {
     content: string;
     fadeIn: boolean;
     typeSpeedMs: number;
+    startRevealed?: boolean;
 } | null;
 export type StepEntry = {
     speaker: string;
@@ -67,6 +68,11 @@ export type SetContextOptions = {
     notify?: boolean;
     expose?: boolean;
     keyNames?: SetContextKeyNames;
+};
+export type VNLayerHandle = {
+    setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
+    getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
+    resetStory: () => Promise<void>;
 };
 export type StoryEngine = {
     lines: LineEntry[];

@@ -3,8 +3,8 @@
 // "${key}_seq"自動採番・wake(interrupt)処理、およびネストしたオブジェクトの
 // フラット化(下記)をまとめたマネージャー。
 //
-// 実際にink変数へ反映する処理(stepProvider.idle(scenario, varName, value)の
-// 呼び出しループ)は、そのVNインスタンスが使っているStepProvider/scenarioに
+// 実際にink変数へ反映する処理(stepProvider.idle(clip, varName, value)の
+// 呼び出しループ)は、そのVNインスタンスが使っているStepProvider/clipに
 // 依存するため、こちらには持たせず core/useStoryEngine.ts 側に残している
 // (prepareWrite()が返す「書き込むべきvars」を使って、呼び出し側がidle()
 // ループを回す、という役割分担)。
@@ -116,6 +116,15 @@ export function getContextVars(atomKey, varNames) {
         result[name] = store[name];
     }
     return result;
+}
+// 簡易セーブ機能(core/SaveProvider.ts)の復元専用。notify/_seq処理を一切
+// 行わず、exposeされた値の写しをそのまま置き換える(story.state.LoadJson()
+// と対になる「JS側の記憶」の復元)。_seqカウンタ自体はリセットする
+// (復元後最初のnotify:true書き込みから1振り直しでよい — 復元前のseq値と
+// 厳密に連番させる必要は無いため)。
+export function hydrate(atomKey, vars) {
+    contextStore.set(atomKey, { ...vars });
+    contextSeq.set(atomKey, {});
 }
 export function reset(atomKey) {
     contextStore.set(atomKey, {});

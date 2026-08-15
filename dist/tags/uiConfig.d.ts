@@ -43,6 +43,10 @@ export type UiConfigPatch = {
     font?: Partial<UiConfig["font"]>;
     stage?: Partial<UiConfig["stage"]>;
 };
+export declare function subscribeUiConfig(listener: () => void): () => void;
+export declare function getUiConfigVersion(): number;
 export declare function setUiConfig(patch: UiConfigPatch, scope?: string): void;
 export declare function getUiConfig(scope?: string): UiConfig;
+export declare function getAllUiConfigPatches(): Record<string, UiConfigPatch>;
+export declare function restoreUiConfigPatches(patches: Record<string, UiConfigPatch> | undefined): void;
 //# sourceMappingURL=uiConfig.d.ts.map

@@ -18,7 +18,8 @@
     "context",
     "api.ts",
     "standalone.ts",
-    "global.d.ts"
+    "global.d.ts",
+    "react.tsx"
   ],
   "exclude": ["node_modules", "dist", "vendor", "scripts"]
 }

@@ -28,9 +28,10 @@ import { getDefaultOnNavigate } from "../core/defaultNavigate";
 // 値そのものを変える必要はない(既存のdata/Scenario1/のようなフォルダ名を
 // リネームする義務はない)。
 const StoryContext = createContext(null);
-export const StoryProvider = ({ children, clip = "Scenario1", stepProvider, onNavigate, instanceId, }) => {
+export const StoryProvider = ({ children, clip = "Scenario1", stepProvider, saveProvider, onNavigate, instanceId, }) => {
     const engine = useStoryEngine(clip, {
         stepProvider,
+        saveProvider,
         onNavigate: onNavigate ?? getDefaultOnNavigate(),
         instanceId,
     });

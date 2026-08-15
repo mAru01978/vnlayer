@@ -21,6 +21,7 @@
     "context",
     "scripts",
     "api.ts",
+    "react.tsx",
     "standalone.ts",
     "global.d.ts"
   ],

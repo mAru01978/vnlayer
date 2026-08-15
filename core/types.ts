@@ -27,7 +27,21 @@ export type LineEntry =
   | { kind: 'choice'; number: number; text: string };
 export type PositionOverrides = Record<string, { originX: number; originY: number; durationMs?: number }>;
 export type ActiveMessage =
-  | { speaker: string; content: string; fadeIn: boolean; typeSpeedMs: number }
+  | {
+      speaker: string;
+      content: string;
+      fadeIn: boolean;
+      typeSpeedMs: number;
+      // 簡易セーブ機能(core/SaveProvider.ts)の復元専用フラグ。通常の
+      // showMessage()では設定しない(=undefined、既存の「毎回タイプライター
+      // アニメーションから始まる」挙動のまま)。trueの場合、
+      // components/StageView.tsxはタイプライター演出をスキップし、
+      // 全文を即座に表示する(保存時点で既に#type:wait:onにより表示が
+      // 完了していたメッセージを復元する場合に使う。保存時点でまだ
+      // 表示途中だった可能性がある場合はfalse/undefinedにし、最初から
+      // タイプさせ直す — ユーザーの要望に合わせた挙動)。
+      startRevealed?: boolean;
+    }
   | null;
 
 // app/api/story/route.ts のレスポンス形状(lib/story/server/engine.ts の RunResult と対応)。
@@ -58,6 +72,21 @@ export type SetContextOptions = {
   notify?: boolean;
   expose?: boolean;
   keyNames?: SetContextKeyNames;
+};
+
+// api.ts(vanilla VNLayer.mount)とcomponents/VNLayerOverlay.tsx/react.tsx
+// (React <VNLayer ref={vnRef} />)の両方が実装・消費する、命令的操作の
+// 最小ハンドル。setContextVars/getContextVars/resetStoryの3メソッドのみを
+// 持つ(StoryEngineの全機能ではなく、外部から安全に呼んでよい最小サブセット)。
+//
+// 設計上の要石(2026-08-08、React版追加時のメモ): vanilla版・React版で
+// 挙動が食い違う最大のバグ源はこのインターフェースの分岐なので、型は
+// ここ1箇所でしか定義しない。api.ts / components/VNLayerOverlay.tsx /
+// react.tsx は全てこの型をimportして使い、独自に再定義しないこと。
+export type VNLayerHandle = {
+  setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
+  getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
+  resetStory: () => Promise<void>;
 };
 
 // useStoryEngineが返す値の形。VNLayer/components側はこれだけを見て描画する

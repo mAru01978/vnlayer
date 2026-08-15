@@ -1,7 +1,7 @@
 {
   "name": "vnlayer",
-  "version": "0.5.0",
- "scripts": {
+  "version": "0.6.0",
+   "scripts": {
    "list:tags": "node scripts/list-tags.js",
     "compile-story": "node scripts/compile-story.js",
     "add:tag": "node scripts/new-tag.js",
@@ -27,6 +27,10 @@
     ".": {
       "types": "./dist/api.d.ts",
       "default": "./dist/api.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
     },
     "./global": "./global.d.ts",
     "./*": {

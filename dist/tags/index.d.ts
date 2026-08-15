@@ -15,11 +15,12 @@ import type { TagHandlers } from './registry';
 export declare function dispatchTag(tag: string, handlers: TagHandlers): Promise<void>;
 export { setTagConfig, getTagConfig, registerTag, registerAlias, registerBasicTag, warnUnknownTag } from './registry';
 export type { TagHandlers } from './registry';
-export { setCharacterSlots, getCharacterSlot, getAllCharacterSlots } from './characterSlots';
-export { setBackgroundSlots, setBackgroundResolver, getBackgroundSlot, getAllBackgroundSlots } from './backgroundSlots';
-export { setSpriteAssets, setSpriteAssetResolver, getSpriteAsset, getAllSpriteAssets } from './spriteAssets';
-export { setAnimAssets, setAnimAssetResolver, getAnimAsset, getAllAnimAssets } from './animAssets';
-export { setUiConfig, getUiConfig } from './uiConfig';
+export { setSpriteAssets, getCharacterSlot, getAllCharacterSlots, getBackgroundSlot, getAllBackgroundSlots, resolveSpriteSrc, subscribeSpriteAssets, getSpriteAssetsVersion, } from './spriteAssets';
+export type { SpriteCharacterConfig, SpriteVariantConfig } from './spriteAssets';
+export { setAnimAssets, setAnimAssetResolver, getAnimAsset, getAllAnimAssets, subscribeAnimAssets, getAnimAssetsVersion, } from './animAssets';
+export { setAssetsConfig, getAssetsConfig, subscribeAssetsConfig, getAssetsConfigVersion, } from './assetsConfig';
+export type { AssetsGlobalConfig } from './assetsConfig';
+export { setUiConfig, getUiConfig, subscribeUiConfig, getUiConfigVersion, getAllUiConfigPatches, restoreUiConfigPatches } from './uiConfig';
 export type { UiConfig, UiConfigPatch, BacklogMode } from './uiConfig';
 export { setWebLinks, getWebLink } from './webLinks';
 //# sourceMappingURL=index.d.ts.map

@@ -1,0 +1,1 @@
+{"version":3,"file":"localStorageSaveProvider.d.ts","sourceRoot":"","sources":["../../../core/saveProviders/localStorageSaveProvider.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAY,MAAM,iBAAiB,CAAC;AAM9D,MAAM,MAAM,+BAA+B,GAAG;IAG5C,SAAS,CAAC,EAAE,MAAM,CAAC;CACpB,CAAC;AAEF,wBAAgB,8BAA8B,CAC5C,OAAO,GAAE,+BAAoC,GAC5C,YAAY,CA0Cd"}

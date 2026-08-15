@@ -88,10 +88,11 @@ export function continueUntilChoice(
         if (key === "s") {
           // # s:name / # s:name:hide / # s:name:pos:... / # s:name:<表情>
           // # s:bg:<背景名> (#bg統合分岐、疑似キャラ名)
-          const [name, mode] = rest;
+          const [name, mode, ...args] = rest;
+
           if (!name || mode === undefined) continue; // 話者だけの指定は見た目に影響しない
           if (name === "bg") {
-            visual.bg = mode;
+            visual.bg = [mode, ...args].join(":");
             continue;
           }
           if (mode === "hide") {

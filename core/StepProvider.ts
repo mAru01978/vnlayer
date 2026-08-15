@@ -1,4 +1,5 @@
 import type { RunResult } from "./types";
+import type { SaveData, StorySaveData } from "./SaveProvider";
 
 // 「Inkを1歩進めて、次の選択肢が出るところまでの結果を返す」ための抽象インターフェース。
 // useStoryEngineはこのインターフェースの実装(StepProvider)を受け取って動くだけで、
@@ -33,4 +34,14 @@ export interface StepProvider {
   // 対応していない実装(サーバー版等、現状は未対応)ではundefinedのままでよく、
   // 呼び出し側(core/useStoryEngine.ts)もoptional chainingで無視する。
   onPush?(atomKey: string, callback: (result: RunResult) => void): () => void;
+  // 簡易セーブ機能(core/SaveProvider.ts参照)用。対応していれば、現在の
+  // ink実行状態+見た目スナップショットをStorySaveDataとして取り出せる。
+  // 対応していない実装(サーバー版等、現状は未対応 — サーバー側cookie
+  // セッションで元々永続化されているため)ではundefinedのままでよい。
+  getSaveData?(clip: string, atomKey?: string): Promise<StorySaveData | null>;
+  // 簡易セーブ機能用。保存済みSaveDataから状態を復元し、続きから再開できる
+  // RunResult(新規のnarrationは発生させず、保存時点の選択肢をそのまま返す)
+  // を返す。対応していなければcore/useStoryEngine.ts側は通常のinit()に
+  // フォールバックする。
+  restore?(clip: string, save: SaveData, atomKey?: string): Promise<RunResult>;
 }
