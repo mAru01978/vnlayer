@@ -1,39 +1,42 @@
 // #interrupt(SwitchFlow + ObserveVariable前提の割り込み)を管理するマネージャー。
 //
-// 設計(2026-08-08、旧ToJson/LoadJsonマージ方式からの作り直し版 + 割り込みknot内
-// 選択肢対応版):
+// 設計(2026-08-08、並列割り込み対応版 — 旧「1インスタンス同時1件まで」方式
+// からの作り直し):
 //   - # interrupt:knot名:変数名 → 「この変数がnotifyされたら指定knotへ割り込む
-//     ことを許可する」という常設の許可を登録する(明示的にclearするまで有効。
-//     「置いた瞬間だけ効く使い捨てマーカー」ではない)。
-//   - setContext(...)がink変数へ値を書き込むと、Story生成時に張っておいた
-//     story.ObserveVariable(...)が発火する(notify:trueかどうかは無関係。
-//     #wait:等の即時打ち切りはcore/managers/waitManager.ts側の責務のままで、
-//     こちらとは独立に動く)。
-//   - 許可済みの変数なら、story.SwitchFlow('interrupt') → ChoosePathString(knot)
-//     → 完了(canContinueがfalseになる)または選択肢が出るところまで進める。
-//   - 割り込みknotが選択肢を持たずそのまま終わった場合は、その場で
-//     SwitchToDefaultFlow()して元フローへ戻す(以前と同じ挙動)。
-//   - 割り込みknotが選択肢を持つ場合は、その場では元フローへ戻さない。
-//     inkjsのSwitchFlowは「名前付きスレッドの切り替え」であり、
-//     ChooseChoiceIndex/currentChoicesは常に「今アクティブなフロー」に
-//     対して働くため、通常のchoose()呼び出し(core/staticStepProvider.ts)を
-//     そのまま使い回せる。choose()側は毎回
-//     resumeDefaultFlowIfInterruptFinished()を通すことで、「割り込みflowの
-//     選択肢がついに尽きた」瞬間を検知して自動的に元フローへ戻す。
-//     これにより、割り込みknot内で何段階でも選択肢を出せる。
-//   - 1VNインスタンス(atomKey)につき同時に1個の割り込みだけ実行する
-//     (選択肢待ちで一時停止している間も「実行中」として扱う)。
-//     実行中に別の許可済み変数がnotifyされたら、キューに積んで直列化する。
-//   - まだ許可が無い時に来たイベントは、変数名ごとに最新の1件だけpendingとして
-//     保持し、後から# interrupt:knot:変数名で許可された瞬間に発火させる。
+//     ことを許可する」という常設の許可を登録する(明示的にclearするまで有効)。
+//   - 許可済みの変数がnotifyされるたびに、そのつど専用の新しい名前付きflow
+//     (interrupt_1, interrupt_2, ...)を発行してSwitchFlowする。これにより
+//     複数の割り込みが同時に発生しても、互いに待たされることなくそれぞれ
+//     即座に反応・進行できる(以前あった「1インスタンス同時1件まで」「1件
+//     だけのpending」という制約を撤廃した)。
+//   - 割り込みflowが選択肢無しで完了した瞬間、そのflowだけを畳んで
+//     SwitchToDefaultFlow()する。複数のflowがたまたま同じタイミングで
+//     完了しようとしても、実際の完了処理(SwitchToDefaultFlow+
+//     currentChoicesの読み取り)自体はJS(シングルスレッド)+
+//     core/staticStepProvider.ts側のatomKeyごとの簡易mutexにより自然に
+//     一件ずつ直列に処理される(「入口は並列、合流だけ一部直列」という
+//     設計はこの2つの組み合わせで実現している。このファイル自身は
+//     mutexを持たない — story操作の直列化はcore/staticStepProvider.ts
+//     の責務)。
+//   - 同じ変数を複数の#interruptから同時に書いた場合の整合性(競合)は
+//     保証しない(並列実行を優先するための意図的なトレードオフ)。整合性が
+//     必要な場面は、呼び出し側で別々の変数を使うことで回避できる。
+//   - まだ許可が無い時に来たイベントは、変数名ごとに最新の1件だけpendingと
+//     して保持し、後から# interrupt:knot:変数名で許可された瞬間に発火させる
+//     (この「1件だけ」は許可待ちの間だけの制約で、許可後の並列実行数には
+//     制限をかけない)。
 //
-// Storyインスタンス自体の生成・保持はcore/staticStepProvider.ts(または将来の
-// サーバー版)側の責務。このマネージャーは「Storyを操作する権限(host)」を
-// attachStory()で受け取るだけで、Storyインスタンスそのものは持たない。
-import type { Story } from 'inkjs';
-import { continueUntilChoice } from '../inkStepRunner';
-import type { RunResult, VisualState } from '../types';
-import { InterruptError, reportError } from '../errors';
+// Storyインスタンス自体の生成・保持・直列化はcore/staticStepProvider.ts
+// (または将来のサーバー版)側の責務。このマネージャーは「Storyを操作する
+// 権限(host)」をattachStory()で受け取るだけで、Storyインスタンスそのものは
+// 持たない。
+//
+// 割り込みknot自体は選択肢を出してもよい(何段階でもOK、tags/defs/special/
+// interrupt.ts参照)。完了判定はfinishFlowIfDone()に集約している。
+import type { Story } from "inkjs";
+import { continueUntilChoice } from "../inkStepRunner";
+import type { RunResult, VisualState } from "../types";
+import { InterruptError, reportError } from "../errors";
 
 export type InterruptHost = {
   story: Story;
@@ -45,14 +48,12 @@ export type InterruptHost = {
   pushResult: (result: RunResult) => void;
 };
 
-const FLOW_NAME = 'interrupt';
+const FLOW_NAME_PREFIX = "interrupt_";
+let flowCounter = 0;
 
 const permissions = new Map<string, Map<string, string>>(); // atomKey -> (varName -> knot)
-const pendingValues = new Map<string, Map<string, unknown>>(); // atomKey -> (varName -> 最新値)
-// 「実行中」= 割り込みflowが呼ばれてから、元フローへ戻り終わるまで
-// (途中で選択肢待ちになっている間も含む)。
-const inProgress = new Map<string, boolean>();
-const queue = new Map<string, string[]>(); // atomKey -> 待機中のknot名の列
+const pendingValues = new Map<string, Map<string, unknown>>(); // atomKey -> (varName -> 許可待ちの最新値)
+const openFlows = new Map<string, Set<string>>(); // atomKey -> 現在開いている割り込みflow名の集合
 const hosts = new Map<string, InterruptHost>();
 const observedVars = new Map<string, Set<string>>();
 
@@ -74,13 +75,13 @@ function getPendingMap(atomKey: string): Map<string, unknown> {
   return m;
 }
 
-function getQueue(atomKey: string): string[] {
-  let q = queue.get(atomKey);
-  if (!q) {
-    q = [];
-    queue.set(atomKey, q);
+function getOpenFlows(atomKey: string): Set<string> {
+  let set = openFlows.get(atomKey);
+  if (!set) {
+    set = new Set();
+    openFlows.set(atomKey, set);
   }
-  return q;
+  return set;
 }
 
 function ensureObserved(atomKey: string, varName: string): void {
@@ -94,9 +95,7 @@ function ensureObserved(atomKey: string, varName: string): void {
 }
 
 // core/staticStepProvider.ts(または将来のサーバー版)側が、Story生成直後に
-// 1回呼ぶ。既に登録済みの許可があれば、この時点でまとめて監視を開始する
-// (例: resetStory()で作り直されたStoryに、直前まで有効だった許可を
-// そのまま引き継がせたい場合)。
+// 1回呼ぶ。既に登録済みの許可があれば、この時点でまとめて監視を開始する。
 export function attachStory(atomKey: string, host: InterruptHost): void {
   hosts.set(atomKey, host);
   observedVars.set(atomKey, new Set());
@@ -106,7 +105,11 @@ export function attachStory(atomKey: string, host: InterruptHost): void {
 }
 
 // # interrupt:knot名:変数名 用。
-export function registerPermission(atomKey: string, knot: string, varName: string): void {
+export function registerPermission(
+  atomKey: string,
+  knot: string,
+  varName: string,
+): void {
   getPermissionMap(atomKey).set(varName, knot);
   ensureObserved(atomKey, varName);
 
@@ -115,7 +118,7 @@ export function registerPermission(atomKey: string, knot: string, varName: strin
   const pendingMap = getPendingMap(atomKey);
   if (pendingMap.has(varName)) {
     pendingMap.delete(varName);
-    enqueueOrRun(atomKey, knot);
+    runInterrupt(atomKey, knot);
   }
 }
 
@@ -129,74 +132,67 @@ export function clearVar(atomKey: string, varName: string): void {
   getPermissionMap(atomKey).delete(varName);
 }
 
-function onVariableChanged(atomKey: string, varName: string, value: unknown): void {
+function onVariableChanged(
+  atomKey: string,
+  varName: string,
+  value: unknown,
+): void {
   const knot = getPermissionMap(atomKey).get(varName);
   if (!knot) {
     // まだ許可が無い: 最新値だけ覚えておき、後で許可された時に発火させる。
     getPendingMap(atomKey).set(varName, value);
     return;
   }
-  enqueueOrRun(atomKey, knot);
-}
-
-function enqueueOrRun(atomKey: string, knot: string): void {
-  if (inProgress.get(atomKey)) {
-    // 選択肢待ちで一時停止中も含めて「実行中」なので、ここに来た分は
-    // 素直に順番待ちさせる(直列化)。
-    getQueue(atomKey).push(knot);
-    return;
-  }
+  // 許可済みなら、他の割り込みが実行中かどうかに関わらず即座に(並列に)開始する。
   runInterrupt(atomKey, knot);
-}
-
-function drainQueue(atomKey: string): void {
-  const next = getQueue(atomKey).shift();
-  if (next) runInterrupt(atomKey, next);
 }
 
 function runInterrupt(atomKey: string, knot: string): void {
   const host = hosts.get(atomKey);
   if (!host) return;
-  inProgress.set(atomKey, true);
+
+  flowCounter += 1;
+  const flowName = `${FLOW_NAME_PREFIX}${flowCounter}`;
+  getOpenFlows(atomKey).add(flowName);
 
   try {
     const { story } = host;
-    story.SwitchFlow(FLOW_NAME);
+    story.SwitchFlow(flowName);
     story.ChoosePathString(knot);
     const result = continueUntilChoice(story, host.getVisual());
     host.setVisual(result.visual);
 
-    // 選択肢を持たずそのまま終わった場合はここで即座に元フローへ戻る。
-    // 選択肢を持つ場合はresumeDefaultFlowIfInterruptFinished内部で
-    // 「まだ戻さない」と判定され、inProgressはtrueのまま維持される
-    // (=次の通常choose()呼び出しがこの割り込みflow上で継続処理される)。
-    const finalResult = resumeDefaultFlowIfInterruptFinished(atomKey, story, result);
+    const finalResult = finishFlowIfDone(atomKey, story, result);
     host.pushResult(finalResult);
   } catch (e) {
-    reportError(new InterruptError(`interrupt knot "${knot}" failed`, { cause: e }));
+    reportError(
+      new InterruptError(`interrupt knot "${knot}" failed`, { cause: e }),
+    );
+    getOpenFlows(atomKey).delete(flowName);
     try {
       host.story.SwitchToDefaultFlow();
+      host.story.RemoveFlow(flowName);
     } catch {
-      // 元フローへ戻すこと自体にも失敗した場合、これ以上打つ手が無いため
+      // 元フローへ戻す/flowの後始末に失敗しても、これ以上打つ手が無いため
       // ここでは黙って諦める(このVNインスタンスは要リロード状態になりうる)。
     }
-    inProgress.set(atomKey, false);
-    drainQueue(atomKey);
   }
 }
 
 // core/staticStepProvider.ts側のchoose()が、通常のChooseChoiceIndex+
 // continueUntilChoiceを行った後に必ず通す。「今アクティブなフローが
-// デフォルトフローではなく(=割り込み中)、かつ選択肢が尽きた」場合だけ、
-// 自動でSwitchToDefaultFlow()し、一時停止していた元フローの選択肢に
-// 差し替えて返す。それ以外(割り込み中でない、または割り込みflowの
-// 選択肢がまだ続く)場合はresultをそのまま返す。
+// デフォルトフローではなく(=いずれかの割り込みflow中)、かつ選択肢が
+// 尽きた」場合だけ、そのflowを畳んでSwitchToDefaultFlow()し、一時停止
+// していた元フローの選択肢に差し替えて返す。それ以外(割り込み中でない、
+// または割り込みflowの選択肢がまだ続く)場合はresultをそのまま返す。
 //
-// これにより、割り込みknot内で何段階でも選択肢を出せる: ユーザーが
-// 割り込みflowの選択肢を選ぶたびにこの関数が呼ばれ、まだ続くならそのまま
-// 割り込みflow上での進行として扱われ、ついに終わったタイミングで初めて
-// 元フローへ戻る。
-export function resumeDefaultFlowIfInterruptFinished(
+// 複数のflowが同時に開いていても、「今アクティブなflow」は常に1つ
+// (story.currentFlowName)なので、この関数はそのflow1つの完了判定だけを
+// 行えばよい。呼び出し元(choose())自体がcore/staticStepProvider.tsの
+// atomKeyごとのmutexで直列化されているため、たまたま複数のflowが
+// ほぼ同時に完了しようとしても、実際のSwitchToDefaultFlow呼び出し同士が
+// 競合することはない。
+export function finishFlowIfDone(
   atomKey: string,
   story: Story,
   result: RunResult,
@@ -205,30 +201,43 @@ export function resumeDefaultFlowIfInterruptFinished(
     return result;
   }
 
+  const finishedFlowName = story.currentFlowName;
   story.SwitchToDefaultFlow();
+  try {
+    story.RemoveFlow(finishedFlowName);
+  } catch {
+    // 削除に失敗しても致命的ではない(同名を使い回すことは無い ―
+    // flowCounterで毎回新しい名前を発行しているため ― のでリークするだけ)。
+  }
+  getOpenFlows(atomKey).delete(finishedFlowName);
+
   const resumedChoices = story.currentChoices.map((c, i) => ({
     text: c.text,
     index: i,
     tags: c.tags ?? [],
   }));
-  inProgress.set(atomKey, false);
-  drainQueue(atomKey);
-  return { steps: result.steps, choices: resumedChoices, visual: result.visual };
+  return {
+    steps: result.steps,
+    choices: resumedChoices,
+    visual: result.visual,
+  };
 }
 
-// 今このVNインスタンスが割り込みflow内で選択肢待ちになっているかどうか。
-// core/staticStepProvider.ts側でのデバッグ・分岐判断に使えるよう公開しておく
-// (通常のchoose()自体はstory.currentFlowIsDefaultFlowを直接見れば十分なので
-// 必須ではないが、hostを持たない外部からの問い合わせ用に用意)。
+// 後方互換のエイリアス(旧名)。core/staticStepProvider.ts側もこちらの
+// 新名(finishFlowIfDone)を使うよう更新済みだが、念のため同じ実体を
+// 別名でも参照できるようにしておく。
+export const resumeDefaultFlowIfInterruptFinished = finishFlowIfDone;
+
+// 今このVNインスタンスで、何らかの割り込みflowが開いている(選択肢待ちを
+// 含む)かどうか。
 export function isInterrupting(atomKey: string): boolean {
-  return inProgress.get(atomKey) ?? false;
+  return getOpenFlows(atomKey).size > 0;
 }
 
 export function dispose(atomKey: string): void {
   permissions.delete(atomKey);
   pendingValues.delete(atomKey);
-  inProgress.delete(atomKey);
-  queue.delete(atomKey);
+  openFlows.delete(atomKey);
   hosts.delete(atomKey);
   observedVars.delete(atomKey);
 }

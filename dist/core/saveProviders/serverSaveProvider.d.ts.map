@@ -1,0 +1,1 @@
+{"version":3,"file":"serverSaveProvider.d.ts","sourceRoot":"","sources":["../../../core/saveProviders/serverSaveProvider.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAY,MAAM,iBAAiB,CAAC;AAE9D,MAAM,MAAM,yBAAyB,GAAG;IAMtC,QAAQ,CAAC,EAAE,MAAM,CAAC;CACnB,CAAC;AAMF,wBAAgB,wBAAwB,CACtC,OAAO,GAAE,yBAA8B,GACtC,YAAY,CAkCd"}

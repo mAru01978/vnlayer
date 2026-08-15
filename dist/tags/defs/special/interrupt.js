@@ -1,5 +1,5 @@
-import { registerTag, warnUnknownTag } from '../../registry';
-import * as interruptManager from '../../../core/managers/interruptManager';
+import { registerTag, warnUnknownTag } from "../../registry";
+import * as interruptManager from "../../../core/managers/interruptManager";
 // #interrupt はSwitchFlow+ObserveVariable前提の割り込みを許可するタグ。
 // 「置いた瞬間だけ効く使い捨てマーカー」ではなく、明示的にclearするまで
 // ずっと有効な常設の許可(詳細はcore/managers/interruptManager.ts参照)。
@@ -18,11 +18,11 @@ import * as interruptManager from '../../../core/managers/interruptManager';
 // +[#tick:0.1] -> knot の形で選択肢待ちの中でしか使えない)とは役割分担が
 // 完全に分かれる: #interruptはイベント駆動専用。
 registerTag({
-    key: 'interrupt',
+    key: "interrupt",
     run: ({ args, handlers }) => {
         const { atomKey } = handlers;
         const [first, second] = args;
-        if (first === 'clear') {
+        if (first === "clear") {
             if (second) {
                 interruptManager.clearVar(atomKey, second);
             }
@@ -34,7 +34,7 @@ registerTag({
         const knot = first;
         const varName = second;
         if (!knot || !varName) {
-            warnUnknownTag(['interrupt', ...args].filter(Boolean).join(':'));
+            warnUnknownTag(["interrupt", ...args].filter(Boolean).join(":"));
             return;
         }
         interruptManager.registerPermission(atomKey, knot, varName);

@@ -12,19 +12,16 @@ declare namespace Physics2DPlugin {
 }
 
 declare namespace gsap {
-
   interface TweenVars {
     physics2D?: Physics2DPlugin.Vars;
   }
 }
 
 declare namespace gsap.plugins {
-  interface Physics2DPlugin extends Plugin {
-     
-  }
+  interface Physics2DPlugin extends Plugin {}
 
   interface Physics2DPluginClass extends Physics2DPlugin {
-    new(): PluginScope & Physics2DPlugin;
+    new (): PluginScope & Physics2DPlugin;
     prototype: PluginScope & Physics2DPlugin;
   }
 

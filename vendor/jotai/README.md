@@ -2,7 +2,6 @@
 
 ![Jotai (light mode)](./img/jotai-header-light.png#gh-light-mode-only)
 
-
 <br>
 
 visit [jotai.org](https://jotai.org) or `npm i jotai`
@@ -30,12 +29,16 @@ value, which can be primitive values like strings and numbers, objects, and
 arrays. You can create as many primitive atoms as you want.
 
 ```jsx
-import { atom } from 'jotai'
+import { atom } from "jotai";
 
-const countAtom = atom(0)
-const countryAtom = atom('Japan')
-const citiesAtom = atom(['Tokyo', 'Kyoto', 'Osaka'])
-const mangaAtom = atom({ 'Dragon Ball': 1984, 'One Piece': 1997, Naruto: 1999 })
+const countAtom = atom(0);
+const countryAtom = atom("Japan");
+const citiesAtom = atom(["Tokyo", "Kyoto", "Osaka"]);
+const mangaAtom = atom({
+  "Dragon Ball": 1984,
+  "One Piece": 1997,
+  Naruto: 1999,
+});
 ```
 
 ### Use the atom in your components
@@ -61,11 +64,11 @@ function as the first argument. `get` allows you to fetch the contextual value
 of any atom.
 
 ```jsx
-const doubledCountAtom = atom((get) => get(countAtom) * 2)
+const doubledCountAtom = atom((get) => get(countAtom) * 2);
 
 function DoubleCounter() {
-  const [doubledCount] = useAtom(doubledCountAtom)
-  return <h2>{doubledCount}</h2>
+  const [doubledCount] = useAtom(doubledCountAtom);
+  return <h2>{doubledCount}</h2>;
 }
 ```
 
@@ -74,18 +77,18 @@ function DoubleCounter() {
 You can combine multiple atoms to create a derived atom.
 
 ```jsx
-const count1 = atom(1)
-const count2 = atom(2)
-const count3 = atom(3)
+const count1 = atom(1);
+const count2 = atom(2);
+const count3 = atom(3);
 
-const sum = atom((get) => get(count1) + get(count2) + get(count3))
+const sum = atom((get) => get(count1) + get(count2) + get(count3));
 ```
 
 Or if you like fp patterns ...
 
 ```jsx
-const atoms = [count1, count2, count3, ...otherAtoms]
-const sum = atom((get) => atoms.map(get).reduce((acc, count) => acc + count))
+const atoms = [count1, count2, count3, ...otherAtoms];
+const sum = atom((get) => atoms.map(get).reduce((acc, count) => acc + count));
 ```
 
 ### Derived async atoms [<img src="https://img.shields.io/badge/-needs_suspense-black" alt="needs suspense" />](https://react.dev/reference/react/Suspense)
@@ -132,11 +135,11 @@ Just do not define a read function.
 ```jsx
 const multiplyCountAtom = atom(null, (get, set, by) =>
   set(countAtom, get(countAtom) * by),
-)
+);
 
 function Controls() {
-  const [, multiply] = useAtom(multiplyCountAtom)
-  return <button onClick={() => multiply(3)}>triple</button>
+  const [, multiply] = useAtom(multiplyCountAtom);
+  return <button onClick={() => multiply(3)}>triple</button>;
 }
 ```
 

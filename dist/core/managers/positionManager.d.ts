@@ -7,6 +7,7 @@ export declare function setPos(atomKey: string, name: string, coords: {
     originY: number;
 } | "reset", durationMs?: number): void;
 export declare function getPositionOverrides(atomKey: string): PositionOverrides;
+export declare function restore(atomKey: string, overrides: PositionOverrides): void;
 export declare function reset(atomKey: string): void;
 export declare function dispose(atomKey: string): void;
 //# sourceMappingURL=positionManager.d.ts.map

@@ -1,21 +1,33 @@
-'use client';
+"use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { useStory } from '../context/StoryContext';
-import { getCharacterSlot } from '../tags/characterSlots';
-import { getUiConfig } from '../tags/uiConfig';
-import { getGlobalBacklogEntries, subscribeGlobalBacklog } from '../core/globalBacklog';
-import * as timelineManager from '../core/managers/timelineManager';
-import { mockRenderer } from './mockRenderer';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { useStory } from "../context/StoryContext";
+import { getCharacterSlot } from "../tags/spriteAssets";
+import { getUiConfig, subscribeUiConfig, getUiConfigVersion, } from "../tags/uiConfig";
+import { getGlobalBacklogEntries, subscribeGlobalBacklog, } from "../core/globalBacklog";
+import * as timelineManager from "../core/managers/timelineManager";
+import { Renderer } from "./Renderer";
 gsap.registerPlugin(useGSAP);
-const renderer = mockRenderer;
+const renderer = Renderer;
 const BUBBLE_FADE_MS = 800;
-export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = true, }) {
+export default function StageView({ mode = "full", uiAnchor = "right", showUi = true, }) {
     const story = useStory();
     const [backlogOpen, setBacklogOpen] = useState(false);
     const globalBacklogEntries = useSyncExternalStore(subscribeGlobalBacklog, getGlobalBacklogEntries, getGlobalBacklogEntries);
+    // 修正メモ(2026-08-08、簡易セーブ機能追加に伴う修正): tags/uiConfig.ts
+    // は以前Reactの再描画を一切トリガーしない素朴なモジュールスコープのMapで、
+    // getUiConfig(...)は毎回ここで直接呼んで読むだけだった。通常再生では
+    // 大量のタグ処理(≒多くのJotai atom書き込み=多くの再描画)が連鎖するため
+    // 気づきにくかったが、簡易セーブからの復元(atom書き込みが最小限)や、
+    // mount後に非同期でVNLayer.configure({ui:...})を呼ぶケースでは
+    // 「値は更新されているのに画面に反映されない/後から突然反映される」
+    // 挙動として表面化していた。値そのもの(オブジェクト参照は毎回変わる)
+    // ではなく「変わったかどうか」を示すversion番号を購読することで、
+    // 変化があれば必ず再描画されるようにする(下のgetUiConfig(...)呼び出し
+    // 自体は今まで通り素朴な関数呼び出しのままでよい)。
+    useSyncExternalStore(subscribeUiConfig, getUiConfigVersion, getUiConfigVersion);
     const [bubbles, setBubbles] = useState({});
     const activeSpeakerRef = useRef(null);
     const fadeOutTimersRef = useRef({});
@@ -29,7 +41,12 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             if (prevSpeaker && prevSpeaker !== newSpeaker) {
                 if (fadeOutTimersRef.current[prevSpeaker])
                     clearTimeout(fadeOutTimersRef.current[prevSpeaker]);
-                setBubbles((prev) => prev[prevSpeaker] ? { ...prev, [prevSpeaker]: { ...prev[prevSpeaker], visible: false } } : prev);
+                setBubbles((prev) => prev[prevSpeaker]
+                    ? {
+                        ...prev,
+                        [prevSpeaker]: { ...prev[prevSpeaker], visible: false },
+                    }
+                    : prev);
                 fadeOutTimersRef.current[prevSpeaker] = setTimeout(() => {
                     setBubbles((prev) => {
                         const next = { ...prev };
@@ -46,13 +63,22 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                 ...prev,
                 [newSpeaker]: {
                     content: activeMessage.content,
-                    revealedCount: 0,
+                    // 簡易セーブからの復元時、保存時点で#type:wait:onにより表示が
+                    // 完了していた(startRevealed:true)場合は、タイプライター演出を
+                    // スキップしていきなり全文表示する。それ以外(通常表示、または
+                    // 復元だがtype:wait:offで完了状況が不明だった場合)は従来通り
+                    // revealedCount:0から始める。
+                    revealedCount: activeMessage.startRevealed
+                        ? activeMessage.content.length
+                        : 0,
                     visible: false,
                     typeSpeedMs: activeMessage.typeSpeedMs ?? 30,
                     fadeIn: activeMessage.fadeIn,
                 },
             }));
-            requestAnimationFrame(() => setBubbles((prev) => (prev[newSpeaker] ? { ...prev, [newSpeaker]: { ...prev[newSpeaker], visible: true } } : prev)));
+            requestAnimationFrame(() => setBubbles((prev) => prev[newSpeaker]
+                ? { ...prev, [newSpeaker]: { ...prev[newSpeaker], visible: true } }
+                : prev));
         }
         else {
             const speaker = activeSpeakerRef.current;
@@ -61,7 +87,9 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                 return;
             if (fadeOutTimersRef.current[speaker])
                 clearTimeout(fadeOutTimersRef.current[speaker]);
-            setBubbles((prev) => (prev[speaker] ? { ...prev, [speaker]: { ...prev[speaker], visible: false } } : prev));
+            setBubbles((prev) => prev[speaker]
+                ? { ...prev, [speaker]: { ...prev[speaker], visible: false } }
+                : prev);
             fadeOutTimersRef.current[speaker] = setTimeout(() => {
                 setBubbles((prev) => {
                     const next = { ...prev };
@@ -77,12 +105,17 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             typeIntervalRef.current = null;
         }
         const speaker = activeMessage?.speaker;
-        const text = activeMessage?.content ?? '';
+        const text = activeMessage?.content ?? "";
         if (!speaker || !text)
             return;
         const speed = activeMessage?.typeSpeedMs ?? 30;
         if (speed <= 0) {
-            setBubbles((prev) => (prev[speaker] ? { ...prev, [speaker]: { ...prev[speaker], revealedCount: text.length } } : prev));
+            setBubbles((prev) => prev[speaker]
+                ? {
+                    ...prev,
+                    [speaker]: { ...prev[speaker], revealedCount: text.length },
+                }
+                : prev);
             return;
         }
         typeIntervalRef.current = setInterval(() => {
@@ -95,7 +128,10 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                         clearInterval(typeIntervalRef.current);
                     return prev;
                 }
-                return { ...prev, [speaker]: { ...entry, revealedCount: entry.revealedCount + 1 } };
+                return {
+                    ...prev,
+                    [speaker]: { ...entry, revealedCount: entry.revealedCount + 1 },
+                };
             });
         }, speed);
         return () => {
@@ -112,7 +148,15 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
         const speaker = activeMessage?.speaker;
         if (!speaker)
             return;
-        setBubbles((prev) => prev[speaker] ? { ...prev, [speaker]: { ...prev[speaker], revealedCount: prev[speaker].content.length } } : prev);
+        setBubbles((prev) => prev[speaker]
+            ? {
+                ...prev,
+                [speaker]: {
+                    ...prev[speaker],
+                    revealedCount: prev[speaker].content.length,
+                },
+            }
+            : prev);
     };
     const outerRef = useRef(null);
     const camRef = useRef(null);
@@ -124,23 +168,28 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     useEffect(() => {
         isProcessingForMeasureRef.current = story?.isProcessing ?? false;
     }, [story?.isProcessing]);
-    const stageStickToViewport = story ? getUiConfig(story.instanceId).stage.stickToViewport : true;
-    const explicitHeightPx = story ? getUiConfig(story.instanceId).stage.heightPx : undefined;
+    const stageStickToViewport = story
+        ? getUiConfig(story.instanceId).stage.stickToViewport
+        : true;
+    const explicitHeightPx = story
+        ? getUiConfig(story.instanceId).stage.heightPx
+        : undefined;
     const measureStageHeight = useCallback(() => {
         const el = outerRef.current;
-        if (!el || typeof document === 'undefined')
+        if (!el || typeof document === "undefined")
             return;
         const prevHeight = el.style.height;
-        el.style.height = '0px';
+        el.style.height = "0px";
         void el.offsetHeight;
         const measured = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
         el.style.height = prevHeight;
         setAutoHeightPx(measured);
     }, []);
     useEffect(() => {
-        if (mode !== 'overlay' || stageStickToViewport || explicitHeightPx)
+        if (mode !== "overlay" || stageStickToViewport || explicitHeightPx)
             return;
-        if (typeof document === 'undefined' || typeof ResizeObserver === 'undefined')
+        if (typeof document === "undefined" ||
+            typeof ResizeObserver === "undefined")
             return;
         measureStageHeight();
         let debounceTimer = null;
@@ -174,12 +223,14 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
             return;
         const tl = gsap.timeline();
         camTlRef.current = tl;
-        timelineManager.register(atomKey, 'cam', tl);
-        tl.set(camRef.current, { transformOrigin: `${cam.originX}% ${cam.originY}%` }).to(camRef.current, {
+        timelineManager.register(atomKey, "cam", tl);
+        tl.set(camRef.current, {
+            transformOrigin: `${cam.originX}% ${cam.originY}%`,
+        }).to(camRef.current, {
             scale: cam.scale,
             duration: 0.5,
-            ease: 'power2.out',
-            overwrite: 'auto',
+            ease: "power2.out",
+            overwrite: "auto",
         });
         return () => {
             tl.kill();
@@ -202,11 +253,11 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
         const leg = shake.duration / 1000 / 4;
         const tl = gsap.timeline();
         shakeTlRef.current = tl;
-        timelineManager.register(atomKey, 'shake', tl);
-        tl.to(el, { x: -amp, duration: leg, ease: 'power1.inOut' })
-            .to(el, { x: amp, duration: leg, ease: 'power1.inOut' })
-            .to(el, { x: -amp, duration: leg, ease: 'power1.inOut' })
-            .to(el, { x: 0, duration: leg, ease: 'power1.inOut' });
+        timelineManager.register(atomKey, "shake", tl);
+        tl.to(el, { x: -amp, duration: leg, ease: "power1.inOut" })
+            .to(el, { x: amp, duration: leg, ease: "power1.inOut" })
+            .to(el, { x: -amp, duration: leg, ease: "power1.inOut" })
+            .to(el, { x: 0, duration: leg, ease: "power1.inOut" });
         return () => {
             tl.kill();
             if (atomKey)
@@ -217,22 +268,28 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
     if (!story)
         return null;
     const { lines, choices, bg, characters, speaker, isProcessing, choose, choicesHidden, messageWindowHidden, positionOverrides, instanceId, } = story;
-    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => ['tick', 'interrupt'].includes(t.split(':')[0])));
-    const isOverlay = mode === 'overlay';
-    const anchorSide = uiAnchor === 'left' ? { left: 12 } : { right: 12 };
+    const visibleChoices = choices.filter((c) => !c.tags?.some((t) => ["tick", "interrupt"].includes(t.split(":")[0])));
+    const isOverlay = mode === "overlay";
+    const anchorSide = uiAnchor === "left" ? { left: 12 } : { right: 12 };
     const uiConfig = getUiConfig(instanceId);
-    const overlayPosition = uiConfig.stage.stickToViewport ? 'fixed' : 'absolute';
+    const overlayPosition = uiConfig.stage.stickToViewport
+        ? "fixed"
+        : "absolute";
     const choiceAnchorName = uiConfig.choice.anchor;
     const choiceAnchorSlot = choiceAnchorName
-        ? positionOverrides[choiceAnchorName] ?? getCharacterSlot(choiceAnchorName) ?? null
+        ? (positionOverrides[choiceAnchorName] ??
+            getCharacterSlot(choiceAnchorName) ??
+            null)
         : null;
     const backlogAnchorName = uiConfig.backlog.anchor;
     const backlogAnchorSlot = backlogAnchorName
-        ? positionOverrides[backlogAnchorName] ?? getCharacterSlot(backlogAnchorName) ?? null
+        ? (positionOverrides[backlogAnchorName] ??
+            getCharacterSlot(backlogAnchorName) ??
+            null)
         : null;
-    const isGlobalBacklog = uiConfig.backlog.mode === 'global';
+    const isGlobalBacklog = uiConfig.backlog.mode === "global";
     const backlogEntries = isGlobalBacklog ? globalBacklogEntries : lines;
-    const uiVis = typeof showUi === 'boolean'
+    const uiVis = typeof showUi === "boolean"
         ? { backlogButton: showUi, choices: showUi, messageWindow: showUi }
         : {
             backlogButton: showUi.backlogButton ?? true,
@@ -248,52 +305,68 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                 : uiConfig.stage.widthPx
                     ? {
                         top: 0,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
+                        left: "50%",
+                        transform: "translateX(-50%)",
                         width: `${uiConfig.stage.widthPx}px`,
                         height: `${effectiveHeightPx}px`,
                     }
                     : { top: 0, left: 0, right: 0, height: `${effectiveHeightPx}px` }),
-            pointerEvents: 'none',
+            pointerEvents: "none",
             zIndex: 50,
-            fontFamily: uiConfig.font.family ?? 'sans-serif',
+            fontFamily: uiConfig.font.family ?? "sans-serif",
             fontSize: uiConfig.font.sizePx,
         }
         : {
             maxWidth: 640,
-            margin: '0 auto',
-            fontFamily: uiConfig.font.family ?? 'sans-serif',
+            margin: "0 auto",
+            fontFamily: uiConfig.font.family ?? "sans-serif",
             fontSize: uiConfig.font.sizePx,
         };
     const stageStyle = isOverlay
-        ? { position: 'absolute', inset: 0 }
+        ? { position: "absolute", inset: 0 }
         : {
-            position: 'relative',
+            position: "relative",
             height: 360,
-            overflow: 'hidden',
+            overflow: "hidden",
             borderRadius: 8,
         };
     return (_jsxs("div", { ref: outerRef, style: outerStyle, children: [uiVis.backlogButton && uiConfig.backlog.show && (_jsx("div", { style: backlogAnchorSlot
                     ? {
-                        position: 'absolute',
+                        position: "absolute",
                         left: `${backlogAnchorSlot.originX}%`,
                         top: `calc(${backlogAnchorSlot.originY}% + ${uiConfig.backlog.offset ?? 20}px)`,
-                        transform: 'translateX(-50%)',
-                        pointerEvents: 'auto',
+                        transform: "translateX(-50%)",
+                        pointerEvents: "auto",
                         zIndex: 51,
                     }
                     : isOverlay
-                        ? { position: overlayPosition, ...anchorSide, bottom: uiConfig.backlog.offset ?? 12, pointerEvents: 'auto', zIndex: 51 }
-                        : { display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
-                        padding: '4px 10px',
+                        ? {
+                            position: overlayPosition,
+                            ...anchorSide,
+                            bottom: uiConfig.backlog.offset ?? 12,
+                            pointerEvents: "auto",
+                            zIndex: 51,
+                        }
+                        : {
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 6,
+                            marginBottom: 6,
+                        }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
+                        padding: "4px 10px",
                         borderRadius: 6,
-                        border: '1px solid #999',
-                        background: '#fff',
-                        color: '#111',
+                        border: "1px solid #999",
+                        background: "#fff",
+                        color: "#111",
                         fontSize: 12,
-                        cursor: 'pointer',
-                    }, children: backlogOpen ? 'バックログを閉じる' : 'バックログ' }) })), _jsxs("div", { ref: shakeRef, style: stageStyle, children: [!isOverlay && _jsx(renderer.Background, { bg: bg, atomKey: story.atomKey }), _jsxs("div", { ref: camRef, style: { position: 'absolute', inset: 0, pointerEvents: isOverlay ? 'none' : undefined }, children: [Object.entries(characters).map(([name, state]) => {
-                                const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 60 };
+                        cursor: "pointer",
+                    }, children: backlogOpen ? "バックログを閉じる" : "バックログ" }) })), _jsxs("div", { ref: shakeRef, style: stageStyle, children: [_jsx(renderer.Background, { bg: bg, atomKey: story.atomKey }), _jsxs("div", { ref: camRef, style: {
+                            position: "absolute",
+                            inset: 0,
+                            pointerEvents: isOverlay ? "none" : undefined,
+                        }, children: [Object.entries(characters).map(([name, state]) => {
+                                const slot = positionOverrides[name] ??
+                                    getCharacterSlot(name) ?? { originX: 50, originY: 60 };
                                 const isFocused = speaker === name;
                                 return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, atomKey: story.atomKey, onClick: uiConfig.character.clickable
                                         ? () => story.setContextVars({ vn_event_char_click: name }, { notify: true })
@@ -301,71 +374,86 @@ export default function StageView({ mode = 'full', uiAnchor = 'right', showUi = 
                             }), story.flash && (_jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs, atomKey: story.atomKey }))] }), uiVis.messageWindow &&
                         !messageWindowHidden &&
                         Object.entries(bubbles)
-                            .filter(([name]) => name !== 'narrator')
+                            .filter(([name]) => name !== "narrator")
                             .map(([name, entry]) => {
-                            const slot = positionOverrides[name] ?? getCharacterSlot(name) ?? { originX: 50, originY: 40 };
-                            return (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.MessageBubble, { speaker: name, content: entry.content, slot: slot, revealedCount: entry.revealedCount, visible: entry.visible, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx, offsetPx: uiConfig.messageWindow.offset, atomKey: story.atomKey }) }, name));
-                        }), uiVis.messageWindow && !messageWindowHidden && bubbles.narrator && (_jsx("div", { style: isOverlay ? { pointerEvents: 'auto' } : undefined, children: _jsx(renderer.NarratorCaption, { content: bubbles.narrator.content, revealedCount: bubbles.narrator.revealedCount, visible: bubbles.narrator.visible, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", style: backlogAnchorSlot
+                            const slot = positionOverrides[name] ??
+                                getCharacterSlot(name) ?? { originX: 50, originY: 40 };
+                            return (_jsx("div", { style: isOverlay ? { pointerEvents: "auto" } : undefined, children: _jsx(renderer.MessageBubble, { speaker: name, content: entry.content, slot: slot, revealedCount: entry.revealedCount, visible: entry.visible, onClick: uiConfig.messageWindow.interactive
+                                        ? skipTyping
+                                        : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx, offsetPx: uiConfig.messageWindow.offset, atomKey: story.atomKey }) }, name));
+                        }), uiVis.messageWindow && !messageWindowHidden && bubbles.narrator && (_jsx("div", { style: isOverlay ? { pointerEvents: "auto" } : undefined, children: _jsx(renderer.NarratorCaption, { content: bubbles.narrator.content, revealedCount: bubbles.narrator.revealedCount, visible: bubbles.narrator.visible, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", style: backlogAnchorSlot
                     ? {
-                        position: 'absolute',
+                        position: "absolute",
                         left: `${backlogAnchorSlot.originX}%`,
                         top: `calc(${backlogAnchorSlot.originY}% + ${(uiConfig.backlog.offset ?? 20) + 36}px)`,
-                        transform: 'translateX(-50%)',
+                        transform: "translateX(-50%)",
                         width: 280,
                         maxHeight: `calc(100% - ${backlogAnchorSlot.originY}% - ${(uiConfig.backlog.offset ?? 20) + 36}px - 8px)`,
-                        overflowY: 'auto',
-                        pointerEvents: 'auto',
-                        padding: '12px 16px',
-                        background: '#1e1e1e',
-                        color: '#fff',
+                        overflowY: "auto",
+                        pointerEvents: "auto",
+                        padding: "12px 16px",
+                        background: "#1e1e1e",
+                        color: "#fff",
                         borderRadius: 8,
-                        display: 'flex',
-                        flexDirection: 'column',
+                        display: "flex",
+                        flexDirection: "column",
                         gap: 10,
                         zIndex: 51,
                     }
                     : {
-                        position: isOverlay ? overlayPosition : 'static',
+                        position: isOverlay ? overlayPosition : "static",
                         ...(isOverlay ? anchorSide : {}),
-                        bottom: isOverlay ? (uiConfig.backlog.offset ?? 12) + 44 : undefined,
+                        bottom: isOverlay
+                            ? (uiConfig.backlog.offset ?? 12) + 44
+                            : undefined,
                         width: isOverlay ? 320 : undefined,
-                        pointerEvents: 'auto',
+                        pointerEvents: "auto",
                         marginTop: isOverlay ? 0 : 12,
-                        padding: '12px 16px',
-                        background: '#1e1e1e',
-                        color: '#fff',
+                        padding: "12px 16px",
+                        background: "#1e1e1e",
+                        color: "#fff",
                         borderRadius: 8,
                         maxHeight: 240,
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
+                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column",
                         gap: 10,
                         zIndex: 51,
-                    }, children: [backlogEntries.length === 0 && _jsx("div", { style: { opacity: 0.5, fontSize: 12 }, children: "\u307E\u3060\u4F1A\u8A71\u304C\u3042\u308A\u307E\u305B\u3093" }), backlogEntries.map((line, i) => {
-                        const originLabel = isGlobalBacklog && line.instanceId && line.instanceId !== instanceId ? line.instanceId : null;
-                        return line.kind === 'choice' ? (_jsxs("div", { children: [_jsxs("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: ["[Choice]", originLabel ? ` (${originLabel})` : ''] }), _jsxs("div", { style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 }, children: [line.number, ". ", line.text] })] }, line.seq ?? i)) : (_jsxs("div", { children: [line.speaker && (_jsxs("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: ["[", line.speaker, "]", originLabel ? ` (${originLabel})` : ''] })), _jsx("div", { style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 }, children: line.content })] }, line.seq ?? i));
+                    }, children: [backlogEntries.length === 0 && (_jsx("div", { style: { opacity: 0.5, fontSize: 12 }, children: "\u307E\u3060\u4F1A\u8A71\u304C\u3042\u308A\u307E\u305B\u3093" })), backlogEntries.map((line, i) => {
+                        const originLabel = isGlobalBacklog &&
+                            line.instanceId &&
+                            line.instanceId !== instanceId
+                            ? line.instanceId
+                            : null;
+                        return line.kind === "choice" ? (_jsxs("div", { children: [_jsxs("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: ["[Choice]", originLabel ? ` (${originLabel})` : ""] }), _jsxs("div", { style: { whiteSpace: "pre-wrap", lineHeight: 1.6 }, children: [line.number, ". ", line.text] })] }, line.seq ?? i)) : (_jsxs("div", { children: [line.speaker && (_jsxs("div", { style: { fontSize: 13, opacity: 0.7, marginBottom: 2 }, children: ["[", line.speaker, "]", originLabel ? ` (${originLabel})` : ""] })), _jsx("div", { style: { whiteSpace: "pre-wrap", lineHeight: 1.6 }, children: line.content })] }, line.seq ?? i));
                     })] })), uiVis.choices && !choicesHidden && visibleChoices.length > 0 && (_jsx("div", { className: "vnlayer-scroll-hidden", style: choiceAnchorSlot
                     ? {
-                        position: 'absolute',
+                        position: "absolute",
                         left: `${choiceAnchorSlot.originX}%`,
                         top: `calc(${choiceAnchorSlot.originY}% + ${uiConfig.choice.offset ?? 20}px)`,
-                        transform: 'translateX(-50%)',
+                        transform: "translateX(-50%)",
                         width: isOverlay ? 220 : 200,
                         maxHeight: `calc(100% - ${choiceAnchorSlot.originY}% - ${uiConfig.choice.offset ?? 20}px - 8px)`,
-                        overflowY: 'auto',
-                        pointerEvents: 'auto',
+                        overflowY: "auto",
+                        pointerEvents: "auto",
                         zIndex: 51,
                     }
                     : {
-                        position: isOverlay ? overlayPosition : 'static',
+                        position: isOverlay ? overlayPosition : "static",
                         ...(isOverlay ? anchorSide : {}),
-                        bottom: isOverlay ? uiConfig.choice.offset ?? 130 : undefined,
+                        bottom: isOverlay
+                            ? (uiConfig.choice.offset ?? 130)
+                            : undefined,
                         width: isOverlay ? 280 : undefined,
-                        maxHeight: isOverlay ? '60vh' : 220,
-                        overflowY: 'auto',
-                        pointerEvents: 'auto',
+                        maxHeight: isOverlay ? "60vh" : 220,
+                        overflowY: "auto",
+                        pointerEvents: "auto",
                         marginTop: isOverlay ? 0 : 10,
                         zIndex: 51,
-                    }, children: _jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: uiConfig.choice.spacing ?? 8 }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }, c.index))) }) }))] }));
+                    }, children: _jsx("div", { style: {
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: uiConfig.choice.spacing ?? 8,
+                    }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }, c.index))) }) }))] }));
 }
 //# sourceMappingURL=StageView.js.map

@@ -1,16 +1,18 @@
-'use strict';
+"use strict";
 
-var internals = require('jotai/vanilla/internals');
+var internals = require("jotai/vanilla/internals");
 
 var keyCount = 0;
 function atom(read, write) {
   var key = "atom" + ++keyCount;
   var config = {
     toString: function toString() {
-      return process.env.NODE_ENV !== 'production' && this.debugLabel ? key + ':' + this.debugLabel : key;
-    }
+      return process.env.NODE_ENV !== "production" && this.debugLabel
+        ? key + ":" + this.debugLabel
+        : key;
+    },
   };
-  if (typeof read === 'function') {
+  if (typeof read === "function") {
     config.read = read;
   } else {
     config.init = read;
@@ -26,7 +28,7 @@ function defaultRead(get) {
   return get(this);
 }
 function defaultWrite(get, set, arg) {
-  return set(this, typeof arg === 'function' ? arg(get(this)) : arg);
+  return set(this, typeof arg === "function" ? arg(get(this)) : arg);
 }
 
 var overriddenCreateStore;
@@ -43,11 +45,14 @@ var defaultStore;
 function getDefaultStore() {
   if (!defaultStore) {
     defaultStore = createStore();
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       var _ref;
-      (_ref = globalThis).__JOTAI_DEFAULT_STORE__ || (_ref.__JOTAI_DEFAULT_STORE__ = defaultStore);
+      (_ref = globalThis).__JOTAI_DEFAULT_STORE__ ||
+        (_ref.__JOTAI_DEFAULT_STORE__ = defaultStore);
       if (globalThis.__JOTAI_DEFAULT_STORE__ !== defaultStore) {
-        console.warn('Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044');
+        console.warn(
+          "Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044",
+        );
       }
     }
   }

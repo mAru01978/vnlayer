@@ -45,6 +45,14 @@ export function getPositionOverrides(atomKey: string): PositionOverrides {
   return getStore().get(positionOverridesAtomFamily(atomKey));
 }
 
+// 簡易セーブ機能(core/SaveProvider.ts)用。保存時点のpositionOverridesを
+// そのまま丸ごと置き換える(# s:name:pos:...による一時的な立ち位置移動は
+// ink実行状態(state.ToJson())には含まれないため、これを復元しないと
+// 「復元直後にキャラや選択肢アンカーの位置がおかしくなる」原因になっていた)。
+export function restore(atomKey: string, overrides: PositionOverrides): void {
+  getStore().set(positionOverridesAtomFamily(atomKey), overrides);
+}
+
 // resetStory()用。値を空に戻すだけで、atomFamilyのキャッシュからは消さない。
 export function reset(atomKey: string): void {
   getStore().set(positionOverridesAtomFamily(atomKey), {});

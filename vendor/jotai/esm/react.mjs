@@ -1,19 +1,25 @@
-'use client';
-import React, { createContext, useContext, useRef, createElement, useReducer, useEffect, useDebugValue, useCallback } from 'react';
-import { getDefaultStore, createStore } from 'jotai/vanilla';
-import { INTERNAL_getBuildingBlocksRev3 } from 'jotai/vanilla/internals';
+"use client";
+import React, {
+  createContext,
+  useContext,
+  useRef,
+  createElement,
+  useReducer,
+  useEffect,
+  useDebugValue,
+  useCallback,
+} from "react";
+import { getDefaultStore, createStore } from "jotai/vanilla";
+import { INTERNAL_getBuildingBlocksRev3 } from "jotai/vanilla/internals";
 
-const StoreContext = createContext(
-  void 0
-);
+const StoreContext = createContext(void 0);
 function useStore(options) {
   const store = useContext(StoreContext);
-  return (options == null ? void 0 : options.store) || store || getDefaultStore();
+  return (
+    (options == null ? void 0 : options.store) || store || getDefaultStore()
+  );
 }
-function Provider({
-  children,
-  store
-}) {
+function Provider({ children, store }) {
   const storeRef = useRef(null);
   if (store) {
     return createElement(StoreContext.Provider, { value: store }, children);
@@ -26,13 +32,14 @@ function Provider({
     {
       // TODO: If this is not a false positive, consider using useState instead of useRef like https://github.com/pmndrs/jotai/pull/2771
       // eslint-disable-next-line react-hooks/refs
-      value: storeRef.current
+      value: storeRef.current,
     },
-    children
+    children,
   );
 }
 
-const isPromiseLike = (x) => typeof (x == null ? void 0 : x.then) === "function";
+const isPromiseLike = (x) =>
+  typeof (x == null ? void 0 : x.then) === "function";
 const attachPromiseStatus = (promise) => {
   if (!promise.status) {
     promise.status = "pending";
@@ -44,23 +51,24 @@ const attachPromiseStatus = (promise) => {
       (e) => {
         promise.status = "rejected";
         promise.reason = e;
-      }
+      },
     );
   }
 };
-const use = React.use || // A shim for older React versions
-((promise) => {
-  if (promise.status === "pending") {
-    throw promise;
-  } else if (promise.status === "fulfilled") {
-    return promise.value;
-  } else if (promise.status === "rejected") {
-    throw promise.reason;
-  } else {
-    attachPromiseStatus(promise);
-    throw promise;
-  }
-});
+const use =
+  React.use || // A shim for older React versions
+  ((promise) => {
+    if (promise.status === "pending") {
+      throw promise;
+    } else if (promise.status === "fulfilled") {
+      return promise.value;
+    } else if (promise.status === "rejected") {
+      throw promise.reason;
+    } else {
+      attachPromiseStatus(promise);
+      throw promise;
+    }
+  });
 const continuablePromiseMap = /* @__PURE__ */ new WeakMap();
 const createContinuablePromise = (store, promise, getValue) => {
   const buildingBlocks = INTERNAL_getBuildingBlocksRev3(store);
@@ -102,19 +110,25 @@ const createContinuablePromise = (store, promise, getValue) => {
   return continuablePromise;
 };
 function useAtomValue(atom, options) {
-  const { delay, unstable_promiseStatus: promiseStatus = !React.use } = options || {};
+  const { delay, unstable_promiseStatus: promiseStatus = !React.use } =
+    options || {};
   const store = useStore(options);
-  const [[valueFromReducer, storeFromReducer, atomFromReducer], rerender] = useReducer(
-    (prev) => {
-      const nextValue = store.get(atom);
-      if (Object.is(prev[0], nextValue) && prev[1] === store && prev[2] === atom) {
-        return prev;
-      }
-      return [nextValue, store, atom];
-    },
-    void 0,
-    () => [store.get(atom), store, atom]
-  );
+  const [[valueFromReducer, storeFromReducer, atomFromReducer], rerender] =
+    useReducer(
+      (prev) => {
+        const nextValue = store.get(atom);
+        if (
+          Object.is(prev[0], nextValue) &&
+          prev[1] === store &&
+          prev[2] === atom
+        ) {
+          return prev;
+        }
+        return [nextValue, store, atom];
+      },
+      void 0,
+      () => [store.get(atom), store, atom],
+    );
   let value = valueFromReducer;
   if (storeFromReducer !== store || atomFromReducer !== atom) {
     rerender();
@@ -127,11 +141,10 @@ function useAtomValue(atom, options) {
           const value2 = store.get(atom);
           if (isPromiseLike(value2)) {
             attachPromiseStatus(
-              createContinuablePromise(store, value2, () => store.get(atom))
+              createContinuablePromise(store, value2, () => store.get(atom)),
             );
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
       if (typeof delay === "number") {
         console.warn(`[DEPRECATED] delay option is deprecated and will be removed in v3.
@@ -166,10 +179,8 @@ function useAtomValueWithDelay<Value>(
   }, [store, atom, delay, promiseStatus]);
   useDebugValue(value);
   if (isPromiseLike(value)) {
-    const promise = createContinuablePromise(
-      store,
-      value,
-      () => store.get(atom)
+    const promise = createContinuablePromise(store, value, () =>
+      store.get(atom),
     );
     if (promiseStatus) {
       attachPromiseStatus(promise);
@@ -183,12 +194,15 @@ function useSetAtom(atom, options) {
   const store = useStore(options);
   const setAtom = useCallback(
     (...args) => {
-      if ((import.meta.env ? import.meta.env.MODE : void 0) !== "production" && !("write" in atom)) {
+      if (
+        (import.meta.env ? import.meta.env.MODE : void 0) !== "production" &&
+        !("write" in atom)
+      ) {
         throw new Error("not writable atom");
       }
       return store.set(atom, ...args);
     },
-    [store, atom]
+    [store, atom],
   );
   return setAtom;
 }
@@ -197,7 +211,7 @@ function useAtom(atom, options) {
   return [
     useAtomValue(atom, options),
     // We do wrong type assertion here, which results in throwing an error.
-    useSetAtom(atom, options)
+    useSetAtom(atom, options),
   ];
 }
 

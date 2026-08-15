@@ -169,7 +169,9 @@ export function continueUntilChoice(story, initialVisual) {
         }
     }
     catch (e) {
-        reportError(new StoryRuntimeError("runtime error during Continue(), stopping here", { cause: e }));
+        reportError(new StoryRuntimeError("runtime error during Continue(), stopping here", {
+            cause: e,
+        }));
     }
     const choices = story.currentChoices.map((c, i) => ({
         text: c.text,

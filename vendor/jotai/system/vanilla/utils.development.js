@@ -1,12 +1,13 @@
-System.register(['jotai/vanilla'], (function (exports) {
-  'use strict';
+System.register(["jotai/vanilla"], function (exports) {
+  "use strict";
   var atom;
   return {
-    setters: [function (module) {
-      atom = module.atom;
-    }],
-    execute: (function () {
-
+    setters: [
+      function (module) {
+        atom = module.atom;
+      },
+    ],
+    execute: function () {
       exports({
         atomFamily: atomFamily,
         atomWithDefault: atomWithDefault,
@@ -23,26 +24,22 @@ System.register(['jotai/vanilla'], (function (exports) {
         selectAtom: selectAtom,
         splitAtom: splitAtom,
         unstable_withStorageValidator: withStorageValidator,
-        unwrap: unwrap
+        unwrap: unwrap,
       });
 
-      const RESET = exports("RESET", /* @__PURE__ */ Symbol(
-        "RESET" 
-      ));
+      const RESET = exports("RESET", /* @__PURE__ */ Symbol("RESET"));
 
       function atomWithReset(initialValue) {
-        const anAtom = atom(
-          initialValue,
-          (get, set, update) => {
-            const nextValue = typeof update === "function" ? update(get(anAtom)) : update;
-            set(anAtom, nextValue === RESET ? initialValue : nextValue);
-          }
-        );
+        const anAtom = atom(initialValue, (get, set, update) => {
+          const nextValue =
+            typeof update === "function" ? update(get(anAtom)) : update;
+          set(anAtom, nextValue === RESET ? initialValue : nextValue);
+        });
         return anAtom;
       }
 
       function atomWithReducer(initialValue, reducer) {
-        return atom(initialValue, function(get, set, action) {
+        return atom(initialValue, function (get, set, action) {
           set(this, reducer(get(this), action));
         });
       }
@@ -51,7 +48,7 @@ System.register(['jotai/vanilla'], (function (exports) {
       function atomFamily(initializeAtom, areEqual) {
         if (!didWarnDeprecation$1) {
           console.warn(
-            "[DEPRECATED] atomFamily is deprecated and will be removed in v3. Please use the `jotai-family` package instead: https://github.com/jotaijs/jotai-family"
+            "[DEPRECATED] atomFamily is deprecated and will be removed in v3. Please use the `jotai-family` package instead: https://github.com/jotaijs/jotai-family",
           );
           didWarnDeprecation$1 = true;
         }
@@ -126,8 +123,16 @@ System.register(['jotai/vanilla'], (function (exports) {
       const getCached$2 = (c, m, k) => (m.has(k) ? m : m.set(k, c())).get(k);
       const cache1$3 = /* @__PURE__ */ new WeakMap();
       const memo3 = (create, dep1, dep2, dep3) => {
-        const cache2 = getCached$2(() => /* @__PURE__ */ new WeakMap(), cache1$3, dep1);
-        const cache3 = getCached$2(() => /* @__PURE__ */ new WeakMap(), cache2, dep2);
+        const cache2 = getCached$2(
+          () => /* @__PURE__ */ new WeakMap(),
+          cache1$3,
+          dep1,
+        );
+        const cache3 = getCached$2(
+          () => /* @__PURE__ */ new WeakMap(),
+          cache2,
+          dep2,
+        );
         return getCached$2(create, cache3, dep3);
       };
       function selectAtom(anAtom, selector, equalityFn = Object.is) {
@@ -151,7 +156,7 @@ System.register(['jotai/vanilla'], (function (exports) {
           },
           anAtom,
           selector,
-          equalityFn
+          equalityFn,
         );
       }
 
@@ -173,12 +178,12 @@ System.register(['jotai/vanilla'], (function (exports) {
         }
         frozenAtoms.add(anAtom);
         const origRead = anAtom.read;
-        anAtom.read = function(get, options) {
+        anAtom.read = function (get, options) {
           return deepFreeze(origRead.call(this, get, options));
         };
         if ("write" in anAtom) {
           const origWrite = anAtom.write;
-          anAtom.write = function(get, set, ...args) {
+          anAtom.write = function (get, set, ...args) {
             return origWrite.call(
               this,
               get,
@@ -188,7 +193,7 @@ System.register(['jotai/vanilla'], (function (exports) {
                 }
                 return set(...setArgs);
               },
-              ...args
+              ...args,
             );
           };
         }
@@ -197,16 +202,20 @@ System.register(['jotai/vanilla'], (function (exports) {
       function freezeAtomCreator(createAtom) {
         {
           console.warn(
-            "[DEPRECATED] freezeAtomCreator is deprecated, define it on users end"
+            "[DEPRECATED] freezeAtomCreator is deprecated, define it on users end",
           );
         }
-        return ((...args) => freezeAtom(createAtom(...args)));
+        return (...args) => freezeAtom(createAtom(...args));
       }
 
       const getCached$1 = (c, m, k) => (m.has(k) ? m : m.set(k, c())).get(k);
       const cache1$2 = /* @__PURE__ */ new WeakMap();
       const memo2$1 = (create, dep1, dep2) => {
-        const cache2 = getCached$1(() => /* @__PURE__ */ new WeakMap(), cache1$2, dep1);
+        const cache2 = getCached$1(
+          () => /* @__PURE__ */ new WeakMap(),
+          cache1$2,
+          dep1,
+        );
         return getCached$1(create, cache2, dep2);
       };
       const cacheKeyForEmptyKeyExtractor = {};
@@ -227,7 +236,9 @@ System.register(['jotai/vanilla'], (function (exports) {
               arr.forEach((item, index) => {
                 const key = keyExtractor ? keyExtractor(item) : index;
                 keyList[index] = key;
-                const cachedAtom = prevMapping && prevMapping.atomList[prevMapping.keyList.indexOf(key)];
+                const cachedAtom =
+                  prevMapping &&
+                  prevMapping.atomList[prevMapping.keyList.indexOf(key)];
                 if (cachedAtom) {
                   atomList[index] = cachedAtom;
                   return;
@@ -235,7 +246,10 @@ System.register(['jotai/vanilla'], (function (exports) {
                 const read = (get) => {
                   const prev2 = get(mappingAtom);
                   const currArr = get(arrAtom);
-                  const mapping2 = getMapping(currArr, prev2 == null ? void 0 : prev2.arr);
+                  const mapping2 = getMapping(
+                    currArr,
+                    prev2 == null ? void 0 : prev2.arr,
+                  );
                   const index2 = mapping2.keyList.indexOf(key);
                   if (index2 < 0 || index2 >= currArr.length) {
                     const prevItem = arr[getMapping(arr).keyList.indexOf(key)];
@@ -249,23 +263,34 @@ System.register(['jotai/vanilla'], (function (exports) {
                 const write = (get, set, update) => {
                   const prev2 = get(mappingAtom);
                   const arr2 = get(arrAtom);
-                  const mapping2 = getMapping(arr2, prev2 == null ? void 0 : prev2.arr);
+                  const mapping2 = getMapping(
+                    arr2,
+                    prev2 == null ? void 0 : prev2.arr,
+                  );
                   const index2 = mapping2.keyList.indexOf(key);
                   if (index2 < 0 || index2 >= arr2.length) {
                     throw new Error("splitAtom: index out of bounds for write");
                   }
-                  const nextItem = isFunction(update) ? update(arr2[index2]) : update;
+                  const nextItem = isFunction(update)
+                    ? update(arr2[index2])
+                    : update;
                   if (!Object.is(arr2[index2], nextItem)) {
                     set(arrAtom, [
                       ...arr2.slice(0, index2),
                       nextItem,
-                      ...arr2.slice(index2 + 1)
+                      ...arr2.slice(index2 + 1),
                     ]);
                   }
                 };
-                atomList[index] = isWritable(arrAtom) ? atom(read, write) : atom(read);
+                atomList[index] = isWritable(arrAtom)
+                  ? atom(read, write)
+                  : atom(read);
               });
-              if (prevMapping && prevMapping.keyList.length === keyList.length && prevMapping.keyList.every((x, i) => x === keyList[i])) {
+              if (
+                prevMapping &&
+                prevMapping.keyList.length === keyList.length &&
+                prevMapping.keyList.every((x, i) => x === keyList[i])
+              ) {
                 mapping = prevMapping;
               } else {
                 mapping = { arr, atomList, keyList };
@@ -283,63 +308,69 @@ System.register(['jotai/vanilla'], (function (exports) {
               mappingAtom.debugPrivate = true;
             }
             mappingAtom.init = void 0;
-            const splittedAtom = isWritable(arrAtom) ? atom(
-              (get) => get(mappingAtom).atomList,
-              (get, set, action) => {
-                switch (action.type) {
-                  case "remove": {
-                    const index = get(splittedAtom).indexOf(action.atom);
-                    if (index >= 0) {
-                      const arr = get(arrAtom);
-                      set(arrAtom, [
-                        ...arr.slice(0, index),
-                        ...arr.slice(index + 1)
-                      ]);
-                    }
-                    break;
-                  }
-                  case "insert": {
-                    const index = action.before ? get(splittedAtom).indexOf(action.before) : get(splittedAtom).length;
-                    if (index >= 0) {
-                      const arr = get(arrAtom);
-                      set(arrAtom, [
-                        ...arr.slice(0, index),
-                        action.value,
-                        ...arr.slice(index)
-                      ]);
-                    }
-                    break;
-                  }
-                  case "move": {
-                    const index1 = get(splittedAtom).indexOf(action.atom);
-                    const index2 = action.before ? get(splittedAtom).indexOf(action.before) : get(splittedAtom).length;
-                    if (index1 >= 0 && index2 >= 0) {
-                      const arr = get(arrAtom);
-                      if (index1 < index2) {
-                        set(arrAtom, [
-                          ...arr.slice(0, index1),
-                          ...arr.slice(index1 + 1, index2),
-                          arr[index1],
-                          ...arr.slice(index2)
-                        ]);
-                      } else {
-                        set(arrAtom, [
-                          ...arr.slice(0, index2),
-                          arr[index1],
-                          ...arr.slice(index2, index1),
-                          ...arr.slice(index1 + 1)
-                        ]);
+            const splittedAtom = isWritable(arrAtom)
+              ? atom(
+                  (get) => get(mappingAtom).atomList,
+                  (get, set, action) => {
+                    switch (action.type) {
+                      case "remove": {
+                        const index = get(splittedAtom).indexOf(action.atom);
+                        if (index >= 0) {
+                          const arr = get(arrAtom);
+                          set(arrAtom, [
+                            ...arr.slice(0, index),
+                            ...arr.slice(index + 1),
+                          ]);
+                        }
+                        break;
+                      }
+                      case "insert": {
+                        const index = action.before
+                          ? get(splittedAtom).indexOf(action.before)
+                          : get(splittedAtom).length;
+                        if (index >= 0) {
+                          const arr = get(arrAtom);
+                          set(arrAtom, [
+                            ...arr.slice(0, index),
+                            action.value,
+                            ...arr.slice(index),
+                          ]);
+                        }
+                        break;
+                      }
+                      case "move": {
+                        const index1 = get(splittedAtom).indexOf(action.atom);
+                        const index2 = action.before
+                          ? get(splittedAtom).indexOf(action.before)
+                          : get(splittedAtom).length;
+                        if (index1 >= 0 && index2 >= 0) {
+                          const arr = get(arrAtom);
+                          if (index1 < index2) {
+                            set(arrAtom, [
+                              ...arr.slice(0, index1),
+                              ...arr.slice(index1 + 1, index2),
+                              arr[index1],
+                              ...arr.slice(index2),
+                            ]);
+                          } else {
+                            set(arrAtom, [
+                              ...arr.slice(0, index2),
+                              arr[index1],
+                              ...arr.slice(index2, index1),
+                              ...arr.slice(index1 + 1),
+                            ]);
+                          }
+                        }
+                        break;
                       }
                     }
-                    break;
-                  }
-                }
-              }
-            ) : atom((get) => get(mappingAtom).atomList);
+                  },
+                )
+              : atom((get) => get(mappingAtom).atomList);
             return splittedAtom;
           },
           arrAtom,
-          keyExtractor || cacheKeyForEmptyKeyExtractor
+          keyExtractor || cacheKeyForEmptyKeyExtractor,
         );
       }
 
@@ -358,14 +389,16 @@ System.register(['jotai/vanilla'], (function (exports) {
             return getDefault(get, options);
           },
           (get, set, update) => {
-            const newValue = typeof update === "function" ? update(get(anAtom)) : update;
+            const newValue =
+              typeof update === "function" ? update(get(anAtom)) : update;
             set(overwrittenAtom, newValue === RESET ? EMPTY : newValue);
-          }
+          },
         );
         return anAtom;
       }
 
-      const isPromiseLike$2 = (x) => typeof (x == null ? void 0 : x.then) === "function";
+      const isPromiseLike$2 = (x) =>
+        typeof (x == null ? void 0 : x.then) === "function";
       function withStorageValidator(validator) {
         return (unknownStorage) => {
           const storage = {
@@ -382,23 +415,26 @@ System.register(['jotai/vanilla'], (function (exports) {
                 return value.then(validate);
               }
               return validate(value);
-            }
+            },
           };
           return storage;
         };
       }
-      function createJSONStorage(getStringStorage = () => {
-        try {
-          return window.localStorage;
-        } catch (e) {
-          {
-            if (typeof window !== "undefined") {
-              console.warn(e);
+      function createJSONStorage(
+        getStringStorage = () => {
+          try {
+            return window.localStorage;
+          } catch (e) {
+            {
+              if (typeof window !== "undefined") {
+                console.warn(e);
+              }
             }
+            return void 0;
           }
-          return void 0;
-        }
-      }, options) {
+        },
+        options,
+      ) {
         var _a;
         let lastStr;
         let lastValue;
@@ -409,7 +445,10 @@ System.register(['jotai/vanilla'], (function (exports) {
               str2 = str2 || "";
               if (lastStr !== str2) {
                 try {
-                  lastValue = JSON.parse(str2, options == null ? void 0 : options.reviver);
+                  lastValue = JSON.parse(
+                    str2,
+                    options == null ? void 0 : options.reviver,
+                  );
                 } catch (e) {
                   return initialValue;
                 }
@@ -417,7 +456,13 @@ System.register(['jotai/vanilla'], (function (exports) {
               }
               return lastValue;
             };
-            const str = (_b = (_a2 = getStringStorage()) == null ? void 0 : _a2.getItem(key)) != null ? _b : null;
+            const str =
+              (_b =
+                (_a2 = getStringStorage()) == null
+                  ? void 0
+                  : _a2.getItem(key)) != null
+                ? _b
+                : null;
             if (isPromiseLike$2(str)) {
               return str.then(parse);
             }
@@ -425,35 +470,51 @@ System.register(['jotai/vanilla'], (function (exports) {
           },
           setItem: (key, newValue) => {
             var _a2;
-            return (_a2 = getStringStorage()) == null ? void 0 : _a2.setItem(
-              key,
-              JSON.stringify(newValue, options == null ? void 0 : options.replacer)
-            );
+            return (_a2 = getStringStorage()) == null
+              ? void 0
+              : _a2.setItem(
+                  key,
+                  JSON.stringify(
+                    newValue,
+                    options == null ? void 0 : options.replacer,
+                  ),
+                );
           },
           removeItem: (key) => {
             var _a2;
-            return (_a2 = getStringStorage()) == null ? void 0 : _a2.removeItem(key);
-          }
+            return (_a2 = getStringStorage()) == null
+              ? void 0
+              : _a2.removeItem(key);
+          },
         };
-        const createHandleSubscribe = (subscriber2) => (key, callback, initialValue) => subscriber2(key, (v) => {
-          let newValue;
-          try {
-            newValue = JSON.parse(v || "", options == null ? void 0 : options.reviver);
-          } catch (e) {
-            newValue = initialValue;
-          }
-          callback(newValue);
-        });
+        const createHandleSubscribe =
+          (subscriber2) => (key, callback, initialValue) =>
+            subscriber2(key, (v) => {
+              let newValue;
+              try {
+                newValue = JSON.parse(
+                  v || "",
+                  options == null ? void 0 : options.reviver,
+                );
+              } catch (e) {
+                newValue = initialValue;
+              }
+              callback(newValue);
+            });
         let subscriber;
         try {
-          subscriber = (_a = getStringStorage()) == null ? void 0 : _a.subscribe;
-        } catch (e) {
-        }
-        if (!subscriber && typeof window !== "undefined" && typeof window.addEventListener === "function" && window.Storage) {
+          subscriber =
+            (_a = getStringStorage()) == null ? void 0 : _a.subscribe;
+        } catch (e) {}
+        if (
+          !subscriber &&
+          typeof window !== "undefined" &&
+          typeof window.addEventListener === "function" &&
+          window.Storage
+        ) {
           subscriber = (key, callback) => {
             if (!(getStringStorage() instanceof window.Storage)) {
-              return () => {
-              };
+              return () => {};
             }
             const storageEventCallback = (e) => {
               if (e.storageArea === getStringStorage() && e.key === key) {
@@ -472,10 +533,15 @@ System.register(['jotai/vanilla'], (function (exports) {
         return storage;
       }
       const defaultStorage = createJSONStorage();
-      function atomWithStorage(key, initialValue, storage = defaultStorage, options) {
+      function atomWithStorage(
+        key,
+        initialValue,
+        storage = defaultStorage,
+        options,
+      ) {
         const getOnInit = options == null ? void 0 : options.getOnInit;
         const baseAtom = atom(
-          getOnInit ? storage.getItem(key, initialValue) : initialValue
+          getOnInit ? storage.getItem(key, initialValue) : initialValue,
         );
         {
           baseAtom.debugPrivate = true;
@@ -483,12 +549,15 @@ System.register(['jotai/vanilla'], (function (exports) {
         baseAtom.onMount = (setAtom) => {
           var _a;
           setAtom(storage.getItem(key, initialValue));
-          return (_a = storage.subscribe) == null ? void 0 : _a.call(storage, key, setAtom, initialValue);
+          return (_a = storage.subscribe) == null
+            ? void 0
+            : _a.call(storage, key, setAtom, initialValue);
         };
         const anAtom = atom(
           (get) => get(baseAtom),
           (get, set, update) => {
-            const nextValue = typeof update === "function" ? update(get(baseAtom)) : update;
+            const nextValue =
+              typeof update === "function" ? update(get(baseAtom)) : update;
             if (nextValue === RESET) {
               set(baseAtom, initialValue);
               return storage.removeItem(key);
@@ -501,12 +570,13 @@ System.register(['jotai/vanilla'], (function (exports) {
             }
             set(baseAtom, nextValue);
             return storage.setItem(key, nextValue);
-          }
+          },
         );
         return anAtom;
       }
 
-      const isPromiseLike$1 = (x) => typeof (x == null ? void 0 : x.then) === "function";
+      const isPromiseLike$1 = (x) =>
+        typeof (x == null ? void 0 : x.then) === "function";
       function atomWithObservable(getObservable, options) {
         const returnResultData = (result) => {
           if ("e" in result) {
@@ -517,14 +587,24 @@ System.register(['jotai/vanilla'], (function (exports) {
         const observableResultAtom = atom((get) => {
           var _a;
           const observable = getObservable(get);
-          const subscribable = ((_a = observable[Symbol.observable]) == null ? void 0 : _a.call(observable)) || observable;
+          const subscribable =
+            ((_a = observable[Symbol.observable]) == null
+              ? void 0
+              : _a.call(observable)) || observable;
           let resolve;
-          const makePending = () => new Promise((r) => {
-            resolve = r;
-          });
-          const initialResult = options && "initialValue" in options ? {
-            d: typeof options.initialValue === "function" ? options.initialValue() : options.initialValue
-          } : makePending();
+          const makePending = () =>
+            new Promise((r) => {
+              resolve = r;
+            });
+          const initialResult =
+            options && "initialValue" in options
+              ? {
+                  d:
+                    typeof options.initialValue === "function"
+                      ? options.initialValue()
+                      : options.initialValue,
+                }
+              : makePending();
           let setResult;
           let lastResult;
           const listener = (result) => {
@@ -549,10 +629,12 @@ System.register(['jotai/vanilla'], (function (exports) {
             subscription = subscribable.subscribe({
               next: (d) => listener({ d }),
               error: (e) => listener({ e }),
-              complete: () => {
-              }
+              complete: () => {},
             });
-            if (isNotMounted() && (options == null ? void 0 : options.unstable_timeout)) {
+            if (
+              isNotMounted() &&
+              (options == null ? void 0 : options.unstable_timeout)
+            ) {
               timer = setTimeout(unsubscribe, options.unstable_timeout);
             }
           };
@@ -595,7 +677,8 @@ System.register(['jotai/vanilla'], (function (exports) {
             return returnResultData(result);
           },
           (get, set, data) => {
-            const [resultAtom, observable, makePending, start, isNotMounted] = get(observableResultAtom);
+            const [resultAtom, observable, makePending, start, isNotMounted] =
+              get(observableResultAtom);
             if ("next" in observable) {
               if (isNotMounted()) {
                 set(resultAtom, makePending());
@@ -605,7 +688,7 @@ System.register(['jotai/vanilla'], (function (exports) {
             } else {
               throw new Error("observable is not subject");
             }
-          }
+          },
         );
         return observableAtom;
       }
@@ -613,10 +696,15 @@ System.register(['jotai/vanilla'], (function (exports) {
       const getCached = (c, m, k) => (m.has(k) ? m : m.set(k, c())).get(k);
       const cache1$1 = /* @__PURE__ */ new WeakMap();
       const memo2 = (create, dep1, dep2) => {
-        const cache2 = getCached(() => /* @__PURE__ */ new WeakMap(), cache1$1, dep1);
+        const cache2 = getCached(
+          () => /* @__PURE__ */ new WeakMap(),
+          cache1$1,
+          dep1,
+        );
         return getCached(create, cache2, dep2);
       };
-      const isPromiseLike = (p) => typeof (p == null ? void 0 : p.then) === "function";
+      const isPromiseLike = (p) =>
+        typeof (p == null ? void 0 : p.then) === "function";
       const defaultFallback = () => void 0;
       function unwrap(anAtom, fallback = defaultFallback) {
         return memo2(
@@ -627,7 +715,7 @@ System.register(['jotai/vanilla'], (function (exports) {
             const triggerRefreshAtom = atom([]);
             triggerRefreshAtom.INTERNAL_onInit = (store) => {
               store.set(triggerRefreshAtom, [
-                () => store.set(refreshAtom, (c) => c + 1)
+                () => store.set(refreshAtom, (c) => c + 1),
               ]);
             };
             {
@@ -639,8 +727,7 @@ System.register(['jotai/vanilla'], (function (exports) {
               let prev;
               try {
                 prev = get(promiseAndValueAtom);
-              } catch (e) {
-              }
+              } catch (e) {}
               const promise = get(anAtom);
               if (!isPromiseLike(promise)) {
                 return { v: promise };
@@ -656,7 +743,7 @@ System.register(['jotai/vanilla'], (function (exports) {
                     promiseErrorCache.set(promise, e);
                     const [triggerRefresh] = get(triggerRefreshAtom);
                     triggerRefresh();
-                  }
+                  },
                 );
               }
               if (promiseErrorCache.has(promise)) {
@@ -665,7 +752,7 @@ System.register(['jotai/vanilla'], (function (exports) {
               if (promiseResultCache.has(promise)) {
                 return {
                   p: promise,
-                  v: promiseResultCache.get(promise)
+                  v: promiseResultCache.get(promise),
                 };
               }
               if (prev && "v" in prev) {
@@ -685,21 +772,22 @@ System.register(['jotai/vanilla'], (function (exports) {
                 }
                 return state.v;
               },
-              (_get, set, ...args) => set(anAtom, ...args)
+              (_get, set, ...args) => set(anAtom, ...args),
             );
           },
           anAtom,
-          fallback
+          fallback,
         );
       }
 
       const cache1 = /* @__PURE__ */ new WeakMap();
-      const memo1 = (create, dep1) => (cache1.has(dep1) ? cache1 : cache1.set(dep1, create())).get(dep1);
+      const memo1 = (create, dep1) =>
+        (cache1.has(dep1) ? cache1 : cache1.set(dep1, create())).get(dep1);
       let didWarnDeprecation = false;
       function loadable(anAtom) {
         if (!didWarnDeprecation) {
           console.warn(
-            "[DEPRECATED] loadable is deprecated and will be removed in v3. Please use a userland util with the `unwrap` util: https://github.com/pmndrs/jotai/pull/3217"
+            "[DEPRECATED] loadable is deprecated and will be removed in v3. Please use a userland util with the `unwrap` util: https://github.com/pmndrs/jotai/pull/3217",
           );
           didWarnDeprecation = true;
         }
@@ -738,7 +826,7 @@ System.register(['jotai/vanilla'], (function (exports) {
             } else {
               throw new Error("refresh must be called without arguments");
             }
-          }
+          },
         );
       }
 
@@ -748,11 +836,10 @@ System.register(['jotai/vanilla'], (function (exports) {
         Object.defineProperty(a, "init", {
           get() {
             return makeInitial();
-          }
+          },
         });
         return a;
       }
-
-    })
+    },
   };
-}));
+});

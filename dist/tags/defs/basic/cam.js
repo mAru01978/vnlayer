@@ -2,7 +2,7 @@ import { registerBasicTag, registerAlias } from "../../registry";
 import { isNumeric } from "../../numericOrLabel";
 import { camAtomFamily } from "../../../core/atoms";
 import { positionOverridesAtomFamily } from "../../../core/managers/positionManager";
-import { getCharacterSlot } from "../../characterSlots";
+import { getCharacterSlot } from "../../spriteAssets";
 const defaultConfig = {
     scales: {
         zoom: 1.6,

@@ -1,0 +1,1 @@
+{"version":3,"file":"cookieSaveProvider.d.ts","sourceRoot":"","sources":["../../../core/saveProviders/cookieSaveProvider.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAY,MAAM,iBAAiB,CAAC;AAE9D,MAAM,MAAM,yBAAyB,GAAG;IACtC,SAAS,CAAC,EAAE,MAAM,CAAC;IAEnB,UAAU,CAAC,EAAE,MAAM,CAAC;CACrB,CAAC;AAQF,wBAAgB,wBAAwB,CACtC,OAAO,GAAE,yBAA8B,GACtC,YAAY,CAsDd"}

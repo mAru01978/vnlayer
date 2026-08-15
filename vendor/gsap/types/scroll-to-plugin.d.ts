@@ -1,5 +1,4 @@
 declare class ScrollToPlugin {
-
   /**
    * Configure ScrollToPlugin
    *
@@ -15,7 +14,6 @@ declare class ScrollToPlugin {
    * @link https://greensock.com/docs/v3/Plugins/ScrollToPlugin/static.config()
    */
   static config(vars: ScrollToPlugin.ConfigVars): void;
-
 
   /**
    * Returns the maximum scroll value for the given Element
@@ -66,18 +64,14 @@ declare namespace ScrollToPlugin {
 }
 
 declare namespace gsap {
-
   interface TweenVars {
     scrollTo?: number | string | Element | Function | ScrollToPlugin.Vars;
   }
 }
 
 declare module "gsap/ScrollToPlugin" {
-  class _ScrollToPlugin extends ScrollToPlugin { }
-  export {
-    _ScrollToPlugin as ScrollToPlugin,
-    _ScrollToPlugin as default
-  }
+  class _ScrollToPlugin extends ScrollToPlugin {}
+  export { _ScrollToPlugin as ScrollToPlugin, _ScrollToPlugin as default };
 }
 
 declare module "gsap/src/ScrollToPlugin" {

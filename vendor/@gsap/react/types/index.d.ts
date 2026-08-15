@@ -7,7 +7,10 @@
 import gsap from "gsap";
 
 type ContextSafeFunc = <T extends Function>(func: T) => T;
-type ContextFunc = (context: gsap.Context, contextSafe?: ContextSafeFunc) => Function | any | void;
+type ContextFunc = (
+  context: gsap.Context,
+  contextSafe?: ContextSafeFunc,
+) => Function | any | void;
 
 interface ReactRef {
   current: any | null;
@@ -29,5 +32,8 @@ interface useGSAPConfig {
  * @param {ContextFunc | useGSAPConfig} func
  * @param {Array | useGSAPConfig} [dependencies]
  * @returns {useGSAPReturn} Object with "context" and "contextSafe" properties
-*/
-export function useGSAP(func?: ContextFunc | useGSAPConfig, dependencies?: unknown[] | useGSAPConfig): useGSAPReturn;
+ */
+export function useGSAP(
+  func?: ContextFunc | useGSAPConfig,
+  dependencies?: unknown[] | useGSAPConfig,
+): useGSAPReturn;

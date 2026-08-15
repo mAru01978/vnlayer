@@ -14,6 +14,15 @@
 //
 // 真偽値は全てon/off(boolean)で統一している。true/falseという値そのものは
 // タグの引数としては使わない(タグ設計方針: 数値・小数・意味のあるラベルのみ)。
+//
+// リアクティブ化(2026-08-08、簡易セーブ機能追加に伴う修正): 以前はここが
+// 素朴なモジュールスコープのMapで、Reactの再描画を一切トリガーしなかった。
+// 通常再生では大量のタグ処理(=多くのJotai atom書き込み=多くの再描画)が
+// 連鎖するため気づきにくかったが、簡易セーブからの復元(steps=[]でatom
+// 書き込みが最小限)や、mount後に非同期でVNLayer.configure({ui:...})を
+// 呼ぶケースでは「値は更新されているのに画面に反映されない/後から
+// 突然反映される」ような挙動として表面化していた。version番号+
+// useSyncExternalStore(components/StageView.tsx側)で解決する。
 const defaultUiConfig = {
     messageWindow: {
         interactive: true,
@@ -43,6 +52,26 @@ const GLOBAL_SCOPE = "__global__";
 // 「差分(patch)」だけを保持する。フルの設定値ではなく差分で持つことで、
 // 「そのスコープで明示的に設定した項目だけ」がグローバルの上に重なるようにする。
 const patchesByScope = new Map();
+// リアクティブ化用: setUiConfig()/restoreUiConfigPatches()が呼ばれるたびに
+// version(単調増加のバージョン番号)を進める。components/StageView.tsx側は
+// useSyncExternalStore(subscribeUiConfig, getUiConfigVersion, ...)を呼ぶことで
+// 「値そのもの」ではなく「変わったかどうか」だけを購読し、変化があれば
+// 再描画される(getUiConfig()自体は毎回新しいオブジェクトを組み立てて返す
+// 関数のままなので、useSyncExternalStoreのgetSnapshotに直接使うと参照が
+// 毎回変わってしまい相性が悪いため、version番号を経由する形にしている)。
+let version = 0;
+const listeners = new Set();
+function bumpVersion() {
+    version += 1;
+    listeners.forEach((listener) => listener());
+}
+export function subscribeUiConfig(listener) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+}
+export function getUiConfigVersion() {
+    return version;
+}
 function mergeSection(base, patch) {
     return patch ? { ...base, ...patch } : base;
 }
@@ -76,6 +105,7 @@ export function setUiConfig(patch, scope) {
         font: { ...existing.font, ...patch.font },
         stage: { ...existing.stage, ...patch.stage },
     });
+    bumpVersion();
 }
 // scopeを省略するとグローバル設定(全VN共通の既定値)を返す。
 // scopeを指定すると、グローバル設定の上にそのインスタンス専用の上書きを
@@ -86,5 +116,24 @@ export function getUiConfig(scope) {
     if (!scope)
         return global;
     return mergePatch(global, patchesByScope.get(scope));
+}
+// 簡易セーブ機能(core/SaveProvider.ts)用。#ui:...タグが積み上げてきた
+// 全スコープぶんのpatchをそのまま取り出す/丸ごと置き換える。
+// ToJson/LoadJson(inkjs自身の実行状態)には含まれない「VNLayer側の見た目
+// 設定」の一部なので、これを保存/復元しないと、保存時点までにストーリーが
+// 辿ったタグ(#ui:font:.../#ui:choice:anchor:...等)の効果が復元後に
+// 失われてしまう(フォントが既定に戻る、選択肢の位置がおかしくなる、
+// といった不具合の原因だった)。
+export function getAllUiConfigPatches() {
+    return Object.fromEntries(patchesByScope);
+}
+export function restoreUiConfigPatches(patches) {
+    patchesByScope.clear();
+    if (patches) {
+        for (const [scope, patch] of Object.entries(patches)) {
+            patchesByScope.set(scope, patch);
+        }
+    }
+    bumpVersion();
 }
 //# sourceMappingURL=uiConfig.js.map

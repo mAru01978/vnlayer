@@ -5,9 +5,11 @@ export declare const activeMessageAtomFamily: import("jotai-family").AtomFamily<
     content: string;
     fadeIn: boolean;
     typeSpeedMs: number;
+    startRevealed?: boolean;
 }>>;
 export declare function setNextRevealFade(atomKey: string, fadeIn: boolean): void;
 export declare function showMessage(atomKey: string, speaker: string, content: string, typeSpeedMs: number): void;
+export declare function restoreMessage(atomKey: string, message: ActiveMessage): void;
 export declare function setMode(atomKey: string, mode: "transient" | "persist" | "hide", transientDurationMs?: number): void;
 export declare function clear(atomKey: string): void;
 export declare function clearIfSpeakerIs(atomKey: string, name: string): void;

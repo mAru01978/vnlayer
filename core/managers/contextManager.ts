@@ -3,8 +3,8 @@
 // "${key}_seq"自動採番・wake(interrupt)処理、およびネストしたオブジェクトの
 // フラット化(下記)をまとめたマネージャー。
 //
-// 実際にink変数へ反映する処理(stepProvider.idle(scenario, varName, value)の
-// 呼び出しループ)は、そのVNインスタンスが使っているStepProvider/scenarioに
+// 実際にink変数へ反映する処理(stepProvider.idle(clip, varName, value)の
+// 呼び出しループ)は、そのVNインスタンスが使っているStepProvider/clipに
 // 依存するため、こちらには持たせず core/useStoryEngine.ts 側に残している
 // (prepareWrite()が返す「書き込むべきvars」を使って、呼び出し側がidle()
 // ループを回す、という役割分担)。
@@ -19,8 +19,8 @@
 // できる(core/types.tsのSetContextOptionsコメント参照)。配列はinkが
 // 扱える値ではないため、フラット化の対象にはせず、そのまま1つの値として
 // 渡す(呼び出し側で意図的にJSON文字列化する等は別途行う必要がある)。
-import * as waitManager from './waitManager';
-import type { SetContextKeyNames, SetContextOptions } from '../types';
+import * as waitManager from "./waitManager";
+import type { SetContextKeyNames, SetContextOptions } from "../types";
 
 const contextStore = new Map<string, Record<string, unknown>>();
 const contextSeq = new Map<string, Record<string, number>>();
@@ -46,7 +46,7 @@ function getSeqRecord(atomKey: string): Record<string, number> {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 // varsを「ink変数名 → 値」の1階層フラットな形に変換する。
@@ -58,7 +58,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export function flattenVars(
   vars: Record<string, unknown>,
   keyNames?: SetContextKeyNames,
-  prefix?: string
+  prefix?: string,
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
@@ -66,16 +66,28 @@ export function flattenVars(
     const override = keyNames?.[key];
 
     if (isPlainObject(value)) {
-      const nestedKeyNames = isPlainObject(override) ? (override as SetContextKeyNames) : undefined;
+      const nestedKeyNames = isPlainObject(override)
+        ? (override as SetContextKeyNames)
+        : undefined;
       // overrideが文字列の場合、その値をこのネストしたオブジェクト全体の
       // 新しいprefixとして使う("weather"→"w"のように途中の階層名だけ
       // 差し替えたいケース向け)。無ければ既定通りprefix_keyを積み重ねる。
-      const nestedPrefix = typeof override === 'string' ? override : prefix ? `${prefix}_${key}` : key;
+      const nestedPrefix =
+        typeof override === "string"
+          ? override
+          : prefix
+            ? `${prefix}_${key}`
+            : key;
       Object.assign(result, flattenVars(value, nestedKeyNames, nestedPrefix));
       continue;
     }
 
-    const flatKey = typeof override === 'string' ? override : prefix ? `${prefix}_${key}` : key;
+    const flatKey =
+      typeof override === "string"
+        ? override
+        : prefix
+          ? `${prefix}_${key}`
+          : key;
     result[flatKey] = value;
   }
 
@@ -105,7 +117,7 @@ function wake(atomKey: string): void {
 export function prepareWrite(
   atomKey: string,
   vars: Record<string, unknown>,
-  options?: SetContextOptions
+  options?: SetContextOptions,
 ): Record<string, unknown> {
   let toWrite = flattenVars(vars, options?.keyNames);
 
@@ -129,7 +141,10 @@ export function prepareWrite(
   return toWrite;
 }
 
-export function getContextVars(atomKey: string, varNames?: string[]): Record<string, unknown> {
+export function getContextVars(
+  atomKey: string,
+  varNames?: string[],
+): Record<string, unknown> {
   const store = getStoreRecord(atomKey);
   if (!varNames || varNames.length === 0) {
     return { ...store };
@@ -139,6 +154,16 @@ export function getContextVars(atomKey: string, varNames?: string[]): Record<str
     result[name] = store[name];
   }
   return result;
+}
+
+// 簡易セーブ機能(core/SaveProvider.ts)の復元専用。notify/_seq処理を一切
+// 行わず、exposeされた値の写しをそのまま置き換える(story.state.LoadJson()
+// と対になる「JS側の記憶」の復元)。_seqカウンタ自体はリセットする
+// (復元後最初のnotify:true書き込みから1振り直しでよい — 復元前のseq値と
+// 厳密に連番させる必要は無いため)。
+export function hydrate(atomKey: string, vars: Record<string, unknown>): void {
+  contextStore.set(atomKey, { ...vars });
+  contextSeq.set(atomKey, {});
 }
 
 export function reset(atomKey: string): void {

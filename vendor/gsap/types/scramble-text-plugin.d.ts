@@ -13,19 +13,16 @@ declare namespace ScrambleTextPlugin {
 }
 
 declare namespace gsap {
-
   interface TweenVars {
     scrambleText?: string | ScrambleTextPlugin.Vars;
   }
 }
 
 declare namespace gsap.plugins {
-  interface ScrambleTextPlugin extends Plugin {
-     
-  }
+  interface ScrambleTextPlugin extends Plugin {}
 
   interface ScrambleTextPluginClass extends ScrambleTextPlugin {
-    new(): PluginScope & ScrambleTextPlugin;
+    new (): PluginScope & ScrambleTextPlugin;
     prototype: PluginScope & ScrambleTextPlugin;
   }
 

@@ -1,9 +1,11 @@
 import { type ReactNode } from "react";
 import type { StepProvider } from "../core/StepProvider";
-export declare const StoryProvider: ({ children, clip, stepProvider, onNavigate, instanceId, }: {
+import type { SaveProvider } from "../core/SaveProvider";
+export declare const StoryProvider: ({ children, clip, stepProvider, saveProvider, onNavigate, instanceId, }: {
     children: ReactNode;
     clip?: string;
     stepProvider?: StepProvider;
+    saveProvider?: SaveProvider | null;
     onNavigate?: (path: string) => void;
     instanceId?: string;
 }) => import("react").JSX.Element;

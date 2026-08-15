@@ -1,12 +1,14 @@
-System.register(['@babel/core', '@babel/template'], (function (exports) {
-  'use strict';
+System.register(["@babel/core", "@babel/template"], function (exports) {
+  "use strict";
   var _templateBuilder;
   return {
-    setters: [null, function (module) {
-      _templateBuilder = module.default;
-    }],
-    execute: (function () {
-
+    setters: [
+      null,
+      function (module) {
+        _templateBuilder = module.default;
+      },
+    ],
+    execute: function () {
       exports("default", reactRefreshPlugin);
 
       function isAtom(t, callee, customAtomNames = []) {
@@ -59,13 +61,13 @@ System.register(['@babel/core', '@babel/template'], (function (exports) {
         // jotai-cache
         "atomWithCache",
         // jotai-recoil
-        "atomWithRecoilValue"
+        "atomWithRecoilValue",
       ];
 
       const templateBuilder = _templateBuilder.default || _templateBuilder;
       function reactRefreshPlugin({ types: t }, options) {
         console.warn(
-          "[DEPRECATED] jotai/babel/plugin-react-refresh is deprecated and will be removed in v3.\nPlease use the `jotai-babel` package instead: https://github.com/jotaijs/jotai-babel"
+          "[DEPRECATED] jotai/babel/plugin-react-refresh is deprecated and will be removed in v3.\nPlease use the `jotai-babel` package instead: https://github.com/jotaijs/jotai-babel",
         );
         return {
           pre({ opts }) {
@@ -88,44 +90,63 @@ System.register(['@babel/core', '@babel/template'], (function (exports) {
             },
           }`)();
                 path.unshiftContainer("body", jotaiAtomCache);
-              }
+              },
             },
             ExportDefaultDeclaration(nodePath, state) {
               const { node } = nodePath;
-              if (t.isCallExpression(node.declaration) && isAtom(t, node.declaration.callee, options == null ? void 0 : options.customAtomNames)) {
+              if (
+                t.isCallExpression(node.declaration) &&
+                isAtom(
+                  t,
+                  node.declaration.callee,
+                  options == null ? void 0 : options.customAtomNames,
+                )
+              ) {
                 const filename = state.filename || "unknown";
                 const atomKey = `${filename}/defaultExport`;
                 const buildExport = templateBuilder(
-                  `export default globalThis.jotaiAtomCache.get(%%atomKey%%, %%atom%%)`
+                  `export default globalThis.jotaiAtomCache.get(%%atomKey%%, %%atom%%)`,
                 );
                 const ast = buildExport({
                   atomKey: t.stringLiteral(atomKey),
-                  atom: node.declaration
+                  atom: node.declaration,
                 });
                 nodePath.replaceWith(ast);
               }
             },
             VariableDeclarator(nodePath, state) {
               var _a, _b;
-              if (t.isIdentifier(nodePath.node.id) && t.isCallExpression(nodePath.node.init) && isAtom(t, nodePath.node.init.callee, options == null ? void 0 : options.customAtomNames) && // Make sure atom declaration is in module scope
-              (((_a = nodePath.parentPath.parentPath) == null ? void 0 : _a.isProgram()) || ((_b = nodePath.parentPath.parentPath) == null ? void 0 : _b.isExportNamedDeclaration()))) {
+              if (
+                t.isIdentifier(nodePath.node.id) &&
+                t.isCallExpression(nodePath.node.init) &&
+                isAtom(
+                  t,
+                  nodePath.node.init.callee,
+                  options == null ? void 0 : options.customAtomNames,
+                ) && // Make sure atom declaration is in module scope
+                (((_a = nodePath.parentPath.parentPath) == null
+                  ? void 0
+                  : _a.isProgram()) ||
+                  ((_b = nodePath.parentPath.parentPath) == null
+                    ? void 0
+                    : _b.isExportNamedDeclaration()))
+              ) {
                 const filename = state.filename || "unknown";
                 const atomKey = `${filename}/${nodePath.node.id.name}`;
                 const buildAtomDeclaration = templateBuilder(
-                  `const %%atomIdentifier%% = globalThis.jotaiAtomCache.get(%%atomKey%%, %%atom%%)`
+                  `const %%atomIdentifier%% = globalThis.jotaiAtomCache.get(%%atomKey%%, %%atom%%)`,
                 );
                 const ast = buildAtomDeclaration({
                   atomIdentifier: t.identifier(nodePath.node.id.name),
                   atomKey: t.stringLiteral(atomKey),
-                  atom: nodePath.node.init
+                  atom: nodePath.node.init,
                 });
                 nodePath.parentPath.replaceWith(ast);
               }
-            }
-          }
+            },
+          },
         };
       }
-
-    })
+    },
   };
-}));
+});

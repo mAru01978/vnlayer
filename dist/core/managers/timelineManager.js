@@ -8,7 +8,7 @@ function getList(atomKey) {
     return list;
 }
 function normalizeName(name) {
-    return name.replace(/^@/, '');
+    return name.replace(/^@/, "");
 }
 function finish(atomKey, entry) {
     const list = registry.get(atomKey);
@@ -25,9 +25,13 @@ function finish(atomKey, entry) {
 // unregister(atomKey, timeline)も呼ぶこと(呼ばないとwaitForIdle()が
 // 「もう動いていないtimeline」を待ち続けてしまう)。
 export function register(atomKey, name, timeline) {
-    const entry = { name: normalizeName(name), timeline, onDone: new Set() };
+    const entry = {
+        name: normalizeName(name),
+        timeline,
+        onDone: new Set(),
+    };
     getList(atomKey).push(entry);
-    timeline.eventCallback('onComplete', () => finish(atomKey, entry));
+    timeline.eventCallback("onComplete", () => finish(atomKey, entry));
 }
 export function unregister(atomKey, timeline) {
     const list = registry.get(atomKey);

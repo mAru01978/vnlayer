@@ -1,10 +1,9 @@
 declare class GSDevTools {
-
   constructor(target: gsap.DOMTarget, vars?: GSDevTools.Vars);
 
   /**
    * Create a GSDevTools instance.
-   * 
+   *
    * ```js
    * GSDevTools.create({animation: tl});
    * ```
@@ -40,7 +39,7 @@ declare class GSDevTools {
    * @memberof GSDevTools
    * @link https://greensock.com/docs/v3/Plugins/GSDevTools/kill()
    */
-  kill(): void
+  kill(): void;
 }
 
 declare namespace GSDevTools {
@@ -66,10 +65,7 @@ declare namespace GSDevTools {
 
 declare module "gsap/GSDevTools" {
   class _GSDevTools extends GSDevTools {}
-  export {
-    _GSDevTools as GSDevTools,
-    _GSDevTools as default
-  }
+  export { _GSDevTools as GSDevTools, _GSDevTools as default };
 }
 
 declare module "gsap/src/GSDevTools" {

@@ -1,8 +1,13 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.jotaiVanillaInternals = {}));
-})(this, (function (exports) { 'use strict';
+  typeof exports === "object" && typeof module !== "undefined"
+    ? factory(exports)
+    : typeof define === "function" && define.amd
+      ? define(["exports"], factory)
+      : ((global =
+          typeof globalThis !== "undefined" ? globalThis : global || self),
+        factory((global.jotaiVanillaInternals = {})));
+})(this, function (exports) {
+  "use strict";
 
   function _arrayLikeToArray(r, a) {
     (null == a || a > r.length) && (a = r.length);
@@ -10,53 +15,66 @@
     return n;
   }
   function _createForOfIteratorHelperLoose(r, e) {
-    var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+    var t =
+      ("undefined" != typeof Symbol && r[Symbol.iterator]) || r["@@iterator"];
     if (t) return (t = t.call(r)).next.bind(t);
     if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e) {
       t && (r = t);
       var o = 0;
       return function () {
-        return o >= r.length ? {
-          done: true
-        } : {
-          done: false,
-          value: r[o++]
-        };
+        return o >= r.length
+          ? {
+              done: true,
+            }
+          : {
+              done: false,
+              value: r[o++],
+            };
       };
     }
-    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    throw new TypeError(
+      "Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.",
+    );
   }
   function _unsupportedIterableToArray(r, a) {
     if (r) {
       if ("string" == typeof r) return _arrayLikeToArray(r, a);
       var t = {}.toString.call(r).slice(8, -1);
-      return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0;
+      return (
+        "Object" === t && r.constructor && (t = r.constructor.name),
+        "Map" === t || "Set" === t
+          ? Array.from(r)
+          : "Arguments" === t ||
+              /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t)
+            ? _arrayLikeToArray(r, a)
+            : void 0
+      );
     }
   }
 
   function hasInitialValue(atom) {
-    return 'init' in atom;
+    return "init" in atom;
   }
   function isActuallyWritableAtom(atom) {
-    return typeof atom.write === 'function';
+    return typeof atom.write === "function";
   }
   function hasOnMount(atom) {
     return !!atom.onMount;
   }
   function isAtomStateInitialized(atomState) {
-    return 'v' in atomState || 'e' in atomState;
+    return "v" in atomState || "e" in atomState;
   }
   function returnAtomValue(atomState) {
-    if ('e' in atomState) {
+    if ("e" in atomState) {
       throw atomState.e;
     }
-    if (!('v' in atomState)) {
-      throw new Error('[Bug] atom state is not initialized');
+    if (!("v" in atomState)) {
+      throw new Error("[Bug] atom state is not initialized");
     }
     return atomState.v;
   }
   function isPromiseLike(p) {
-    return typeof (p == null ? void 0 : p.then) === 'function';
+    return typeof (p == null ? void 0 : p.then) === "function";
   }
   function shouldThrowSynchronously(error) {
     if (!(error instanceof Error)) {
@@ -64,7 +82,12 @@
     }
     var name = error.name;
     var message = error.message.toLowerCase();
-    return (name === 'RangeError' || name === 'InternalError') && (message.includes('call stack') || message.includes('too much recursion') || message.includes('stack overflow'));
+    return (
+      (name === "RangeError" || name === "InternalError") &&
+      (message.includes("call stack") ||
+        message.includes("too much recursion") ||
+        message.includes("stack overflow"))
+    );
   }
   function addPendingPromiseToDependency(atom, promise, dependencyAtomState) {
     if (!dependencyAtomState.p.has(atom)) {
@@ -86,7 +109,10 @@
       return mountedDependents;
     }
     var dependents = new Set(mountedDependents);
-    for (var _iterator = _createForOfIteratorHelperLoose(pendingDependents), _step; !(_step = _iterator()).done;) {
+    for (
+      var _iterator = _createForOfIteratorHelperLoose(pendingDependents), _step;
+      !(_step = _iterator()).done;
+    ) {
       var a = _step.value;
       dependents.add(a);
     }
@@ -112,12 +138,14 @@
     var callbacks = new WeakMap();
     var notify = function notify(atom) {
       var _callbacks$get, _callbacks$get2;
-      (_callbacks$get = callbacks.get(all)) == null || _callbacks$get.forEach(function (fn) {
-        return fn(atom);
-      });
-      (_callbacks$get2 = callbacks.get(atom)) == null || _callbacks$get2.forEach(function (fn) {
-        return fn();
-      });
+      (_callbacks$get = callbacks.get(all)) == null ||
+        _callbacks$get.forEach(function (fn) {
+          return fn(atom);
+        });
+      (_callbacks$get2 = callbacks.get(atom)) == null ||
+        _callbacks$get2.forEach(function (fn) {
+          return fn();
+        });
     };
     notify.add = function (atom, fn) {
       var key = atom || all;
@@ -149,25 +177,58 @@
   function hasOnInit(atom) {
     return !!atom.INTERNAL_onInit;
   }
-  var BUILDING_BLOCK_atomRead = function BUILDING_BLOCK_atomRead(_buildingBlocks, _store, atom) {
-    for (var _len = arguments.length, params = new Array(_len > 3 ? _len - 3 : 0), _key = 3; _key < _len; _key++) {
+  var BUILDING_BLOCK_atomRead = function BUILDING_BLOCK_atomRead(
+    _buildingBlocks,
+    _store,
+    atom,
+  ) {
+    for (
+      var _len = arguments.length,
+        params = new Array(_len > 3 ? _len - 3 : 0),
+        _key = 3;
+      _key < _len;
+      _key++
+    ) {
       params[_key - 3] = arguments[_key];
     }
     return atom.read.apply(atom, params);
   };
-  var BUILDING_BLOCK_atomWrite = function BUILDING_BLOCK_atomWrite(_buildingBlocks, _store, atom) {
-    for (var _len2 = arguments.length, params = new Array(_len2 > 3 ? _len2 - 3 : 0), _key2 = 3; _key2 < _len2; _key2++) {
+  var BUILDING_BLOCK_atomWrite = function BUILDING_BLOCK_atomWrite(
+    _buildingBlocks,
+    _store,
+    atom,
+  ) {
+    for (
+      var _len2 = arguments.length,
+        params = new Array(_len2 > 3 ? _len2 - 3 : 0),
+        _key2 = 3;
+      _key2 < _len2;
+      _key2++
+    ) {
       params[_key2 - 3] = arguments[_key2];
     }
     return atom.write.apply(atom, params);
   };
-  var BUILDING_BLOCK_atomOnInit = function BUILDING_BLOCK_atomOnInit(_buildingBlocks, store, atom) {
+  var BUILDING_BLOCK_atomOnInit = function BUILDING_BLOCK_atomOnInit(
+    _buildingBlocks,
+    store,
+    atom,
+  ) {
     return atom.INTERNAL_onInit(store);
   };
-  var BUILDING_BLOCK_atomOnMount = function BUILDING_BLOCK_atomOnMount(_buildingBlocks, _store, atom, setAtom) {
+  var BUILDING_BLOCK_atomOnMount = function BUILDING_BLOCK_atomOnMount(
+    _buildingBlocks,
+    _store,
+    atom,
+    setAtom,
+  ) {
     return atom.onMount == null ? void 0 : atom.onMount(setAtom);
   };
-  var BUILDING_BLOCK_ensureAtomState = function BUILDING_BLOCK_ensureAtomState(buildingBlocks, store, atom) {
+  var BUILDING_BLOCK_ensureAtomState = function BUILDING_BLOCK_ensureAtomState(
+    buildingBlocks,
+    store,
+    atom,
+  ) {
     var atomStateMap = buildingBlocks[0];
     var atomState = atomStateMap.get(atom);
     if (!atomState) {
@@ -176,7 +237,7 @@
       atomState = {
         d: new Map(),
         p: new Set(),
-        n: 0
+        n: 0,
       };
       atomStateMap.set(atom, atomState);
       _storeHooks.i == null || _storeHooks.i(atom);
@@ -186,14 +247,22 @@
     }
     return atomState;
   };
-  var BUILDING_BLOCK_flushCallbacks = function BUILDING_BLOCK_flushCallbacks(buildingBlocks, store) {
+  var BUILDING_BLOCK_flushCallbacks = function BUILDING_BLOCK_flushCallbacks(
+    buildingBlocks,
+    store,
+  ) {
     var mountedMap = buildingBlocks[1];
     var changedAtoms = buildingBlocks[3];
     var mountCallbacks = buildingBlocks[4];
     var unmountCallbacks = buildingBlocks[5];
     var storeHooks = buildingBlocks[6];
     var recomputeInvalidatedAtoms = buildingBlocks[13];
-    if (!storeHooks.f && !changedAtoms.size && !mountCallbacks.size && !unmountCallbacks.size) {
+    if (
+      !storeHooks.f &&
+      !changedAtoms.size &&
+      !mountCallbacks.size &&
+      !unmountCallbacks.size
+    ) {
       return;
     }
     var errors = [];
@@ -209,29 +278,49 @@
         call(storeHooks.f);
       }
       var callbacks = new Set();
-      for (var _iterator2 = _createForOfIteratorHelperLoose(changedAtoms), _step2; !(_step2 = _iterator2()).done;) {
+      for (
+        var _iterator2 = _createForOfIteratorHelperLoose(changedAtoms), _step2;
+        !(_step2 = _iterator2()).done;
+      ) {
         var _mountedMap$get;
         var _atom = _step2.value;
-        var listeners = (_mountedMap$get = mountedMap.get(_atom)) == null ? void 0 : _mountedMap$get.l;
+        var listeners =
+          (_mountedMap$get = mountedMap.get(_atom)) == null
+            ? void 0
+            : _mountedMap$get.l;
         if (listeners) {
-          for (var _iterator6 = _createForOfIteratorHelperLoose(listeners), _step6; !(_step6 = _iterator6()).done;) {
+          for (
+            var _iterator6 = _createForOfIteratorHelperLoose(listeners), _step6;
+            !(_step6 = _iterator6()).done;
+          ) {
             var _listener = _step6.value;
             callbacks.add(_listener);
           }
         }
       }
       changedAtoms.clear();
-      for (var _iterator3 = _createForOfIteratorHelperLoose(unmountCallbacks), _step3; !(_step3 = _iterator3()).done;) {
+      for (
+        var _iterator3 = _createForOfIteratorHelperLoose(unmountCallbacks),
+          _step3;
+        !(_step3 = _iterator3()).done;
+      ) {
         var fn = _step3.value;
         callbacks.add(fn);
       }
       unmountCallbacks.clear();
-      for (var _iterator4 = _createForOfIteratorHelperLoose(mountCallbacks), _step4; !(_step4 = _iterator4()).done;) {
+      for (
+        var _iterator4 = _createForOfIteratorHelperLoose(mountCallbacks),
+          _step4;
+        !(_step4 = _iterator4()).done;
+      ) {
         var _fn = _step4.value;
         callbacks.add(_fn);
       }
       mountCallbacks.clear();
-      for (var _iterator5 = _createForOfIteratorHelperLoose(callbacks), _step5; !(_step5 = _iterator5()).done;) {
+      for (
+        var _iterator5 = _createForOfIteratorHelperLoose(callbacks), _step5;
+        !(_step5 = _iterator5()).done;
+      ) {
         var _fn2 = _step5.value;
         call(_fn2);
       }
@@ -243,78 +332,96 @@
       throw new AggregateError(errors);
     }
   };
-  var BUILDING_BLOCK_recomputeInvalidatedAtoms = function BUILDING_BLOCK_recomputeInvalidatedAtoms(buildingBlocks, store) {
-    var mountedMap = buildingBlocks[1];
-    var invalidatedAtoms = buildingBlocks[2];
-    var changedAtoms = buildingBlocks[3];
-    var ensureAtomState = buildingBlocks[11];
-    var readAtomState = buildingBlocks[14];
-    var mountDependencies = buildingBlocks[17];
-    if (!changedAtoms.size) {
-      return;
-    }
-    var sortedReversedAtoms = [];
-    var sortedReversedStates = [];
-    var visiting = new WeakSet();
-    var visited = new WeakSet();
-    var stackAtoms = [];
-    var stackStates = [];
-    for (var _iterator7 = _createForOfIteratorHelperLoose(changedAtoms), _step7; !(_step7 = _iterator7()).done;) {
-      var _atom2 = _step7.value;
-      stackAtoms.push(_atom2);
-      stackStates.push(ensureAtomState(buildingBlocks, store, _atom2));
-    }
-    while (stackAtoms.length) {
-      var top = stackAtoms.length - 1;
-      var a = stackAtoms[top];
-      var aState = stackStates[top];
-      if (visited.has(a)) {
-        stackAtoms.pop();
-        stackStates.pop();
-        continue;
+  var BUILDING_BLOCK_recomputeInvalidatedAtoms =
+    function BUILDING_BLOCK_recomputeInvalidatedAtoms(buildingBlocks, store) {
+      var mountedMap = buildingBlocks[1];
+      var invalidatedAtoms = buildingBlocks[2];
+      var changedAtoms = buildingBlocks[3];
+      var ensureAtomState = buildingBlocks[11];
+      var readAtomState = buildingBlocks[14];
+      var mountDependencies = buildingBlocks[17];
+      if (!changedAtoms.size) {
+        return;
       }
-      if (visiting.has(a)) {
-        if (invalidatedAtoms.get(a) === aState.n) {
-          sortedReversedAtoms.push(a);
-          sortedReversedStates.push(aState);
-        } else if (invalidatedAtoms.has(a)) {
-          throw new Error('[Bug] invalidated atom exists');
+      var sortedReversedAtoms = [];
+      var sortedReversedStates = [];
+      var visiting = new WeakSet();
+      var visited = new WeakSet();
+      var stackAtoms = [];
+      var stackStates = [];
+      for (
+        var _iterator7 = _createForOfIteratorHelperLoose(changedAtoms), _step7;
+        !(_step7 = _iterator7()).done;
+      ) {
+        var _atom2 = _step7.value;
+        stackAtoms.push(_atom2);
+        stackStates.push(ensureAtomState(buildingBlocks, store, _atom2));
+      }
+      while (stackAtoms.length) {
+        var top = stackAtoms.length - 1;
+        var a = stackAtoms[top];
+        var aState = stackStates[top];
+        if (visited.has(a)) {
+          stackAtoms.pop();
+          stackStates.pop();
+          continue;
         }
-        visited.add(a);
-        stackAtoms.pop();
-        stackStates.pop();
-        continue;
-      }
-      visiting.add(a);
-      for (var _iterator8 = _createForOfIteratorHelperLoose(getMountedOrPendingDependents(a, aState, mountedMap)), _step8; !(_step8 = _iterator8()).done;) {
-        var d = _step8.value;
-        if (!visiting.has(d)) {
-          stackAtoms.push(d);
-          stackStates.push(ensureAtomState(buildingBlocks, store, d));
+        if (visiting.has(a)) {
+          if (invalidatedAtoms.get(a) === aState.n) {
+            sortedReversedAtoms.push(a);
+            sortedReversedStates.push(aState);
+          } else if (invalidatedAtoms.has(a)) {
+            throw new Error("[Bug] invalidated atom exists");
+          }
+          visited.add(a);
+          stackAtoms.pop();
+          stackStates.pop();
+          continue;
+        }
+        visiting.add(a);
+        for (
+          var _iterator8 = _createForOfIteratorHelperLoose(
+              getMountedOrPendingDependents(a, aState, mountedMap),
+            ),
+            _step8;
+          !(_step8 = _iterator8()).done;
+        ) {
+          var d = _step8.value;
+          if (!visiting.has(d)) {
+            stackAtoms.push(d);
+            stackStates.push(ensureAtomState(buildingBlocks, store, d));
+          }
         }
       }
-    }
-    for (var i = sortedReversedAtoms.length - 1; i >= 0; --i) {
-      var _a = sortedReversedAtoms[i];
-      var _aState = sortedReversedStates[i];
-      var hasChangedDeps = false;
-      for (var _iterator9 = _createForOfIteratorHelperLoose(_aState.d.keys()), _step9; !(_step9 = _iterator9()).done;) {
-        var dep = _step9.value;
-        if (dep !== _a && changedAtoms.has(dep)) {
-          hasChangedDeps = true;
-          break;
+      for (var i = sortedReversedAtoms.length - 1; i >= 0; --i) {
+        var _a = sortedReversedAtoms[i];
+        var _aState = sortedReversedStates[i];
+        var hasChangedDeps = false;
+        for (
+          var _iterator9 = _createForOfIteratorHelperLoose(_aState.d.keys()),
+            _step9;
+          !(_step9 = _iterator9()).done;
+        ) {
+          var dep = _step9.value;
+          if (dep !== _a && changedAtoms.has(dep)) {
+            hasChangedDeps = true;
+            break;
+          }
         }
+        if (hasChangedDeps) {
+          invalidatedAtoms.set(_a, _aState.n);
+          readAtomState(buildingBlocks, store, _a);
+          mountDependencies(buildingBlocks, store, _a);
+        }
+        invalidatedAtoms.delete(_a);
       }
-      if (hasChangedDeps) {
-        invalidatedAtoms.set(_a, _aState.n);
-        readAtomState(buildingBlocks, store, _a);
-        mountDependencies(buildingBlocks, store, _a);
-      }
-      invalidatedAtoms.delete(_a);
-    }
-  };
+    };
   var storeMutationSet = new WeakSet();
-  var BUILDING_BLOCK_readAtomState = function BUILDING_BLOCK_readAtomState(buildingBlocks, store, atom) {
+  var BUILDING_BLOCK_readAtomState = function BUILDING_BLOCK_readAtomState(
+    buildingBlocks,
+    store,
+    atom,
+  ) {
     var mountedMap = buildingBlocks[1];
     var invalidatedAtoms = buildingBlocks[2];
     var changedAtoms = buildingBlocks[3];
@@ -332,12 +439,18 @@
     var atomState = ensureAtomState(buildingBlocks, store, atom);
     var storeEpochNumber = storeEpochHolder[0];
     if (isAtomStateInitialized(atomState)) {
-      if (mountedMap.has(atom) && invalidatedAtoms.get(atom) !== atomState.n || atomState.m === storeEpochNumber) {
+      if (
+        (mountedMap.has(atom) && invalidatedAtoms.get(atom) !== atomState.n) ||
+        atomState.m === storeEpochNumber
+      ) {
         atomState.m = storeEpochNumber;
         return atomState;
       }
       var hasChangedDeps = false;
-      for (var _iterator0 = _createForOfIteratorHelperLoose(atomState.d), _step0; !(_step0 = _iterator0()).done;) {
+      for (
+        var _iterator0 = _createForOfIteratorHelperLoose(atomState.d), _step0;
+        !(_step0 = _iterator0()).done;
+      ) {
         var _step0$value = _step0.value,
           a = _step0$value[0],
           _n = _step0$value[1];
@@ -354,7 +467,10 @@
     var isSync = true;
     var prevDeps = new Set(atomState.d.keys());
     var pruneDependencies = function pruneDependencies() {
-      for (var _iterator1 = _createForOfIteratorHelperLoose(prevDeps), _step1; !(_step1 = _iterator1()).done;) {
+      for (
+        var _iterator1 = _createForOfIteratorHelperLoose(prevDeps), _step1;
+        !(_step1 = _iterator1()).done;
+      ) {
         var _a2 = _step1.value;
         atomState.d.delete(_a2);
       }
@@ -376,7 +492,7 @@
           if (hasInitialValue(a)) {
             setAtomStateValueOrPromise(buildingBlocks, store, a, a.init);
           } else {
-            throw new Error('no atom init');
+            throw new Error("no atom init");
           }
         }
         return returnAtomValue(_aState2);
@@ -392,7 +508,8 @@
         }
         if (mountedMap.has(atom)) {
           var _mountedMap$get2;
-          (_mountedMap$get2 = mountedMap.get(a)) == null || _mountedMap$get2.t.add(atom);
+          (_mountedMap$get2 = mountedMap.get(a)) == null ||
+            _mountedMap$get2.t.add(atom);
         }
         if (!isSync) {
           mountDependenciesIfAsync();
@@ -410,19 +527,27 @@
       },
       get setSelf() {
         {
-          console.warn('[DEPRECATED] setSelf is deprecated and will be removed in v3.');
+          console.warn(
+            "[DEPRECATED] setSelf is deprecated and will be removed in v3.",
+          );
         }
         if (!isActuallyWritableAtom(atom)) {
-          console.warn('setSelf function cannot be used with read-only atom');
+          console.warn("setSelf function cannot be used with read-only atom");
         }
         if (!setSelf && isActuallyWritableAtom(atom)) {
           setSelf = function setSelf() {
             if (isSync) {
-              console.warn('setSelf function cannot be called in sync');
+              console.warn("setSelf function cannot be called in sync");
             }
             if (!isSync) {
               try {
-                for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                for (
+                  var _len3 = arguments.length,
+                    args = new Array(_len3),
+                    _key3 = 0;
+                  _key3 < _len3;
+                  _key3++
+                ) {
                   args[_key3] = arguments[_key3];
                 }
                 return writeAtomState(buildingBlocks, store, atom, args);
@@ -434,24 +559,39 @@
           };
         }
         return setSelf;
-      }
+      },
     };
     var prevEpochNumber = atomState.n;
     var prevInvalidated = invalidatedAtoms.get(atom) === prevEpochNumber;
     try {
-      if ("development" !== 'production') {
+      if ("development" !== "production") {
         storeMutationSet.delete(store);
       }
-      var _valueOrPromise = atomRead(buildingBlocks, store, atom, getter, options);
-      if ("development" !== 'production' && storeMutationSet.has(store)) {
-        console.warn('Detected store mutation during atom read. This is not supported.');
+      var _valueOrPromise = atomRead(
+        buildingBlocks,
+        store,
+        atom,
+        getter,
+        options,
+      );
+      if ("development" !== "production" && storeMutationSet.has(store)) {
+        console.warn(
+          "Detected store mutation during atom read. This is not supported.",
+        );
       }
       setAtomStateValueOrPromise(buildingBlocks, store, atom, _valueOrPromise);
       if (isPromiseLike(_valueOrPromise)) {
-        registerAbortHandler(buildingBlocks, store, _valueOrPromise, function () {
-          var _controller;
-          return (_controller = controller) == null ? void 0 : _controller.abort();
-        });
+        registerAbortHandler(
+          buildingBlocks,
+          store,
+          _valueOrPromise,
+          function () {
+            var _controller;
+            return (_controller = controller) == null
+              ? void 0
+              : _controller.abort();
+          },
+        );
         var settle = function settle() {
           pruneDependencies();
           mountDependenciesIfAsync();
@@ -481,25 +621,37 @@
       }
     }
   };
-  var BUILDING_BLOCK_invalidateDependents = function BUILDING_BLOCK_invalidateDependents(buildingBlocks, store, atom) {
-    var mountedMap = buildingBlocks[1];
-    var invalidatedAtoms = buildingBlocks[2];
-    var ensureAtomState = buildingBlocks[11];
-    var stack = [atom];
-    while (stack.length) {
-      var a = stack.pop();
-      var aState = ensureAtomState(buildingBlocks, store, a);
-      for (var _iterator10 = _createForOfIteratorHelperLoose(getMountedOrPendingDependents(a, aState, mountedMap)), _step10; !(_step10 = _iterator10()).done;) {
-        var d = _step10.value;
-        var dState = ensureAtomState(buildingBlocks, store, d);
-        if (invalidatedAtoms.get(d) !== dState.n) {
-          invalidatedAtoms.set(d, dState.n);
-          stack.push(d);
+  var BUILDING_BLOCK_invalidateDependents =
+    function BUILDING_BLOCK_invalidateDependents(buildingBlocks, store, atom) {
+      var mountedMap = buildingBlocks[1];
+      var invalidatedAtoms = buildingBlocks[2];
+      var ensureAtomState = buildingBlocks[11];
+      var stack = [atom];
+      while (stack.length) {
+        var a = stack.pop();
+        var aState = ensureAtomState(buildingBlocks, store, a);
+        for (
+          var _iterator10 = _createForOfIteratorHelperLoose(
+              getMountedOrPendingDependents(a, aState, mountedMap),
+            ),
+            _step10;
+          !(_step10 = _iterator10()).done;
+        ) {
+          var d = _step10.value;
+          var dState = ensureAtomState(buildingBlocks, store, d);
+          if (invalidatedAtoms.get(d) !== dState.n) {
+            invalidatedAtoms.set(d, dState.n);
+            stack.push(d);
+          }
         }
       }
-    }
-  };
-  var BUILDING_BLOCK_writeAtomState = function BUILDING_BLOCK_writeAtomState(buildingBlocks, store, atom, args) {
+    };
+  var BUILDING_BLOCK_writeAtomState = function BUILDING_BLOCK_writeAtomState(
+    buildingBlocks,
+    store,
+    atom,
+    args,
+  ) {
     var changedAtoms = buildingBlocks[3];
     var storeHooks = buildingBlocks[6];
     var atomWrite = buildingBlocks[8];
@@ -519,14 +671,20 @@
     var setter = function setter(a) {
       var aState = ensureAtomState(buildingBlocks, store, a);
       try {
-        for (var _len4 = arguments.length, args = new Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
+        for (
+          var _len4 = arguments.length,
+            args = new Array(_len4 > 1 ? _len4 - 1 : 0),
+            _key4 = 1;
+          _key4 < _len4;
+          _key4++
+        ) {
           args[_key4 - 1] = arguments[_key4];
         }
         if (a === atom) {
           if (!hasInitialValue(a)) {
-            throw new Error('atom not writable');
+            throw new Error("atom not writable");
           }
-          if ("development" !== 'production') {
+          if ("development" !== "production") {
             storeMutationSet.add(store);
           }
           var prevEpochNumber = aState.n;
@@ -551,49 +709,64 @@
       }
     };
     try {
-      return atomWrite.apply(void 0, [buildingBlocks, store, atom, getter, setter].concat(args));
+      return atomWrite.apply(
+        void 0,
+        [buildingBlocks, store, atom, getter, setter].concat(args),
+      );
     } finally {
       isSync = false;
     }
   };
-  var BUILDING_BLOCK_mountDependencies = function BUILDING_BLOCK_mountDependencies(buildingBlocks, store, atom) {
-    var mountedMap = buildingBlocks[1];
-    var changedAtoms = buildingBlocks[3];
-    var storeHooks = buildingBlocks[6];
-    var ensureAtomState = buildingBlocks[11];
-    var invalidateDependents = buildingBlocks[15];
-    var mountAtom = buildingBlocks[18];
-    var unmountAtom = buildingBlocks[19];
-    var atomState = ensureAtomState(buildingBlocks, store, atom);
-    var mounted = mountedMap.get(atom);
-    if (mounted && atomState.d.size > 0) {
-      for (var _iterator11 = _createForOfIteratorHelperLoose(atomState.d), _step11; !(_step11 = _iterator11()).done;) {
-        var _step11$value = _step11.value,
-          a = _step11$value[0],
-          _n2 = _step11$value[1];
-        if (!mounted.d.has(a)) {
-          var aState = ensureAtomState(buildingBlocks, store, a);
-          var aMounted = mountAtom(buildingBlocks, store, a);
-          aMounted.t.add(atom);
-          mounted.d.add(a);
-          if (_n2 !== aState.n) {
-            changedAtoms.add(a);
-            invalidateDependents(buildingBlocks, store, a);
-            storeHooks.c == null || storeHooks.c(a);
+  var BUILDING_BLOCK_mountDependencies =
+    function BUILDING_BLOCK_mountDependencies(buildingBlocks, store, atom) {
+      var mountedMap = buildingBlocks[1];
+      var changedAtoms = buildingBlocks[3];
+      var storeHooks = buildingBlocks[6];
+      var ensureAtomState = buildingBlocks[11];
+      var invalidateDependents = buildingBlocks[15];
+      var mountAtom = buildingBlocks[18];
+      var unmountAtom = buildingBlocks[19];
+      var atomState = ensureAtomState(buildingBlocks, store, atom);
+      var mounted = mountedMap.get(atom);
+      if (mounted && atomState.d.size > 0) {
+        for (
+          var _iterator11 = _createForOfIteratorHelperLoose(atomState.d),
+            _step11;
+          !(_step11 = _iterator11()).done;
+        ) {
+          var _step11$value = _step11.value,
+            a = _step11$value[0],
+            _n2 = _step11$value[1];
+          if (!mounted.d.has(a)) {
+            var aState = ensureAtomState(buildingBlocks, store, a);
+            var aMounted = mountAtom(buildingBlocks, store, a);
+            aMounted.t.add(atom);
+            mounted.d.add(a);
+            if (_n2 !== aState.n) {
+              changedAtoms.add(a);
+              invalidateDependents(buildingBlocks, store, a);
+              storeHooks.c == null || storeHooks.c(a);
+            }
+          }
+        }
+        for (
+          var _iterator12 = _createForOfIteratorHelperLoose(mounted.d), _step12;
+          !(_step12 = _iterator12()).done;
+        ) {
+          var _a3 = _step12.value;
+          if (!atomState.d.has(_a3)) {
+            mounted.d.delete(_a3);
+            var _aMounted = unmountAtom(buildingBlocks, store, _a3);
+            _aMounted == null || _aMounted.t.delete(atom);
           }
         }
       }
-      for (var _iterator12 = _createForOfIteratorHelperLoose(mounted.d), _step12; !(_step12 = _iterator12()).done;) {
-        var _a3 = _step12.value;
-        if (!atomState.d.has(_a3)) {
-          mounted.d.delete(_a3);
-          var _aMounted = unmountAtom(buildingBlocks, store, _a3);
-          _aMounted == null || _aMounted.t.delete(atom);
-        }
-      }
-    }
-  };
-  var BUILDING_BLOCK_mountAtom = function BUILDING_BLOCK_mountAtom(buildingBlocks, store, atom) {
+    };
+  var BUILDING_BLOCK_mountAtom = function BUILDING_BLOCK_mountAtom(
+    buildingBlocks,
+    store,
+    atom,
+  ) {
     var mountedMap = buildingBlocks[1];
     var mountCallbacks = buildingBlocks[4];
     var storeHooks = buildingBlocks[6];
@@ -608,7 +781,11 @@
     var mounted = mountedMap.get(atom);
     if (!mounted) {
       readAtomState(buildingBlocks, store, atom);
-      for (var _iterator13 = _createForOfIteratorHelperLoose(atomState.d.keys()), _step13; !(_step13 = _iterator13()).done;) {
+      for (
+        var _iterator13 = _createForOfIteratorHelperLoose(atomState.d.keys()),
+          _step13;
+        !(_step13 = _iterator13()).done;
+      ) {
         var a = _step13.value;
         var aMounted = mountAtom(buildingBlocks, store, a);
         aMounted.t.add(atom);
@@ -616,7 +793,7 @@
       mounted = {
         l: new Set(),
         d: new Set(atomState.d.keys()),
-        t: new Set()
+        t: new Set(),
       };
       mountedMap.set(atom, mounted);
       if (isActuallyWritableAtom(atom) && hasOnMount(atom)) {
@@ -624,7 +801,13 @@
           var isSync = true;
           var setAtom = function setAtom() {
             try {
-              for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+              for (
+                var _len5 = arguments.length,
+                  args = new Array(_len5),
+                  _key5 = 0;
+                _key5 < _len5;
+                _key5++
+              ) {
                 args[_key5] = arguments[_key5];
               }
               return writeAtomState(buildingBlocks, store, atom, args);
@@ -657,7 +840,11 @@
     }
     return mounted;
   };
-  var BUILDING_BLOCK_unmountAtom = function BUILDING_BLOCK_unmountAtom(buildingBlocks, store, atom) {
+  var BUILDING_BLOCK_unmountAtom = function BUILDING_BLOCK_unmountAtom(
+    buildingBlocks,
+    store,
+    atom,
+  ) {
     var mountedMap = buildingBlocks[1];
     var unmountCallbacks = buildingBlocks[5];
     var storeHooks = buildingBlocks[6];
@@ -669,10 +856,16 @@
       return mounted;
     }
     var isDependent = false;
-    for (var _iterator14 = _createForOfIteratorHelperLoose(mounted.t), _step14; !(_step14 = _iterator14()).done;) {
+    for (
+      var _iterator14 = _createForOfIteratorHelperLoose(mounted.t), _step14;
+      !(_step14 = _iterator14()).done;
+    ) {
       var _mountedMap$get3;
       var _a4 = _step14.value;
-      if ((_mountedMap$get3 = mountedMap.get(_a4)) != null && _mountedMap$get3.d.has(atom)) {
+      if (
+        (_mountedMap$get3 = mountedMap.get(_a4)) != null &&
+        _mountedMap$get3.d.has(atom)
+      ) {
         isDependent = true;
         break;
       }
@@ -683,7 +876,11 @@
       }
       mounted = undefined;
       mountedMap.delete(atom);
-      for (var _iterator15 = _createForOfIteratorHelperLoose(atomState.d.keys()), _step15; !(_step15 = _iterator15()).done;) {
+      for (
+        var _iterator15 = _createForOfIteratorHelperLoose(atomState.d.keys()),
+          _step15;
+        !(_step15 = _iterator15()).done;
+      ) {
         var a = _step15.value;
         var aMounted = unmountAtom(buildingBlocks, store, a);
         aMounted == null || aMounted.t.delete(atom);
@@ -693,39 +890,67 @@
     }
     return mounted;
   };
-  var BUILDING_BLOCK_setAtomStateValueOrPromise = function BUILDING_BLOCK_setAtomStateValueOrPromise(buildingBlocks, store, atom, valueOrPromise) {
-    var ensureAtomState = buildingBlocks[11];
-    var abortPromise = buildingBlocks[27];
-    var atomState = ensureAtomState(buildingBlocks, store, atom);
-    var hasPrevValue = 'v' in atomState;
-    var prevValue = atomState.v;
-    if (isPromiseLike(valueOrPromise)) {
-      for (var _iterator16 = _createForOfIteratorHelperLoose(atomState.d.keys()), _step16; !(_step16 = _iterator16()).done;) {
-        var a = _step16.value;
-        addPendingPromiseToDependency(atom, valueOrPromise, ensureAtomState(buildingBlocks, store, a));
+  var BUILDING_BLOCK_setAtomStateValueOrPromise =
+    function BUILDING_BLOCK_setAtomStateValueOrPromise(
+      buildingBlocks,
+      store,
+      atom,
+      valueOrPromise,
+    ) {
+      var ensureAtomState = buildingBlocks[11];
+      var abortPromise = buildingBlocks[27];
+      var atomState = ensureAtomState(buildingBlocks, store, atom);
+      var hasPrevValue = "v" in atomState;
+      var prevValue = atomState.v;
+      if (isPromiseLike(valueOrPromise)) {
+        for (
+          var _iterator16 = _createForOfIteratorHelperLoose(atomState.d.keys()),
+            _step16;
+          !(_step16 = _iterator16()).done;
+        ) {
+          var a = _step16.value;
+          addPendingPromiseToDependency(
+            atom,
+            valueOrPromise,
+            ensureAtomState(buildingBlocks, store, a),
+          );
+        }
       }
-    }
-    atomState.v = valueOrPromise;
-    delete atomState.e;
-    if (!hasPrevValue || !Object.is(prevValue, atomState.v)) {
-      ++atomState.n;
-      if (isPromiseLike(prevValue)) {
-        abortPromise(buildingBlocks, store, prevValue);
+      atomState.v = valueOrPromise;
+      delete atomState.e;
+      if (!hasPrevValue || !Object.is(prevValue, atomState.v)) {
+        ++atomState.n;
+        if (isPromiseLike(prevValue)) {
+          abortPromise(buildingBlocks, store, prevValue);
+        }
       }
-    }
-  };
-  var BUILDING_BLOCK_storeGet = function BUILDING_BLOCK_storeGet(buildingBlocks, store, atom) {
+    };
+  var BUILDING_BLOCK_storeGet = function BUILDING_BLOCK_storeGet(
+    buildingBlocks,
+    store,
+    atom,
+  ) {
     var readAtomState = buildingBlocks[14];
     return returnAtomValue(readAtomState(buildingBlocks, store, atom));
   };
-  var BUILDING_BLOCK_storeSet = function BUILDING_BLOCK_storeSet(buildingBlocks, store, atom) {
+  var BUILDING_BLOCK_storeSet = function BUILDING_BLOCK_storeSet(
+    buildingBlocks,
+    store,
+    atom,
+  ) {
     var changedAtoms = buildingBlocks[3];
     var flushCallbacks = buildingBlocks[12];
     var recomputeInvalidatedAtoms = buildingBlocks[13];
     var writeAtomState = buildingBlocks[16];
     var prevChangedAtomsSize = changedAtoms.size;
     try {
-      for (var _len6 = arguments.length, args = new Array(_len6 > 3 ? _len6 - 3 : 0), _key6 = 3; _key6 < _len6; _key6++) {
+      for (
+        var _len6 = arguments.length,
+          args = new Array(_len6 > 3 ? _len6 - 3 : 0),
+          _key6 = 3;
+        _key6 < _len6;
+        _key6++
+      ) {
         args[_key6 - 3] = arguments[_key6];
       }
       return writeAtomState(buildingBlocks, store, atom, args);
@@ -736,7 +961,12 @@
       }
     }
   };
-  var BUILDING_BLOCK_storeSub = function BUILDING_BLOCK_storeSub(buildingBlocks, store, atom, listener) {
+  var BUILDING_BLOCK_storeSub = function BUILDING_BLOCK_storeSub(
+    buildingBlocks,
+    store,
+    atom,
+    listener,
+  ) {
     var flushCallbacks = buildingBlocks[12];
     var recomputeInvalidatedAtoms = buildingBlocks[13];
     var mountAtom = buildingBlocks[18];
@@ -753,31 +983,44 @@
       flushCallbacks(buildingBlocks, store);
     };
   };
-  var BUILDING_BLOCK_registerAbortHandler = function BUILDING_BLOCK_registerAbortHandler(buildingBlocks, _store, promise, abortHandler) {
+  var BUILDING_BLOCK_registerAbortHandler =
+    function BUILDING_BLOCK_registerAbortHandler(
+      buildingBlocks,
+      _store,
+      promise,
+      abortHandler,
+    ) {
+      var abortHandlersMap = buildingBlocks[25];
+      var abortHandlers = abortHandlersMap.get(promise);
+      if (!abortHandlers) {
+        abortHandlers = new Set();
+        abortHandlersMap.set(promise, abortHandlers);
+        var cleanup = function cleanup() {
+          return abortHandlersMap.delete(promise);
+        };
+        promise.then(cleanup, cleanup);
+      }
+      abortHandlers.add(abortHandler);
+    };
+  var BUILDING_BLOCK_abortPromise = function BUILDING_BLOCK_abortPromise(
+    buildingBlocks,
+    _store,
+    promise,
+  ) {
     var abortHandlersMap = buildingBlocks[25];
     var abortHandlers = abortHandlersMap.get(promise);
-    if (!abortHandlers) {
-      abortHandlers = new Set();
-      abortHandlersMap.set(promise, abortHandlers);
-      var cleanup = function cleanup() {
-        return abortHandlersMap.delete(promise);
-      };
-      promise.then(cleanup, cleanup);
-    }
-    abortHandlers.add(abortHandler);
-  };
-  var BUILDING_BLOCK_abortPromise = function BUILDING_BLOCK_abortPromise(buildingBlocks, _store, promise) {
-    var abortHandlersMap = buildingBlocks[25];
-    var abortHandlers = abortHandlersMap.get(promise);
-    abortHandlers == null || abortHandlers.forEach(function (fn) {
-      return fn();
-    });
+    abortHandlers == null ||
+      abortHandlers.forEach(function (fn) {
+        return fn();
+      });
   };
   var buildingBlockMap = new WeakMap();
   function getBuildingBlocks(store) {
     var buildingBlocks = buildingBlockMap.get(store);
     if (!buildingBlocks) {
-      throw new Error('Store must be created by buildStore to read its building blocks');
+      throw new Error(
+        "Store must be created by buildStore to read its building blocks",
+      );
     }
     var enhanceBuildingBlocks = buildingBlocks[24];
     if (enhanceBuildingBlocks) {
@@ -786,7 +1029,13 @@
     return buildingBlocks;
   }
   function buildStore() {
-    for (var _len7 = arguments.length, partialBuildingBlocks = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
+    for (
+      var _len7 = arguments.length,
+        partialBuildingBlocks = new Array(_len7),
+        _key7 = 0;
+      _key7 < _len7;
+      _key7++
+    ) {
       partialBuildingBlocks[_key7] = arguments[_key7];
     }
     var store = {
@@ -794,16 +1043,55 @@
         return storeGet(buildingBlocks, store, atom);
       },
       set: function set(atom) {
-        for (var _len8 = arguments.length, args = new Array(_len8 > 1 ? _len8 - 1 : 0), _key8 = 1; _key8 < _len8; _key8++) {
+        for (
+          var _len8 = arguments.length,
+            args = new Array(_len8 > 1 ? _len8 - 1 : 0),
+            _key8 = 1;
+          _key8 < _len8;
+          _key8++
+        ) {
           args[_key8 - 1] = arguments[_key8];
         }
-        return storeSet.apply(void 0, [buildingBlocks, store, atom].concat(args));
+        return storeSet.apply(
+          void 0,
+          [buildingBlocks, store, atom].concat(args),
+        );
       },
       sub: function sub(atom, listener) {
         return storeSub(buildingBlocks, store, atom, listener);
-      }
+      },
     };
-    var buildingBlocks = [new WeakMap(), new WeakMap(), new WeakMap(), new Set(), new Set(), new Set(), {}, BUILDING_BLOCK_atomRead, BUILDING_BLOCK_atomWrite, BUILDING_BLOCK_atomOnInit, BUILDING_BLOCK_atomOnMount, BUILDING_BLOCK_ensureAtomState, BUILDING_BLOCK_flushCallbacks, BUILDING_BLOCK_recomputeInvalidatedAtoms, BUILDING_BLOCK_readAtomState, BUILDING_BLOCK_invalidateDependents, BUILDING_BLOCK_writeAtomState, BUILDING_BLOCK_mountDependencies, BUILDING_BLOCK_mountAtom, BUILDING_BLOCK_unmountAtom, BUILDING_BLOCK_setAtomStateValueOrPromise, BUILDING_BLOCK_storeGet, BUILDING_BLOCK_storeSet, BUILDING_BLOCK_storeSub, undefined, new WeakMap(), BUILDING_BLOCK_registerAbortHandler, BUILDING_BLOCK_abortPromise, [0]].map(function (fn, i) {
+    var buildingBlocks = [
+      new WeakMap(),
+      new WeakMap(),
+      new WeakMap(),
+      new Set(),
+      new Set(),
+      new Set(),
+      {},
+      BUILDING_BLOCK_atomRead,
+      BUILDING_BLOCK_atomWrite,
+      BUILDING_BLOCK_atomOnInit,
+      BUILDING_BLOCK_atomOnMount,
+      BUILDING_BLOCK_ensureAtomState,
+      BUILDING_BLOCK_flushCallbacks,
+      BUILDING_BLOCK_recomputeInvalidatedAtoms,
+      BUILDING_BLOCK_readAtomState,
+      BUILDING_BLOCK_invalidateDependents,
+      BUILDING_BLOCK_writeAtomState,
+      BUILDING_BLOCK_mountDependencies,
+      BUILDING_BLOCK_mountAtom,
+      BUILDING_BLOCK_unmountAtom,
+      BUILDING_BLOCK_setAtomStateValueOrPromise,
+      BUILDING_BLOCK_storeGet,
+      BUILDING_BLOCK_storeSet,
+      BUILDING_BLOCK_storeSub,
+      undefined,
+      new WeakMap(),
+      BUILDING_BLOCK_registerAbortHandler,
+      BUILDING_BLOCK_abortPromise,
+      [0],
+    ].map(function (fn, i) {
       return partialBuildingBlocks[i] || fn;
     });
     buildingBlockMap.set(store, Object.freeze(buildingBlocks));
@@ -813,10 +1101,12 @@
     return store;
   }
 
-  exports.INTERNAL_addPendingPromiseToDependency = addPendingPromiseToDependency;
+  exports.INTERNAL_addPendingPromiseToDependency =
+    addPendingPromiseToDependency;
   exports.INTERNAL_buildStoreRev3 = buildStore;
   exports.INTERNAL_getBuildingBlocksRev3 = getBuildingBlocks;
-  exports.INTERNAL_getMountedOrPendingDependents = getMountedOrPendingDependents;
+  exports.INTERNAL_getMountedOrPendingDependents =
+    getMountedOrPendingDependents;
   exports.INTERNAL_hasInitialValue = hasInitialValue;
   exports.INTERNAL_initializeStoreHooksRev3 = initializeStoreHooks;
   exports.INTERNAL_isActuallyWritableAtom = isActuallyWritableAtom;
@@ -824,5 +1114,4 @@
   exports.INTERNAL_isPromiseLike = isPromiseLike;
   exports.INTERNAL_returnAtomValue = returnAtomValue;
   exports.INTERNAL_shouldThrowSynchronously = shouldThrowSynchronously;
-
-}));
+});

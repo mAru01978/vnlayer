@@ -1,13 +1,13 @@
-'use client';
+"use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useRef } from 'react';
-import { StoryProvider, useStory } from '../context/StoryContext';
-import StageView from './StageView';
+import { useEffect, useRef } from "react";
+import { StoryProvider, useStory } from "../context/StoryContext";
+import StageView from "./StageView";
 // StoryProviderの内側でuseStory()を呼び、engineの最新関数をref経由でapi.ts側に
 // 橋渡しするだけの非表示コンポーネント。engineオブジェクト自体は毎レンダー
 // 新しく作られるが、handle経由で呼べば常に最新のsetContextVars/resetStoryを
 // 呼び出せるようにしてある(onReadyは初回マウント時に1回だけ呼ぶ)。
-function EngineBridge({ onReady }) {
+function EngineBridge({ onReady, }) {
     const engine = useStory();
     const engineRef = useRef(engine);
     engineRef.current = engine;
@@ -29,7 +29,7 @@ function EngineBridge({ onReady }) {
 // <VNLayerOverlay clip="BlogIntro" mode="overlay" /> をどのページに置いても
 // それだけでそのクリップ用のエンジン一式が独立して動く。
 // (旧VNLayer.tsxと同じ役割。描画自体はStageViewに一本化されている)
-export default function VNLayerOverlay({ clip = 'Scenario1', mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }) {
-    return (_jsxs(StoryProvider, { clip: clip, stepProvider: stepProvider, onNavigate: onNavigate, instanceId: instanceId, children: [_jsx(EngineBridge, { onReady: onReady }), _jsx(StageView, { mode: mode, uiAnchor: uiAnchor, showUi: showUi })] }));
+export default function VNLayerOverlay({ clip = "Scenario1", mode = "overlay", uiAnchor, showUi, stepProvider, saveProvider, onNavigate, onReady, instanceId, }) {
+    return (_jsxs(StoryProvider, { clip: clip, stepProvider: stepProvider, saveProvider: saveProvider, onNavigate: onNavigate, instanceId: instanceId, children: [_jsx(EngineBridge, { onReady: onReady }), _jsx(StageView, { mode: mode, uiAnchor: uiAnchor, showUi: showUi })] }));
 }
 //# sourceMappingURL=VNLayerOverlay.js.map

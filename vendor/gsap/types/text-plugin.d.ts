@@ -13,19 +13,16 @@ declare namespace TextPlugin {
 }
 
 declare namespace gsap {
-
   interface TweenVars {
     text?: string | TextPlugin.Vars;
   }
 }
 
 declare namespace gsap.plugins {
-  interface TextPlugin extends Plugin {
-     
-  }
+  interface TextPlugin extends Plugin {}
 
   interface TextPluginClass extends TextPlugin {
-    new(): PluginScope & TextPlugin;
+    new (): PluginScope & TextPlugin;
     prototype: PluginScope & TextPlugin;
   }
 

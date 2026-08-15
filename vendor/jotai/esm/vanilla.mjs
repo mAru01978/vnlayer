@@ -1,12 +1,15 @@
-import { INTERNAL_buildStoreRev3 } from 'jotai/vanilla/internals';
+import { INTERNAL_buildStoreRev3 } from "jotai/vanilla/internals";
 
 let keyCount = 0;
 function atom(read, write) {
   const key = `atom${++keyCount}`;
   const config = {
     toString() {
-      return (import.meta.env ? import.meta.env.MODE : void 0) !== "production" && this.debugLabel ? key + ":" + this.debugLabel : key;
-    }
+      return (import.meta.env ? import.meta.env.MODE : void 0) !==
+        "production" && this.debugLabel
+        ? key + ":" + this.debugLabel
+        : key;
+    },
   };
   if (typeof read === "function") {
     config.read = read;
@@ -24,10 +27,7 @@ function defaultRead(get) {
   return get(this);
 }
 function defaultWrite(get, set, arg) {
-  return set(
-    this,
-    typeof arg === "function" ? arg(get(this)) : arg
-  );
+  return set(this, typeof arg === "function" ? arg(get(this)) : arg);
 }
 
 let overriddenCreateStore;
@@ -45,10 +45,11 @@ function getDefaultStore() {
   if (!defaultStore) {
     defaultStore = createStore();
     if ((import.meta.env ? import.meta.env.MODE : void 0) !== "production") {
-      globalThis.__JOTAI_DEFAULT_STORE__ || (globalThis.__JOTAI_DEFAULT_STORE__ = defaultStore);
+      globalThis.__JOTAI_DEFAULT_STORE__ ||
+        (globalThis.__JOTAI_DEFAULT_STORE__ = defaultStore);
       if (globalThis.__JOTAI_DEFAULT_STORE__ !== defaultStore) {
         console.warn(
-          "Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044"
+          "Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044",
         );
       }
     }

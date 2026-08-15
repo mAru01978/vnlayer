@@ -1,29 +1,56 @@
-'use client';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { useAtomValue } from 'jotai';
-import { dispatchTag } from '../tags/index';
-import { getUiConfig } from '../tags/uiConfig';
-import { getDefaultStepProvider } from './defaultStepProvider';
-import { registerInstance, unregisterInstance, registerSelf, unregisterSelf } from './instanceRegistry';
-import { getStore } from './store';
-import { camAtomFamily, shakeAtomFamily, flashAtomFamily, typeSpeedAtomFamily, disposeBasicAtoms } from './atoms';
-import * as backgroundManager from './managers/backgroundManager';
-import * as characterManager from './managers/characterManager';
-import * as speakerManager from './managers/speakerManager';
-import * as positionManager from './managers/positionManager';
-import * as messageManager from './managers/messageManager';
-import * as choiceManager from './managers/choiceManager';
-import * as backlogManager from './managers/backlogManager';
-import * as windowVisibilityManager from './managers/windowVisibilityManager';
-import * as typeManager from './managers/typeManager';
-import * as navigationManager from './managers/navigationManager';
-import * as waitManager from './managers/waitManager';
-import * as contextManager from './managers/contextManager';
-import * as timelineManager from './managers/timelineManager';
-import * as interruptManager from './managers/interruptManager';
-import { TagDispatchError, reportError } from './errors';
-import type { StepProvider } from './StepProvider';
-import type { RunResult, SetContextOptions, StoryEngine } from './types';
+"use client";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useAtomValue } from "jotai";
+import { dispatchTag } from "../tags/index";
+import {
+  getUiConfig,
+  getAllUiConfigPatches,
+  restoreUiConfigPatches,
+} from "../tags/uiConfig";
+import {
+  getAllCharacterSlots,
+  getAllBackgroundSlots,
+  setSpriteAssets,
+} from "../tags/spriteAssets";
+import { getDefaultStepProvider } from "./defaultStepProvider";
+import {
+  registerInstance,
+  unregisterInstance,
+  registerSelf,
+  unregisterSelf,
+} from "./instanceRegistry";
+import { getStore } from "./store";
+import {
+  camAtomFamily,
+  shakeAtomFamily,
+  flashAtomFamily,
+  typeSpeedAtomFamily,
+  disposeBasicAtoms,
+} from "./atoms";
+import * as backgroundManager from "./managers/backgroundManager";
+import * as characterManager from "./managers/characterManager";
+import * as speakerManager from "./managers/speakerManager";
+import * as positionManager from "./managers/positionManager";
+import * as messageManager from "./managers/messageManager";
+import * as choiceManager from "./managers/choiceManager";
+import * as backlogManager from "./managers/backlogManager";
+import * as windowVisibilityManager from "./managers/windowVisibilityManager";
+import * as typeManager from "./managers/typeManager";
+import * as navigationManager from "./managers/navigationManager";
+import * as waitManager from "./managers/waitManager";
+import * as contextManager from "./managers/contextManager";
+import * as timelineManager from "./managers/timelineManager";
+import * as interruptManager from "./managers/interruptManager";
+import { TagDispatchError, StoryRuntimeError, reportError } from "./errors";
+import { getDefaultSaveProvider } from "./defaultSaveProvider";
+import type { StepProvider } from "./StepProvider";
+import type { SaveProvider } from "./SaveProvider";
+import type {
+  RunResult,
+  SetContextOptions,
+  StoryEngine,
+  ActiveMessage,
+} from "./types";
 
 // タグシステム大改修フェーズ3: 「useStoryEngine.tsの責務過多を解消し、タグ
 // 追加のたびにここを改修しなくて済むようにする」という狙いで全面的に
@@ -62,11 +89,20 @@ export function useStoryEngine(
   clip: string,
   options: {
     stepProvider?: StepProvider;
+    // 簡易セーブ機能(core/SaveProvider.ts参照)。省略時は
+    // core/defaultSaveProvider.ts の既定値(通常はlocalStorage)を使う。
+    // 明示的にnullを渡すと、このインスタンスではセーブ/ロードを一切行わない
+    // (装飾専用インスタンス等、進行状態を持たないVNで無駄なI/Oを避けたい場合向け)。
+    saveProvider?: SaveProvider | null;
     onNavigate?: (path: string) => void;
     instanceId?: string;
-  } = {}
+  } = {},
 ): StoryEngine {
   const stepProvider = options.stepProvider ?? getDefaultStepProvider();
+  const saveProvider =
+    options.saveProvider === null
+      ? null
+      : (options.saveProvider ?? getDefaultSaveProvider());
   const onNavigate = options.onNavigate;
   const instanceId = options.instanceId;
 
@@ -77,18 +113,28 @@ export function useStoryEngine(
   // 書き込みはタグ(basic/special問わず)か、このフック自身(ink進行に
   // 伴う同期処理)がマネージャー関数を呼んで行う。
   const bg = useAtomValue(backgroundManager.bgAtomFamily(atomKey));
-  const characters = useAtomValue(characterManager.charactersAtomFamily(atomKey));
+  const characters = useAtomValue(
+    characterManager.charactersAtomFamily(atomKey),
+  );
   const speaker = useAtomValue(speakerManager.speakerAtomFamily(atomKey));
   const cam = useAtomValue(camAtomFamily(atomKey));
   const shake = useAtomValue(shakeAtomFamily(atomKey));
   const flash = useAtomValue(flashAtomFamily(atomKey));
   const typeSpeedMs = useAtomValue(typeSpeedAtomFamily(atomKey));
-  const positionOverrides = useAtomValue(positionManager.positionOverridesAtomFamily(atomKey));
-  const activeMessage = useAtomValue(messageManager.activeMessageAtomFamily(atomKey));
+  const positionOverrides = useAtomValue(
+    positionManager.positionOverridesAtomFamily(atomKey),
+  );
+  const activeMessage = useAtomValue(
+    messageManager.activeMessageAtomFamily(atomKey),
+  );
   const choices = useAtomValue(choiceManager.choicesAtomFamily(atomKey));
-  const choicesHidden = useAtomValue(choiceManager.choicesHiddenAtomFamily(atomKey));
+  const choicesHidden = useAtomValue(
+    choiceManager.choicesHiddenAtomFamily(atomKey),
+  );
   const lines = useAtomValue(backlogManager.linesAtomFamily(atomKey));
-  const messageWindowHidden = useAtomValue(windowVisibilityManager.messageWindowHiddenAtomFamily(atomKey));
+  const messageWindowHidden = useAtomValue(
+    windowVisibilityManager.messageWindowHiddenAtomFamily(atomKey),
+  );
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -143,13 +189,25 @@ export function useStoryEngine(
 
         if (step.content) {
           speakerManager.setSpeaker(atomKey, step.speaker);
-          backlogManager.pushLine(atomKey, instanceId, step.speaker, step.content);
+          backlogManager.pushLine(
+            atomKey,
+            instanceId,
+            step.speaker,
+            step.content,
+          );
           const currentTypeSpeed = typeManager.getTypeSpeed(atomKey);
-          messageManager.showMessage(atomKey, step.speaker, step.content, currentTypeSpeed);
+          messageManager.showMessage(
+            atomKey,
+            step.speaker,
+            step.content,
+            currentTypeSpeed,
+          );
 
           if (typeManager.isTypeWaitEnabled(atomKey)) {
-            const typingMs = currentTypeSpeed > 0 ? step.content.length * currentTypeSpeed : 0;
-            const estimatedMs = typingMs + typeManager.getTypeWaitBufferMs(atomKey);
+            const typingMs =
+              currentTypeSpeed > 0 ? step.content.length * currentTypeSpeed : 0;
+            const estimatedMs =
+              typingMs + typeManager.getTypeWaitBufferMs(atomKey);
             if (isStale()) return;
             await waitManager.wait(atomKey, estimatedMs);
           }
@@ -163,7 +221,10 @@ export function useStoryEngine(
         if (onNavigate) {
           onNavigate(pendingGoto);
         } else {
-          console.warn('[useStoryEngine] goto tag encountered but no onNavigate handler was provided:', pendingGoto);
+          console.warn(
+            "[useStoryEngine] goto tag encountered but no onNavigate handler was provided:",
+            pendingGoto,
+          );
         }
       }
 
@@ -176,14 +237,126 @@ export function useStoryEngine(
       choiceManager.setChoices(atomKey, result.choices);
       isProcessingRef.current = false;
       setIsProcessing(false);
+
+      // 簡易セーブ機能: このバッチの処理が終わるたびに、対応していれば
+      // (StepProvider.getSaveData実装あり、かつsaveProviderが設定されている
+      // 場合)現在のink実行状態を保存する。UIをブロックしないよう
+      // fire-and-forgetで行う(セーブ失敗はエラー報告するだけで進行は止めない)。
+      if (saveProvider && stepProvider.getSaveData) {
+        stepProvider
+          .getSaveData(clip, atomKey)
+          .then((storySave) => {
+            if (!storySave) return;
+            return saveProvider.save(clip, {
+              clip,
+              inkStateJson: storySave.inkStateJson,
+              visual: storySave.visual,
+              contextVars: contextManager.getContextVars(atomKey),
+              positionOverrides: positionManager.getPositionOverrides(atomKey),
+              uiConfigPatches: getAllUiConfigPatches(),
+              characterSlots: getAllCharacterSlots(),
+              backgroundSlots: getAllBackgroundSlots(),
+              activeMessage: (() => {
+                const current = messageManager.getActiveMessage(atomKey);
+                if (!current) return null;
+                // #type:wait:onで表示完了を待っていた(=advance()がこの
+                // メッセージのタイプ推定時間ぶんawait済み)場合だけ、
+                // 「保存時点で表示完了していた」とみなす。type:wait:offの
+                // 場合はプレイヤーが実際どこまで読み終えていたか分からない
+                // ため、安全側(最初からタイプさせ直す)に倒す。
+                return {
+                  ...current,
+                  startRevealed: typeManager.isTypeWaitEnabled(atomKey),
+                };
+              })(),
+              backlogLines: backlogManager.getLines(atomKey),
+              savedAt: Date.now(),
+            });
+          })
+          .catch((e) => {
+            reportError(
+              new StoryRuntimeError("failed to persist save data", {
+                cause: e,
+              }),
+            );
+          });
+      }
     },
-    [atomKey, instanceId, onNavigate]
+    [atomKey, instanceId, onNavigate, clip, stepProvider, saveProvider],
   );
 
   const init = useCallback(async () => {
     if (isProcessingRef.current) return;
-    const result = await stepProvider.init(clip, atomKey);
+    let result: RunResult | null = null;
+    let restoredMessage: ActiveMessage | undefined;
+
+    // 簡易セーブ機能: 対応していれば(StepProvider.restore実装あり、かつ
+    // saveProviderが設定されている場合)まず保存済みデータからの復元を試みる。
+    // 復元に失敗しても致命的エラーにはせず、通常のinit()にフォールバックする
+    // (壊れたセーブデータのせいで二度と開けなくなる、という事故を避けるため)。
+    if (saveProvider && stepProvider.restore) {
+      try {
+        const saved = await saveProvider.load(clip);
+        if (saved && saved.clip === clip) {
+          result = await stepProvider.restore(clip, saved, atomKey);
+          contextManager.hydrate(atomKey, saved.contextVars ?? {});
+          // ink実行状態(state.ToJson())には含まれない、タグの累積副作用を
+          // 復元する。順序上、下のadvance(result)がatom書き込み経由で
+          // StageViewの再描画を引き起こすため、この時点で値を確定させて
+          // おけば復元直後の1フレーム目から正しい見た目になる。
+          positionManager.restore(atomKey, saved.positionOverrides ?? {});
+          restoreUiConfigPatches(saved.uiConfigPatches);
+          // 素材統合(2026-08-09)により、保存された立ち位置/背景定義は
+          // 統合済みspriteレジストリ(tags/spriteAssets.ts)へ書き戻す形に
+          // 変換する(SaveData自体のフラットな形は変更していない)。
+          if (saved.characterSlots) {
+            const patch: Record<string, { originX: number; originY: number }> =
+              {};
+            for (const [name, slot] of Object.entries(saved.characterSlots)) {
+              patch[name] = { originX: slot.originX, originY: slot.originY };
+            }
+            setSpriteAssets(patch);
+          }
+          if (saved.backgroundSlots) {
+            const variants: Record<string, { color?: string; src?: string }> =
+              {};
+            for (const [bgName, slot] of Object.entries(
+              saved.backgroundSlots,
+            )) {
+              variants[bgName] = { color: slot.color, src: slot.image };
+            }
+            setSpriteAssets({ bg: { variants } });
+          }
+          backlogManager.restore(atomKey, instanceId, saved.backlogLines ?? []);
+          // activeMessageはadvance(result)より後に反映する(advance()自体は
+          // result.steps=[]なのでshowMessage()は呼ばれず競合しないが、
+          // 順序を明確にするため後段でまとめて処理する)。
+          restoredMessage = saved.activeMessage ?? null;
+        }
+      } catch (e) {
+        reportError(
+          new StoryRuntimeError(
+            "failed to restore from save data, starting fresh instead",
+            { cause: e },
+          ),
+        );
+        result = null;
+        restoredMessage = undefined;
+      }
+    }
+
+    if (!result) {
+      result = await stepProvider.init(clip, atomKey);
+    }
     await advance(result);
+    if (restoredMessage !== undefined) {
+      // タイプ中(startRevealed:false)なら最初からタイプさせ直し、
+      // 表示完了済み(startRevealed:true)または#type:wait:offで完了状態が
+      // 不明な場合は既定のfalse(=最初からタイプ)を使う(core/managers/
+      // messageManager.tsのshowMessage()と揃えたデフォルト)。
+      // 実際の即時全文表示/タイプし直しの分岐はcomponents/StageView.tsx側。
+      messageManager.restoreMessage(atomKey, restoredMessage);
+    }
     setHasLoadedOnce(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clip, stepProvider]);
@@ -220,9 +393,14 @@ export function useStoryEngine(
       if (isProcessingRef.current) {
         const isAmbient = choices
           .find((c) => c.index === index)
-          ?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
+          ?.tags?.some(
+            (t) =>
+              t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
+          );
         if (!isAmbient) {
-          console.warn(`[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`);
+          console.warn(
+            `[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`,
+          );
         }
         return;
       }
@@ -233,20 +411,30 @@ export function useStoryEngine(
 
       const chosen = choices.find((c) => c.index === index);
       const isAmbientChoice = chosen?.tags?.some(
-        (t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt'
+        (t) => t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
       );
       if (chosen && !isAmbientChoice) {
         const visibleAtChoiceTime = choices.filter(
-          (c) => !c.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt')
+          (c) =>
+            !c.tags?.some(
+              (t) =>
+                t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
+            ),
         );
-        const number = visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
-        backlogManager.pushChoice(atomKey, instanceId, number > 0 ? number : 1, chosen.text);
+        const number =
+          visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
+        backlogManager.pushChoice(
+          atomKey,
+          instanceId,
+          number > 0 ? number : 1,
+          chosen.text,
+        );
       }
 
       const result = await stepProvider.choose(clip, index, atomKey);
       await advance(result);
     },
-    [choices, advance, clip, stepProvider, atomKey, instanceId]
+    [choices, advance, clip, stepProvider, atomKey, instanceId],
   );
 
   // tick/interrupt(event_loopパターン)の自動choose()。
@@ -255,7 +443,9 @@ export function useStoryEngine(
     // 選択肢が更新されるたび無条件に消費/破棄する(waitManager.
     // consumePendingInterrupt()自体が読み取りと同時にfalseへ戻す)。
     const hadPendingInterrupt = waitManager.consumePendingInterrupt(atomKey);
-    const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
+    const interruptChoice = choices.find((c) =>
+      c.tags?.some((t) => t.split(":")[0] === "interrupt"),
+    );
     if (interruptChoice && hadPendingInterrupt) {
       // 実際に#interrupt付き選択肢へ割り込む、この瞬間だけ演出中の全
       // GSAP timelineを一時停止する(notify:trueの全呼び出しで毎回pauseする
@@ -270,19 +460,21 @@ export function useStoryEngine(
       return;
     }
 
-    const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(':')[0] === 'tick'));
+    const tickChoices = choices.filter((c) =>
+      c.tags?.some((t) => t.split(":")[0] === "tick"),
+    );
     if (tickChoices.length === 0) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
     for (const tickChoice of tickChoices) {
-      const tickTag = tickChoice.tags.find((t) => t.split(':')[0] === 'tick');
-      const seconds = tickTag ? Number(tickTag.split(':')[1]) : NaN;
+      const tickTag = tickChoice.tags.find((t) => t.split(":")[0] === "tick");
+      const seconds = tickTag ? Number(tickTag.split(":")[1]) : NaN;
       if (!Number.isFinite(seconds) || seconds <= 0) continue;
 
       timers.push(
         setTimeout(() => {
           choose(tickChoice.index);
-        }, seconds * 1000)
+        }, seconds * 1000),
       );
     }
 
@@ -310,7 +502,12 @@ export function useStoryEngine(
     // 元々存在しない)ため、ここでも同じ範囲(cam/positionOverrides/
     // activeMessage/messageWindowHidden/contextStore)だけをリセットし、
     // 挙動を変えないようにしている。
-    getStore().set(camAtomFamily(atomKey), { target: '', scale: 1, originX: 50, originY: 50 });
+    getStore().set(camAtomFamily(atomKey), {
+      target: "",
+      scale: 1,
+      originX: 50,
+      originY: 50,
+    });
     positionManager.reset(atomKey);
     messageManager.reset(atomKey);
     windowVisibilityManager.reset(atomKey);
@@ -318,9 +515,17 @@ export function useStoryEngine(
     // 値の写しも古い情報になるためクリアする。
     contextManager.reset(atomKey);
 
+    // 保存されている簡易セーブも古い情報になるため消す(次回ロード時に
+    // 古い状態へ復元されてしまうのを防ぐ)。消せなくても致命的ではない
+    // (次のadvance()完了時にどのみち新しい状態で上書きされる)ので、
+    // 結果は待たずfire-and-forgetで行う。
+    if (saveProvider) {
+      saveProvider.clear(clip).catch(() => {});
+    }
+
     const result = await stepProvider.reset(clip, atomKey);
     await advance(result);
-  }, [advance, clip, stepProvider, atomKey]);
+  }, [advance, clip, stepProvider, atomKey, saveProvider]);
 
   const setContextVars = useCallback(
     async (vars: Record<string, unknown>, options?: SetContextOptions) => {
@@ -329,14 +534,14 @@ export function useStoryEngine(
         await stepProvider.idle(clip, varName, value, atomKey);
       }
     },
-    [atomKey, clip, stepProvider]
+    [atomKey, clip, stepProvider],
   );
 
   const getContextVars = useCallback(
     async (varNames?: string[]): Promise<Record<string, unknown>> => {
       return contextManager.getContextVars(atomKey, varNames);
     },
-    [atomKey]
+    [atomKey],
   );
 
   // #emit(他VN宛、3引数形)用の自己登録: このVNインスタンスが自分の

@@ -1,22 +1,20 @@
 /// <reference types="react" />
-import type { StepProvider } from '../core/StepProvider';
-import type { SetContextOptions } from '../core/types';
-import { type StageMode, type UiAnchor } from './StageView';
+import type { StepProvider } from "../core/StepProvider";
+import type { SaveProvider } from "../core/SaveProvider";
+import type { VNLayerHandle } from "../core/types";
+import { type StageMode, type UiAnchor } from "./StageView";
 export type VNLayerMode = StageMode;
-export type VNLayerHandle = {
-    setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
-    getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
-    resetStory: () => Promise<void>;
-};
+export type { VNLayerHandle } from "../core/types";
 export type VNLayerOverlayProps = {
     clip?: string;
-    mode: VNLayerMode;
+    mode?: VNLayerMode;
     uiAnchor?: UiAnchor;
     showUi?: boolean;
     stepProvider?: StepProvider;
+    saveProvider?: SaveProvider | null;
     onNavigate?: (path: string) => void;
     onReady?: (handle: VNLayerHandle) => void;
     instanceId?: string;
 };
-export default function VNLayerOverlay({ clip, mode, uiAnchor, showUi, stepProvider, onNavigate, onReady, instanceId }: VNLayerOverlayProps): import("react").JSX.Element;
+export default function VNLayerOverlay({ clip, mode, uiAnchor, showUi, stepProvider, saveProvider, onNavigate, onReady, instanceId, }: VNLayerOverlayProps): import("react").JSX.Element;
 //# sourceMappingURL=VNLayerOverlay.d.ts.map

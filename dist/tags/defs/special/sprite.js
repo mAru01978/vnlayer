@@ -1,7 +1,6 @@
 import { registerTag, registerAlias } from "../../registry";
 import { isNumeric } from "../../numericOrLabel";
-import { setCharacterSlots } from "../../characterSlots";
-import { setBackgroundSlots } from "../../backgroundSlots";
+import { setSpriteAssets } from "../../spriteAssets";
 import * as speakerManager from "../../../core/managers/speakerManager";
 import * as characterManager from "../../../core/managers/characterManager";
 import * as positionManager from "../../../core/managers/positionManager";
@@ -77,7 +76,9 @@ registerTag({
                 return;
             const [colorMode, colorValue] = rest;
             if (colorMode === "color" && colorValue) {
-                setBackgroundSlots({ [bgName]: { color: colorValue } });
+                setSpriteAssets({
+                    [BG_PSEUDO_NAME]: { variants: { [bgName]: { color: colorValue } } },
+                });
             }
             backgroundManager.setBackground(atomKey, instanceId, bgName);
             return;
@@ -98,7 +99,7 @@ registerTag({
         if (mode === "initPos") {
             const [x, y] = rest;
             if (isNumeric(x) && isNumeric(y)) {
-                setCharacterSlots({
+                setSpriteAssets({
                     [name]: { originX: Number(x), originY: Number(y) },
                 });
             }

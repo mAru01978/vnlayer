@@ -1,17 +1,18 @@
-System.register(['jotai/vanilla/internals'], (function (exports) {
-  'use strict';
+System.register(["jotai/vanilla/internals"], function (exports) {
+  "use strict";
   var INTERNAL_buildStoreRev3;
   return {
-    setters: [function (module) {
-      INTERNAL_buildStoreRev3 = module.INTERNAL_buildStoreRev3;
-    }],
-    execute: (function () {
-
+    setters: [
+      function (module) {
+        INTERNAL_buildStoreRev3 = module.INTERNAL_buildStoreRev3;
+      },
+    ],
+    execute: function () {
       exports({
         INTERNAL_overrideCreateStore: INTERNAL_overrideCreateStore,
         atom: atom,
         createStore: createStore,
-        getDefaultStore: getDefaultStore
+        getDefaultStore: getDefaultStore,
       });
 
       let keyCount = 0;
@@ -20,7 +21,7 @@ System.register(['jotai/vanilla/internals'], (function (exports) {
         const config = {
           toString() {
             return this.debugLabel ? key + ":" + this.debugLabel : key;
-          }
+          },
         };
         if (typeof read === "function") {
           config.read = read;
@@ -38,10 +39,7 @@ System.register(['jotai/vanilla/internals'], (function (exports) {
         return get(this);
       }
       function defaultWrite(get, set, arg) {
-        return set(
-          this,
-          typeof arg === "function" ? arg(get(this)) : arg
-        );
+        return set(this, typeof arg === "function" ? arg(get(this)) : arg);
       }
 
       let overriddenCreateStore;
@@ -59,17 +57,17 @@ System.register(['jotai/vanilla/internals'], (function (exports) {
         if (!defaultStore) {
           defaultStore = createStore();
           {
-            globalThis.__JOTAI_DEFAULT_STORE__ || (globalThis.__JOTAI_DEFAULT_STORE__ = defaultStore);
+            globalThis.__JOTAI_DEFAULT_STORE__ ||
+              (globalThis.__JOTAI_DEFAULT_STORE__ = defaultStore);
             if (globalThis.__JOTAI_DEFAULT_STORE__ !== defaultStore) {
               console.warn(
-                "Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044"
+                "Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044",
               );
             }
           }
         }
         return defaultStore;
       }
-
-    })
+    },
   };
-}));
+});

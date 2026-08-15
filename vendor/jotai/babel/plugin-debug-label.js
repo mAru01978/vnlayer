@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-var _templateBuilder = require('@babel/template');
+var _templateBuilder = require("@babel/template");
 
 function isAtom(t, callee, customAtomNames) {
   if (customAtomNames === void 0) {
@@ -18,36 +18,98 @@ function isAtom(t, callee, customAtomNames) {
   }
   return false;
 }
-var atomFunctionNames = ['atom', 'atomFamily', 'atomWithDefault', 'atomWithObservable', 'atomWithReducer', 'atomWithReset', 'atomWithStorage', 'freezeAtom', 'loadable', 'selectAtom', 'splitAtom', 'unwrap', 'atomWithMachine', 'atomWithImmer', 'atomWithProxy', 'atomWithQuery', 'atomWithMutation', 'atomWithSubscription', 'atomWithStore', 'atomWithHash', 'atomWithLocation', 'focusAtom', 'atomWithValidate', 'validateAtoms', 'atomWithCache', 'atomWithRecoilValue'];
+var atomFunctionNames = [
+  "atom",
+  "atomFamily",
+  "atomWithDefault",
+  "atomWithObservable",
+  "atomWithReducer",
+  "atomWithReset",
+  "atomWithStorage",
+  "freezeAtom",
+  "loadable",
+  "selectAtom",
+  "splitAtom",
+  "unwrap",
+  "atomWithMachine",
+  "atomWithImmer",
+  "atomWithProxy",
+  "atomWithQuery",
+  "atomWithMutation",
+  "atomWithSubscription",
+  "atomWithStore",
+  "atomWithHash",
+  "atomWithLocation",
+  "focusAtom",
+  "atomWithValidate",
+  "validateAtoms",
+  "atomWithCache",
+  "atomWithRecoilValue",
+];
 
 var templateBuilder = _templateBuilder.default || _templateBuilder;
 function debugLabelPlugin(_ref, options) {
   var t = _ref.types;
-  console.warn('[DEPRECATED] jotai/babel/plugin-debug-label is deprecated and will be removed in v3.\n' + 'Please use the `jotai-babel` package instead: https://github.com/jotaijs/jotai-babel');
+  console.warn(
+    "[DEPRECATED] jotai/babel/plugin-debug-label is deprecated and will be removed in v3.\n" +
+      "Please use the `jotai-babel` package instead: https://github.com/jotaijs/jotai-babel",
+  );
   return {
     visitor: {
-      ExportDefaultDeclaration: function ExportDefaultDeclaration(nodePath, state) {
+      ExportDefaultDeclaration: function ExportDefaultDeclaration(
+        nodePath,
+        state,
+      ) {
         var node = nodePath.node;
-        if (t.isCallExpression(node.declaration) && isAtom(t, node.declaration.callee, options == null ? void 0 : options.customAtomNames)) {
-          var filename = (state.filename || 'unknown').replace(/\.\w+$/, '');
-          var displayName = filename.split('/').pop();
-          if (displayName === 'index') {
-            displayName = filename.slice(0, -'/index'.length).split('/').pop() || 'unknown';
+        if (
+          t.isCallExpression(node.declaration) &&
+          isAtom(
+            t,
+            node.declaration.callee,
+            options == null ? void 0 : options.customAtomNames,
+          )
+        ) {
+          var filename = (state.filename || "unknown").replace(/\.\w+$/, "");
+          var displayName = filename.split("/").pop();
+          if (displayName === "index") {
+            displayName =
+              filename.slice(0, -"/index".length).split("/").pop() || "unknown";
           }
-          var buildExport = templateBuilder("\n          const %%atomIdentifier%% = %%atom%%;\n          export default %%atomIdentifier%%\n          ");
+          var buildExport = templateBuilder(
+            "\n          const %%atomIdentifier%% = %%atom%%;\n          export default %%atomIdentifier%%\n          ",
+          );
           var ast = buildExport({
             atomIdentifier: t.identifier(displayName),
-            atom: node.declaration
+            atom: node.declaration,
           });
           nodePath.replaceWithMultiple(ast);
         }
       },
       VariableDeclarator: function VariableDeclarator(path) {
-        if (t.isIdentifier(path.node.id) && t.isCallExpression(path.node.init) && isAtom(t, path.node.init.callee, options == null ? void 0 : options.customAtomNames)) {
-          path.parentPath.insertAfter(t.expressionStatement(t.assignmentExpression('=', t.memberExpression(t.identifier(path.node.id.name), t.identifier('debugLabel')), t.stringLiteral(path.node.id.name))));
+        if (
+          t.isIdentifier(path.node.id) &&
+          t.isCallExpression(path.node.init) &&
+          isAtom(
+            t,
+            path.node.init.callee,
+            options == null ? void 0 : options.customAtomNames,
+          )
+        ) {
+          path.parentPath.insertAfter(
+            t.expressionStatement(
+              t.assignmentExpression(
+                "=",
+                t.memberExpression(
+                  t.identifier(path.node.id.name),
+                  t.identifier("debugLabel"),
+                ),
+                t.stringLiteral(path.node.id.name),
+              ),
+            ),
+          );
         }
-      }
-    }
+      },
+    },
   };
 }
 

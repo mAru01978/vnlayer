@@ -20,7 +20,7 @@
 // 名前(name)は呼び出し側が自由に付ける識別子で、DOMのidやCSSセレクタとは
 // 無関係。同じ名前を複数回登録してもよい(#timeline:kill:@nameは該当する
 // 名前を持つtimeline全部を対象にする)。
-import type gsapNS from 'gsap';
+import type gsapNS from "gsap";
 
 type Entry = {
   name: string;
@@ -40,7 +40,7 @@ function getList(atomKey: string): Entry[] {
 }
 
 function normalizeName(name: string): string {
-  return name.replace(/^@/, '');
+  return name.replace(/^@/, "");
 }
 
 function finish(atomKey: string, entry: Entry): void {
@@ -57,13 +57,24 @@ function finish(atomKey: string, entry: Entry): void {
 // 呼び出し側が自前でtimeline.kill()する場合は、その直後に必ず
 // unregister(atomKey, timeline)も呼ぶこと(呼ばないとwaitForIdle()が
 // 「もう動いていないtimeline」を待ち続けてしまう)。
-export function register(atomKey: string, name: string, timeline: gsap.core.Timeline): void {
-  const entry: Entry = { name: normalizeName(name), timeline, onDone: new Set() };
+export function register(
+  atomKey: string,
+  name: string,
+  timeline: gsap.core.Timeline,
+): void {
+  const entry: Entry = {
+    name: normalizeName(name),
+    timeline,
+    onDone: new Set(),
+  };
   getList(atomKey).push(entry);
-  timeline.eventCallback('onComplete', () => finish(atomKey, entry));
+  timeline.eventCallback("onComplete", () => finish(atomKey, entry));
 }
 
-export function unregister(atomKey: string, timeline: gsap.core.Timeline): void {
+export function unregister(
+  atomKey: string,
+  timeline: gsap.core.Timeline,
+): void {
   const list = registry.get(atomKey);
   if (!list) return;
   const entry = list.find((e) => e.timeline === timeline);
