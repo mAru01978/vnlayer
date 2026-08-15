@@ -14,6 +14,30 @@ const path = require("path");
 const projectRoot = process.env.INIT_CWD || path.resolve(__dirname, "..", "..");
 const defaultDataDir = path.join(projectRoot, "data");
 
+
+const VENDOR_MENU_ITEMS = [
+  {
+    label: "全て更新",
+    value: "",
+  },
+  {
+    label: "inkjs/inkjs-compiler",
+    value: "inkjs",
+  },
+  {
+    label: "gsap",
+    value: "gsap",
+  },
+  {
+    label: "jotai",
+    value: "jotai",
+  },
+  {
+    label: "戻る",
+    value: null,
+  },
+];
+
 // メニューに出す項目一覧。スクリプトパスは絶対パスで安全に指定。
 const MENU_ITEMS = [
   {
@@ -109,9 +133,29 @@ const MENU_ITEMS = [
     },
   },
   {
-    label: "inkjs/inkjs-compilerをvendor/に固定・更新(update-vendor.js)",
-    run: () => runDirect(["node", path.join(__dirname, "update-vendor.js")]),
+  label: "vendorを更新(update-vendor.js)",
+  run: async () => {
+    const item = await showMenu(
+      VENDOR_MENU_ITEMS,
+      "vendor更新対象選択",
+    );
+
+    if (item.value === null) {
+      return;
+    }
+
+    const args = [
+      "node",
+      path.join(__dirname, "update-vendor.js"),
+    ];
+
+    if (item.value) {
+      args.push(item.value);
+    }
+
+    runDirect(args);
   },
+},
   {
     label:
       "VNLayerのJSビルド、React等のランタイム全バンドル(build-vnlayer-standalone.js)",
@@ -195,16 +239,17 @@ async function runWithPrompts(questions, buildCmd) {
 
 // ここから先が「矢印キーで選ぶメニュー」本体。
 // Node標準のreadline + 生のキー入力(raw mode)だけで実装している。
-function showMenu() {
+function showMenu(items, title = "メニュー") {
   return new Promise((resolve) => {
     let selected = 0;
 
     function render() {
       console.clear();
       console.log(
-        "=== 開発用スクリプトメニュー(↑↓で選択、Enterで実行、Ctrl+Cで終了) ===\n",
-      );
-      MENU_ITEMS.forEach((item, i) => {
+  `=== ${title}(↑↓で選択、Enterで実行、Ctrl+Cで終了) ===\n`,
+);
+
+items.forEach((item, i) => {
         const cursor = i === selected ? "> " : "  ";
         console.log(`${cursor}${item.label}`);
       });
@@ -221,14 +266,14 @@ function showMenu() {
         cleanup();
         process.exit(0);
       } else if (key.name === "up") {
-        selected = (selected - 1 + MENU_ITEMS.length) % MENU_ITEMS.length;
+        selected = (selected - 1 + items.length) % items.length;
         render();
       } else if (key.name === "down") {
-        selected = (selected + 1) % MENU_ITEMS.length;
+        selected = (selected + 1) % items.length;
         render();
       } else if (key.name === "return") {
         cleanup();
-        resolve(MENU_ITEMS[selected]);
+        resolve(items[selected]);
       }
     }
 
@@ -254,7 +299,7 @@ async function main() {
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const item = await showMenu();
+    const item = await showMenu(MENU_ITEMS, "開発用スクリプトメニュー");
     console.log(""); // メニュー選択後に少し余白
     await item.run();
     if (item.label === "終了") break;
