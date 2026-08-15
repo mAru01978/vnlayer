@@ -51,6 +51,9 @@ function shortestRotationTo(prevDeg, rawTargetDeg) {
 }
 const MOCK_BG_COLOR = '#333';
 function resolveBgVisual(bg) {
+    if (!bg) {
+        return { kind: 'none' };
+    }
     // 登録済みの背景素材を最優先する。
     const slot = getBackgroundSlot(bg);
     if (slot?.image) {
