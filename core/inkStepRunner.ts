@@ -88,7 +88,7 @@ export function continueUntilChoice(
         if (key === "s") {
           // # s:name / # s:name:hide / # s:name:pos:... / # s:name:<表情>
           // # s:bg:<背景名> (#bg統合分岐、疑似キャラ名)
-           const [name, mode] = rest;
+          const [name, mode] = rest;
 
           if (!name || mode === undefined) continue; // 話者だけの指定は見た目に影響しない
           if (name === "bg") {
@@ -175,7 +175,9 @@ export function continueUntilChoice(
     }
   } catch (e) {
     reportError(
-      new StoryRuntimeError("runtime error during Continue(), stopping here", { cause: e }),
+      new StoryRuntimeError("runtime error during Continue(), stopping here", {
+        cause: e,
+      }),
     );
   }
 

@@ -71,5 +71,3 @@ export function reportError(error: VNLayerError): void {
 
   listeners.forEach((listener) => listener(error));
 }
-
-

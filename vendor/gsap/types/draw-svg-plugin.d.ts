@@ -1,5 +1,4 @@
 declare namespace gsap {
-
   type DrawSVGTarget = string | SVGPrimitive | SVGPathElement;
 
   interface TweenVars {
@@ -8,9 +7,7 @@ declare namespace gsap {
 }
 
 declare namespace gsap.plugins {
-
   interface DrawSVGPlugin extends Plugin {
-
     /**
      * Get the length of an SVG element's stroke.
      *
@@ -41,7 +38,7 @@ declare namespace gsap.plugins {
   }
 
   interface DrawSVGPluginClass extends DrawSVGPlugin {
-    new(): PluginScope & DrawSVGPlugin;
+    new (): PluginScope & DrawSVGPlugin;
     prototype: PluginScope & DrawSVGPlugin;
   }
 

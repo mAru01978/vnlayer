@@ -15,26 +15,25 @@ import { charactersAtomFamily } from "../../../core/managers/characterManager";
 // # gaze:alice:30:60 → aliceの視線を(originX=30, originY=60)へ向ける(%、ステージ全体基準)
 // # gaze:alice:reset → 正面向きに戻す(矢印を消す)
 registerBasicTag({
-    key: "gaze",
-    atomFamily: charactersAtomFamily,
-    resolve: (args, _config, { atomKey, store }) => {
-        const [name, xArg, yArg] = args;
-        const prev = store.get(charactersAtomFamily(atomKey));
-        if (xArg === "reset") {
-            if (!prev[name])
-                return undefined; // 元々居ない/視線が無いキャラへのresetは何もしない
-            const { gaze: _drop, ...rest } = prev[name];
-            return { ...prev, [name]: rest };
-        }
-        if (isNumeric(xArg) && isNumeric(yArg)) {
-            const base = prev[name] ?? { expression: "normal" };
-            return {
-                ...prev,
-                [name]: { ...base, gaze: { x: Number(xArg), y: Number(yArg) } },
-            };
-        }
-        return undefined;
-    },
+  key: "gaze",
+  atomFamily: charactersAtomFamily,
+  resolve: (args, _config, { atomKey, store }) => {
+    const [name, xArg, yArg] = args;
+    const prev = store.get(charactersAtomFamily(atomKey));
+    if (xArg === "reset") {
+      if (!prev[name]) return undefined; // 元々居ない/視線が無いキャラへのresetは何もしない
+      const { gaze: _drop, ...rest } = prev[name];
+      return { ...prev, [name]: rest };
+    }
+    if (isNumeric(xArg) && isNumeric(yArg)) {
+      const base = prev[name] ?? { expression: "normal" };
+      return {
+        ...prev,
+        [name]: { ...base, gaze: { x: Number(xArg), y: Number(yArg) } },
+      };
+    }
+    return undefined;
+  },
 });
 registerAlias("g", "gaze");
 //# sourceMappingURL=gaze.js.map

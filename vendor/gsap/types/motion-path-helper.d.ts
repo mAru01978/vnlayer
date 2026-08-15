@@ -1,5 +1,4 @@
 declare class MotionPathHelper {
-
   constructor(target: gsap.DOMTarget, vars?: MotionPathHelper.Vars);
 
   /**
@@ -12,11 +11,11 @@ declare class MotionPathHelper {
    * @memberof MotionPathHelper
    * @link https://greensock.com/docs/v3/Plugins/MotionPathHelper/kill()
    */
-  kill(): void
+  kill(): void;
 
   /**
    * Create a MotionPathHelper instance.
-   * 
+   *
    * ```js
    * MotionPathHelper.create(".myClass");
    * ```
@@ -27,7 +26,10 @@ declare class MotionPathHelper {
    * @memberof MotionPathHelper
    * @link https://greensock.com/docs/v3/Plugins/MotionPathHelper
    */
-  static create(target: gsap.DOMTarget, vars?: MotionPathHelper.Vars): MotionPathHelper;
+  static create(
+    target: gsap.DOMTarget,
+    vars?: MotionPathHelper.Vars,
+  ): MotionPathHelper;
 
   /**
    * Makes an SVG <path> editable in the browser.
@@ -46,7 +48,10 @@ declare class MotionPathHelper {
    * @memberof MotionPathHelper
    * @link https://greensock.com/docs/v3/Plugins/MotionPathHelper/static.editPath()
    */
-  static editPath(target: gsap.DOMTarget, vars?: MotionPathHelper.EditPathVars): MotionPathHelper;
+  static editPath(
+    target: gsap.DOMTarget,
+    vars?: MotionPathHelper.EditPathVars,
+  ): MotionPathHelper;
 }
 
 declare namespace MotionPathHelper {
@@ -82,8 +87,8 @@ declare module "gsap/MotionPathHelper" {
   class _MotionPathHelper extends MotionPathHelper {}
   export {
     _MotionPathHelper as MotionPathHelper,
-    _MotionPathHelper as default
-  }
+    _MotionPathHelper as default,
+  };
 }
 
 declare module "gsap/src/MotionPathHelper" {

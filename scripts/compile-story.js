@@ -69,9 +69,7 @@ for (const dir of clipDirs) {
     console.log(`[compile-story] "${clipName}" 完了。`);
   } catch (e) {
     hadError = true;
-    console.error(
-      `[compile-story] "${clipName}" のコンパイルに失敗しました。`,
-    );
+    console.error(`[compile-story] "${clipName}" のコンパイルに失敗しました。`);
   }
 }
 

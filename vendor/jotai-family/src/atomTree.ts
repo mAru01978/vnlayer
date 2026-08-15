@@ -1,19 +1,19 @@
-import type { Atom } from 'jotai/vanilla'
+import type { Atom } from "jotai/vanilla";
 
 type Node<AtomType extends Atom<unknown> = Atom<unknown>> = {
-  children?: Map<unknown, Node<AtomType>>
-  atom?: AtomType
-}
+  children?: Map<unknown, Node<AtomType>>;
+  atom?: AtomType;
+};
 
 type AtomTree<
   Path extends readonly unknown[],
   AtomType extends Atom<unknown>,
 > = {
-  (path: Path): AtomType
-  remove(path?: Path, removeSubTree?: boolean): void
-  getSubTree(path?: Path): Node<AtomType>
-  getNodePath(path?: Path): Node<AtomType>[]
-}
+  (path: Path): AtomType;
+  remove(path?: Path, removeSubTree?: boolean): void;
+  getSubTree(path?: Path): Node<AtomType>;
+  getNodePath(path?: Path): Node<AtomType>[];
+};
 
 /**
  * Creates a hierarchical structure of Jotai atoms.
@@ -26,8 +26,8 @@ export function atomTree<
   Path extends readonly unknown[],
   AtomType extends Atom<unknown>,
 >(initializePathAtom: (path: Path) => AtomType): AtomTree<Path, AtomType> {
-  const root: Node<AtomType> = {}
-  const defaultPath = [] as readonly unknown[] as Path
+  const root: Node<AtomType> = {};
+  const defaultPath = [] as readonly unknown[] as Path;
 
   /**
    * Creates or retrieves an atom at the specified path in the hierarchy.
@@ -36,17 +36,17 @@ export function atomTree<
    * @returns The Jotai atom for the specified path.
    */
   const createAtom: AtomTree<Path, AtomType> = (path) => {
-    let node = root
+    let node = root;
     for (const key of path) {
-      node.children ??= new Map()
+      node.children ??= new Map();
       if (!node.children.has(key)) {
-        node.children.set(key, {})
+        node.children.set(key, {});
       }
-      node = node.children.get(key)!
+      node = node.children.get(key)!;
     }
-    node.atom ??= initializePathAtom(path)
-    return node.atom
-  }
+    node.atom ??= initializePathAtom(path);
+    return node.atom;
+  };
 
   /**
    * Removes an atom (and optionally its subtree) at the specified path.
@@ -56,26 +56,26 @@ export function atomTree<
    * @throws Error if the path does not exist.
    */
   createAtom.remove = (path = defaultPath, removeSubTree = false) => {
-    const nodePath = createAtom.getNodePath(path)
-    const node = nodePath[nodePath.length - 1]!
-    delete node.atom
+    const nodePath = createAtom.getNodePath(path);
+    const node = nodePath[nodePath.length - 1]!;
+    delete node.atom;
     if (removeSubTree) {
-      delete node.children
+      delete node.children;
     }
     // delete empty subtrees from bottom to top
     for (let i = nodePath.length - 1; i >= 0; i--) {
-      const node = nodePath[i]!
+      const node = nodePath[i]!;
       if (!node.children?.size && i > 0) {
-        const parentNode = nodePath[i - 1]!
-        parentNode.children!.delete(path[i]!)
+        const parentNode = nodePath[i - 1]!;
+        parentNode.children!.delete(path[i]!);
         if (!parentNode.children!.size) {
-          delete parentNode.children
+          delete parentNode.children;
         }
       } else {
-        break
+        break;
       }
     }
-  }
+  };
 
   /**
    * Retrieves the internal node (subtree) at a specified path.
@@ -85,15 +85,15 @@ export function atomTree<
    * @throws Error if the path does not exist.
    */
   createAtom.getSubTree = (path = defaultPath) => {
-    let node: Node<AtomType> | undefined = root
+    let node: Node<AtomType> | undefined = root;
     for (const key of path) {
-      node = node.children?.get(key)
+      node = node.children?.get(key);
       if (!node) {
-        throw new Error('Path does not exist')
+        throw new Error("Path does not exist");
       }
     }
-    return node
-  }
+    return node;
+  };
 
   /**
    * Retrieves the internal node (subtree) at a specified path.
@@ -103,17 +103,17 @@ export function atomTree<
    * @throws Error if the path does not exist.
    */
   createAtom.getNodePath = (path = defaultPath) => {
-    const nodePath = [root]
-    let node: Node<AtomType> | undefined = root
+    const nodePath = [root];
+    let node: Node<AtomType> | undefined = root;
     for (const key of path) {
-      node = node.children?.get(key)
+      node = node.children?.get(key);
       if (!node) {
-        throw new Error('Path does not exist')
+        throw new Error("Path does not exist");
       }
-      nodePath.push(node)
+      nodePath.push(node);
     }
-    return nodePath
-  }
+    return nodePath;
+  };
 
-  return createAtom
+  return createAtom;
 }

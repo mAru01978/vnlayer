@@ -21,14 +21,21 @@ declare class CustomEase {
   segment: number[];
 
   constructor(id: string, data?: string | number[], config?: CustomEaseConfig);
-  
+
   setData(data?: string | number[], config?: CustomEaseConfig): this;
   getSVGData(config?: CustomEaseConfig): string;
-  
-  static create(id: string, data?: string | number[], config?: CustomEaseConfig): EaseFunction;
+
+  static create(
+    id: string,
+    data?: string | number[],
+    config?: CustomEaseConfig,
+  ): EaseFunction;
   static register(core: object): void;
   static get(id: string): EaseFunction;
-  static getSVGData(ease: CustomEase | EaseFunction | string, config?: CustomEaseConfig): string;
+  static getSVGData(
+    ease: CustomEase | EaseFunction | string,
+    config?: CustomEaseConfig,
+  ): string;
 }
 
 declare module "gsap/CustomEase" {
@@ -50,4 +57,3 @@ declare module "gsap/src/CustomEase" {
 declare module "gsap/all" {
   export * from "gsap/CustomEase";
 }
-

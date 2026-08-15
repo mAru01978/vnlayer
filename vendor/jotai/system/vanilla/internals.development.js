@@ -1,8 +1,7 @@
-System.register([], (function (exports) {
-  'use strict';
+System.register([], function (exports) {
+  "use strict";
   return {
-    execute: (function () {
-
+    execute: function () {
       exports({
         INTERNAL_addPendingPromiseToDependency: addPendingPromiseToDependency,
         INTERNAL_buildStoreRev3: buildStore,
@@ -14,7 +13,7 @@ System.register([], (function (exports) {
         INTERNAL_isAtomStateInitialized: isAtomStateInitialized,
         INTERNAL_isPromiseLike: isPromiseLike,
         INTERNAL_returnAtomValue: returnAtomValue,
-        INTERNAL_shouldThrowSynchronously: shouldThrowSynchronously
+        INTERNAL_shouldThrowSynchronously: shouldThrowSynchronously,
       });
 
       function hasInitialValue(atom) {
@@ -47,9 +46,18 @@ System.register([], (function (exports) {
         }
         const name = error.name;
         const message = error.message.toLowerCase();
-        return (name === "RangeError" || name === "InternalError") && (message.includes("call stack") || message.includes("too much recursion") || message.includes("stack overflow"));
+        return (
+          (name === "RangeError" || name === "InternalError") &&
+          (message.includes("call stack") ||
+            message.includes("too much recursion") ||
+            message.includes("stack overflow"))
+        );
       }
-      function addPendingPromiseToDependency(atom, promise, dependencyAtomState) {
+      function addPendingPromiseToDependency(
+        atom,
+        promise,
+        dependencyAtomState,
+      ) {
         if (!dependencyAtomState.p.has(atom)) {
           dependencyAtomState.p.add(atom);
           const cleanup = () => dependencyAtomState.p.delete(atom);
@@ -86,8 +94,12 @@ System.register([], (function (exports) {
         const callbacks = /* @__PURE__ */ new WeakMap();
         const notify = (atom) => {
           var _a, _b;
-          (_a = callbacks.get(all)) == null ? void 0 : _a.forEach((fn) => fn(atom));
-          (_b = callbacks.get(atom)) == null ? void 0 : _b.forEach((fn) => fn());
+          (_a = callbacks.get(all)) == null
+            ? void 0
+            : _a.forEach((fn) => fn(atom));
+          (_b = callbacks.get(atom)) == null
+            ? void 0
+            : _b.forEach((fn) => fn());
         };
         notify.add = (atom, fn) => {
           const key = atom || all;
@@ -118,10 +130,26 @@ System.register([], (function (exports) {
       function hasOnInit(atom) {
         return !!atom.INTERNAL_onInit;
       }
-      const BUILDING_BLOCK_atomRead = (_buildingBlocks, _store, atom, ...params) => atom.read(...params);
-      const BUILDING_BLOCK_atomWrite = (_buildingBlocks, _store, atom, ...params) => atom.write(...params);
-      const BUILDING_BLOCK_atomOnInit = (_buildingBlocks, store, atom) => atom.INTERNAL_onInit(store);
-      const BUILDING_BLOCK_atomOnMount = (_buildingBlocks, _store, atom, setAtom) => {
+      const BUILDING_BLOCK_atomRead = (
+        _buildingBlocks,
+        _store,
+        atom,
+        ...params
+      ) => atom.read(...params);
+      const BUILDING_BLOCK_atomWrite = (
+        _buildingBlocks,
+        _store,
+        atom,
+        ...params
+      ) => atom.write(...params);
+      const BUILDING_BLOCK_atomOnInit = (_buildingBlocks, store, atom) =>
+        atom.INTERNAL_onInit(store);
+      const BUILDING_BLOCK_atomOnMount = (
+        _buildingBlocks,
+        _store,
+        atom,
+        setAtom,
+      ) => {
         var _a;
         return (_a = atom.onMount) == null ? void 0 : _a.call(atom, setAtom);
       };
@@ -132,7 +160,11 @@ System.register([], (function (exports) {
         if (!atomState) {
           const storeHooks = buildingBlocks[6];
           const atomOnInit = buildingBlocks[9];
-          atomState = { d: /* @__PURE__ */ new Map(), p: /* @__PURE__ */ new Set(), n: 0 };
+          atomState = {
+            d: /* @__PURE__ */ new Map(),
+            p: /* @__PURE__ */ new Set(),
+            n: 0,
+          };
           atomStateMap.set(atom, atomState);
           (_a = storeHooks.i) == null ? void 0 : _a.call(storeHooks, atom);
           if (hasOnInit(atom)) {
@@ -149,7 +181,12 @@ System.register([], (function (exports) {
         const unmountCallbacks = buildingBlocks[5];
         const storeHooks = buildingBlocks[6];
         const recomputeInvalidatedAtoms = buildingBlocks[13];
-        if (!storeHooks.f && !changedAtoms.size && !mountCallbacks.size && !unmountCallbacks.size) {
+        if (
+          !storeHooks.f &&
+          !changedAtoms.size &&
+          !mountCallbacks.size &&
+          !unmountCallbacks.size
+        ) {
           return;
         }
         const errors = [];
@@ -166,7 +203,8 @@ System.register([], (function (exports) {
           }
           const callbacks = /* @__PURE__ */ new Set();
           for (const atom of changedAtoms) {
-            const listeners = (_a = mountedMap.get(atom)) == null ? void 0 : _a.l;
+            const listeners =
+              (_a = mountedMap.get(atom)) == null ? void 0 : _a.l;
             if (listeners) {
               for (const listener of listeners) {
                 callbacks.add(listener);
@@ -188,12 +226,19 @@ System.register([], (function (exports) {
           if (changedAtoms.size) {
             recomputeInvalidatedAtoms(buildingBlocks, store);
           }
-        } while (changedAtoms.size || unmountCallbacks.size || mountCallbacks.size);
+        } while (
+          changedAtoms.size ||
+          unmountCallbacks.size ||
+          mountCallbacks.size
+        );
         if (errors.length) {
           throw new AggregateError(errors);
         }
       };
-      const BUILDING_BLOCK_recomputeInvalidatedAtoms = (buildingBlocks, store) => {
+      const BUILDING_BLOCK_recomputeInvalidatedAtoms = (
+        buildingBlocks,
+        store,
+      ) => {
         const mountedMap = buildingBlocks[1];
         const invalidatedAtoms = buildingBlocks[2];
         const changedAtoms = buildingBlocks[3];
@@ -235,7 +280,11 @@ System.register([], (function (exports) {
             continue;
           }
           visiting.add(a);
-          for (const d of getMountedOrPendingDependents(a, aState, mountedMap)) {
+          for (const d of getMountedOrPendingDependents(
+            a,
+            aState,
+            mountedMap,
+          )) {
             if (!visiting.has(d)) {
               stackAtoms.push(d);
               stackStates.push(ensureAtomState(buildingBlocks, store, d));
@@ -284,7 +333,8 @@ System.register([], (function (exports) {
             // If the atom is mounted, we can use cached atom state,
             // because it should have been updated by dependencies.
             // We can't use the cache if the atom is invalidated.
-            mountedMap.has(atom) && invalidatedAtoms.get(atom) !== atomState.n || // If atom is not mounted, we can use cached atom state,
+            (mountedMap.has(atom) &&
+              invalidatedAtoms.get(atom) !== atomState.n) || // If atom is not mounted, we can use cached atom state,
             // only if store hasn't been mutated.
             atomState.m === storeEpochNumber
           ) {
@@ -362,11 +412,13 @@ System.register([], (function (exports) {
           get setSelf() {
             {
               console.warn(
-                "[DEPRECATED] setSelf is deprecated and will be removed in v3."
+                "[DEPRECATED] setSelf is deprecated and will be removed in v3.",
               );
             }
             if (!isActuallyWritableAtom(atom)) {
-              console.warn("setSelf function cannot be used with read-only atom");
+              console.warn(
+                "setSelf function cannot be used with read-only atom",
+              );
             }
             if (!setSelf && isActuallyWritableAtom(atom)) {
               setSelf = (...args) => {
@@ -384,7 +436,7 @@ System.register([], (function (exports) {
               };
             }
             return setSelf;
-          }
+          },
         };
         const prevEpochNumber = atomState.n;
         const prevInvalidated = invalidatedAtoms.get(atom) === prevEpochNumber;
@@ -397,20 +449,22 @@ System.register([], (function (exports) {
             store,
             atom,
             getter,
-            options
+            options,
           );
           if (storeMutationSet.has(store)) {
             console.warn(
-              "Detected store mutation during atom read. This is not supported."
+              "Detected store mutation during atom read. This is not supported.",
             );
           }
-          setAtomStateValueOrPromise(buildingBlocks, store, atom, valueOrPromise);
+          setAtomStateValueOrPromise(
+            buildingBlocks,
+            store,
+            atom,
+            valueOrPromise,
+          );
           if (isPromiseLike(valueOrPromise)) {
-            registerAbortHandler(
-              buildingBlocks,
-              store,
-              valueOrPromise,
-              () => controller == null ? void 0 : controller.abort()
+            registerAbortHandler(buildingBlocks, store, valueOrPromise, () =>
+              controller == null ? void 0 : controller.abort(),
             );
             const settle = () => {
               pruneDependencies();
@@ -441,7 +495,11 @@ System.register([], (function (exports) {
           }
         }
       };
-      const BUILDING_BLOCK_invalidateDependents = (buildingBlocks, store, atom) => {
+      const BUILDING_BLOCK_invalidateDependents = (
+        buildingBlocks,
+        store,
+        atom,
+      ) => {
         const mountedMap = buildingBlocks[1];
         const invalidatedAtoms = buildingBlocks[2];
         const ensureAtomState = buildingBlocks[11];
@@ -449,7 +507,11 @@ System.register([], (function (exports) {
         while (stack.length) {
           const a = stack.pop();
           const aState = ensureAtomState(buildingBlocks, store, a);
-          for (const d of getMountedOrPendingDependents(a, aState, mountedMap)) {
+          for (const d of getMountedOrPendingDependents(
+            a,
+            aState,
+            mountedMap,
+          )) {
             const dState = ensureAtomState(buildingBlocks, store, d);
             if (invalidatedAtoms.get(d) !== dState.n) {
               invalidatedAtoms.set(d, dState.n);
@@ -458,7 +520,12 @@ System.register([], (function (exports) {
           }
         }
       };
-      const BUILDING_BLOCK_writeAtomState = (buildingBlocks, store, atom, args) => {
+      const BUILDING_BLOCK_writeAtomState = (
+        buildingBlocks,
+        store,
+        atom,
+        args,
+      ) => {
         const changedAtoms = buildingBlocks[3];
         const storeHooks = buildingBlocks[6];
         const atomWrite = buildingBlocks[8];
@@ -472,7 +539,8 @@ System.register([], (function (exports) {
         const setAtomStateValueOrPromise = buildingBlocks[20];
         const storeEpochHolder = buildingBlocks[28];
         let isSync = true;
-        const getter = (a) => returnAtomValue(readAtomState(buildingBlocks, store, a));
+        const getter = (a) =>
+          returnAtomValue(readAtomState(buildingBlocks, store, a));
         const setter = (a, ...args2) => {
           var _a;
           const aState = ensureAtomState(buildingBlocks, store, a);
@@ -506,12 +574,23 @@ System.register([], (function (exports) {
           }
         };
         try {
-          return atomWrite(buildingBlocks, store, atom, getter, setter, ...args);
+          return atomWrite(
+            buildingBlocks,
+            store,
+            atom,
+            getter,
+            setter,
+            ...args,
+          );
         } finally {
           isSync = false;
         }
       };
-      const BUILDING_BLOCK_mountDependencies = (buildingBlocks, store, atom) => {
+      const BUILDING_BLOCK_mountDependencies = (
+        buildingBlocks,
+        store,
+        atom,
+      ) => {
         var _a;
         const mountedMap = buildingBlocks[1];
         const changedAtoms = buildingBlocks[3];
@@ -568,7 +647,7 @@ System.register([], (function (exports) {
           mounted = {
             l: /* @__PURE__ */ new Set(),
             d: new Set(atomState.d.keys()),
-            t: /* @__PURE__ */ new Set()
+            t: /* @__PURE__ */ new Set(),
           };
           mountedMap.set(atom, mounted);
           if (isActuallyWritableAtom(atom) && hasOnMount(atom)) {
@@ -585,7 +664,12 @@ System.register([], (function (exports) {
                 }
               };
               try {
-                const onUnmount = atomOnMount(buildingBlocks, store, atom, setAtom);
+                const onUnmount = atomOnMount(
+                  buildingBlocks,
+                  store,
+                  atom,
+                  setAtom,
+                );
                 if (onUnmount) {
                   mounted.u = () => {
                     isSync = true;
@@ -640,7 +724,12 @@ System.register([], (function (exports) {
         }
         return mounted;
       };
-      const BUILDING_BLOCK_setAtomStateValueOrPromise = (buildingBlocks, store, atom, valueOrPromise) => {
+      const BUILDING_BLOCK_setAtomStateValueOrPromise = (
+        buildingBlocks,
+        store,
+        atom,
+        valueOrPromise,
+      ) => {
         const ensureAtomState = buildingBlocks[11];
         const abortPromise = buildingBlocks[27];
         const atomState = ensureAtomState(buildingBlocks, store, atom);
@@ -651,7 +740,7 @@ System.register([], (function (exports) {
             addPendingPromiseToDependency(
               atom,
               valueOrPromise,
-              ensureAtomState(buildingBlocks, store, a)
+              ensureAtomState(buildingBlocks, store, a),
             );
           }
         }
@@ -668,7 +757,12 @@ System.register([], (function (exports) {
         const readAtomState = buildingBlocks[14];
         return returnAtomValue(readAtomState(buildingBlocks, store, atom));
       };
-      const BUILDING_BLOCK_storeSet = (buildingBlocks, store, atom, ...args) => {
+      const BUILDING_BLOCK_storeSet = (
+        buildingBlocks,
+        store,
+        atom,
+        ...args
+      ) => {
         const changedAtoms = buildingBlocks[3];
         const flushCallbacks = buildingBlocks[12];
         const recomputeInvalidatedAtoms = buildingBlocks[13];
@@ -683,7 +777,12 @@ System.register([], (function (exports) {
           }
         }
       };
-      const BUILDING_BLOCK_storeSub = (buildingBlocks, store, atom, listener) => {
+      const BUILDING_BLOCK_storeSub = (
+        buildingBlocks,
+        store,
+        atom,
+        listener,
+      ) => {
         const flushCallbacks = buildingBlocks[12];
         const recomputeInvalidatedAtoms = buildingBlocks[13];
         const mountAtom = buildingBlocks[18];
@@ -700,7 +799,12 @@ System.register([], (function (exports) {
           flushCallbacks(buildingBlocks, store);
         };
       };
-      const BUILDING_BLOCK_registerAbortHandler = (buildingBlocks, _store, promise, abortHandler) => {
+      const BUILDING_BLOCK_registerAbortHandler = (
+        buildingBlocks,
+        _store,
+        promise,
+        abortHandler,
+      ) => {
         const abortHandlersMap = buildingBlocks[25];
         let abortHandlers = abortHandlersMap.get(promise);
         if (!abortHandlers) {
@@ -721,7 +825,7 @@ System.register([], (function (exports) {
         const buildingBlocks = buildingBlockMap.get(store);
         if (!buildingBlocks) {
           throw new Error(
-            "Store must be created by buildStore to read its building blocks"
+            "Store must be created by buildStore to read its building blocks",
           );
         }
         const enhanceBuildingBlocks = buildingBlocks[24];
@@ -740,7 +844,7 @@ System.register([], (function (exports) {
           },
           sub(atom, listener) {
             return storeSub(buildingBlocks, store, atom, listener);
-          }
+          },
         };
         const buildingBlocks = [
           // store state
@@ -785,7 +889,7 @@ System.register([], (function (exports) {
           BUILDING_BLOCK_registerAbortHandler,
           BUILDING_BLOCK_abortPromise,
           // store epoch
-          [0]
+          [0],
         ].map((fn, i) => partialBuildingBlocks[i] || fn);
         buildingBlockMap.set(store, Object.freeze(buildingBlocks));
         const storeGet = buildingBlocks[21];
@@ -793,7 +897,6 @@ System.register([], (function (exports) {
         const storeSub = buildingBlocks[23];
         return store;
       }
-
-    })
+    },
   };
-}));
+});

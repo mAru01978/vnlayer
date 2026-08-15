@@ -17,38 +17,52 @@ export type CharacterState = {
   // 素材のキャラ絵が入るまでのモック段階で、視線の向き(矢印)を確認するためのもの。
   gaze?: { x: number; y: number };
 };
-export type CamState = { target: string; scale: number; originX: number; originY: number };
+export type CamState = {
+  target: string;
+  scale: number;
+  originX: number;
+  originY: number;
+};
 export type ShakeState = { nonce: number; amplitude: number; duration: number };
 // バックログの1エントリ。発言(kind:'line')か、選択した項目の記録(kind:'choice')。
 // 選択肢は「表示されてたリストの何番目か(1始まり)」も一緒に持たせる
 // (# ui:...等で除外されるtick/interrupt等の裏方選択肢は数に含めない)。
 export type LineEntry =
-  | { kind: 'line'; speaker: string; content: string }
-  | { kind: 'choice'; number: number; text: string };
-export type PositionOverrides = Record<string, { originX: number; originY: number; durationMs?: number }>;
-export type ActiveMessage =
-  | {
-      speaker: string;
-      content: string;
-      fadeIn: boolean;
-      typeSpeedMs: number;
-      // 簡易セーブ機能(core/SaveProvider.ts)の復元専用フラグ。通常の
-      // showMessage()では設定しない(=undefined、既存の「毎回タイプライター
-      // アニメーションから始まる」挙動のまま)。trueの場合、
-      // components/StageView.tsxはタイプライター演出をスキップし、
-      // 全文を即座に表示する(保存時点で既に#type:wait:onにより表示が
-      // 完了していたメッセージを復元する場合に使う。保存時点でまだ
-      // 表示途中だった可能性がある場合はfalse/undefinedにし、最初から
-      // タイプさせ直す — ユーザーの要望に合わせた挙動)。
-      startRevealed?: boolean;
-    }
-  | null;
+  | { kind: "line"; speaker: string; content: string }
+  | { kind: "choice"; number: number; text: string };
+export type PositionOverrides = Record<
+  string,
+  { originX: number; originY: number; durationMs?: number }
+>;
+export type ActiveMessage = {
+  speaker: string;
+  content: string;
+  fadeIn: boolean;
+  typeSpeedMs: number;
+  // 簡易セーブ機能(core/SaveProvider.ts)の復元専用フラグ。通常の
+  // showMessage()では設定しない(=undefined、既存の「毎回タイプライター
+  // アニメーションから始まる」挙動のまま)。trueの場合、
+  // components/StageView.tsxはタイプライター演出をスキップし、
+  // 全文を即座に表示する(保存時点で既に#type:wait:onにより表示が
+  // 完了していたメッセージを復元する場合に使う。保存時点でまだ
+  // 表示途中だった可能性がある場合はfalse/undefinedにし、最初から
+  // タイプさせ直す — ユーザーの要望に合わせた挙動)。
+  startRevealed?: boolean;
+} | null;
 
 // app/api/story/route.ts のレスポンス形状(lib/story/server/engine.ts の RunResult と対応)。
 // StepProviderの戻り値の形なので、サーバー版・静的版どちらの実装もこの形に合わせる。
 export type StepEntry = { speaker: string; content: string; tags: string[] };
-export type VisualState = { bg: string; characters: Record<string, CharacterState>; speaker: string };
-export type RunResult = { steps: StepEntry[]; choices: Choice[]; visual: VisualState };
+export type VisualState = {
+  bg: string;
+  characters: Record<string, CharacterState>;
+  speaker: string;
+};
+export type RunResult = {
+  steps: StepEntry[];
+  choices: Choice[];
+  visual: VisualState;
+};
 
 // setContextVars(vars, options?)の第2引数。
 //   notify   … 各キーに"${key}_seq"を自動生成・インクリメントして一緒に
@@ -84,7 +98,10 @@ export type SetContextOptions = {
 // ここ1箇所でしか定義しない。api.ts / components/VNLayerOverlay.tsx /
 // react.tsx は全てこの型をimportして使い、独自に再定義しないこと。
 export type VNLayerHandle = {
-  setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
+  setContextVars: (
+    vars: Record<string, unknown>,
+    options?: SetContextOptions,
+  ) => Promise<void>;
   getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
   resetStory: () => Promise<void>;
 };
@@ -114,7 +131,10 @@ export type StoryEngine = {
   typeSpeedMs: number;
   // api-refactor-1/2: 外部(VNLayer.setContext等)から一方通行でInk変数へ値を
   // 反映するための口。SetContextOptions参照。
-  setContextVars: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
+  setContextVars: (
+    vars: Record<string, unknown>,
+    options?: SetContextOptions,
+  ) => Promise<void>;
   // api-refactor-2: setContextVarsの読み取り版。setContextVarsで(expose:false
   // でなく)書き込まれた値の写しを返す。varNames省略時はexposeされている
   // 値すべてを返す。ink本体には問い合わせない(サーバー往復が発生しない)。

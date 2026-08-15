@@ -13,29 +13,29 @@ import { typeSpeedAtomFamily } from "../atoms";
 const typeWaitEnabled = new Map();
 const typeWaitBuffer = new Map();
 export function setTypeSpeed(atomKey, ms) {
-    getStore().set(typeSpeedAtomFamily(atomKey), ms);
+  getStore().set(typeSpeedAtomFamily(atomKey), ms);
 }
 export function getTypeSpeed(atomKey) {
-    return getStore().get(typeSpeedAtomFamily(atomKey));
+  return getStore().get(typeSpeedAtomFamily(atomKey));
 }
 export function setTypeWaitMode(atomKey, enabled, readingBufferMs) {
-    typeWaitEnabled.set(atomKey, enabled);
-    if (readingBufferMs !== undefined)
-        typeWaitBuffer.set(atomKey, readingBufferMs);
+  typeWaitEnabled.set(atomKey, enabled);
+  if (readingBufferMs !== undefined)
+    typeWaitBuffer.set(atomKey, readingBufferMs);
 }
 export function isTypeWaitEnabled(atomKey) {
-    return typeWaitEnabled.get(atomKey) ?? false;
+  return typeWaitEnabled.get(atomKey) ?? false;
 }
 export function getTypeWaitBufferMs(atomKey) {
-    return typeWaitBuffer.get(atomKey) ?? 1500;
+  return typeWaitBuffer.get(atomKey) ?? 1500;
 }
 export function reset(atomKey) {
-    typeWaitEnabled.delete(atomKey);
-    typeWaitBuffer.delete(atomKey);
+  typeWaitEnabled.delete(atomKey);
+  typeWaitBuffer.delete(atomKey);
 }
 export function dispose(atomKey) {
-    typeWaitEnabled.delete(atomKey);
-    typeWaitBuffer.delete(atomKey);
-    typeSpeedAtomFamily.remove(atomKey);
+  typeWaitEnabled.delete(atomKey);
+  typeWaitBuffer.delete(atomKey);
+  typeSpeedAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=typeManager.js.map

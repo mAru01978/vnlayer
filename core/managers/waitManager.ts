@@ -15,7 +15,7 @@
 // #interrupt付き選択肢への割り込み時に演出(GSAP timeline)もpause/resumeする
 // 処理は、ここではなくcore/useStoryEngine.tsのtick/interrupt処理useEffect側に
 // ある(理由は下のinterrupt()のコメント参照)。
-import { abortableSleep } from '../abortableSleep';
+import { abortableSleep } from "../abortableSleep";
 
 type BatchState = {
   generation: number;

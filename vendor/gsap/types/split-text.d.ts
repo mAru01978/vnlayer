@@ -8,21 +8,21 @@ declare class SplitText {
 
   constructor(target: gsap.DOMTarget, vars?: SplitText.Vars);
 
-    /**
-     * Stops any autoSplit behavior (removes internal listeners for resizes and font loading)
-     *
-     * ```js
-     * split.kill();
-     * ```
-     *
-     * @memberof SplitText
-     * @link https://greensock.com/docs/v3/Plugins/SplitText/kill()
-     */
-    kill(): void;
+  /**
+   * Stops any autoSplit behavior (removes internal listeners for resizes and font loading)
+   *
+   * ```js
+   * split.kill();
+   * ```
+   *
+   * @memberof SplitText
+   * @link https://greensock.com/docs/v3/Plugins/SplitText/kill()
+   */
+  kill(): void;
 
   /**
    * Reverts the innerHTML to the original content.
-   * 
+   *
    * ```js
    * split.revert();
    * ```
@@ -34,7 +34,7 @@ declare class SplitText {
 
   /**
    * Re-splits a SplitText according to the vars provided. It will automatically call revert() first if necessary. Useful if you want to change the way the text is split after the SplitText instance is created.
-   * 
+   *
    * ```js
    * split.split({type: "lines,chars"});
    * ```
@@ -60,11 +60,9 @@ declare class SplitText {
    * @link https://greensock.com/docs/v3/Plugins/SplitText/static.create()
    */
   static create(target: gsap.DOMTarget, vars?: SplitText.Vars): SplitText;
-
 }
 
 declare namespace SplitText {
-
   type SplitTextTarget = string | NodeList | Node | Node[];
   type PrepareTextFunction = (text: string, element: Element) => string;
   interface WordDelimiterConfig {
@@ -97,10 +95,7 @@ declare namespace SplitText {
 
 declare module "gsap/SplitText" {
   class _SplitText extends SplitText {}
-  export {
-    _SplitText as SplitText,
-    _SplitText as default
-  }
+  export { _SplitText as SplitText, _SplitText as default };
 }
 
 declare module "gsap/src/SplitText" {
@@ -116,4 +111,3 @@ declare module "gsap/dist/SplitText" {
 declare module "gsap/all" {
   export * from "gsap/SplitText";
 }
-

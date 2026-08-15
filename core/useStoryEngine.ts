@@ -1,32 +1,56 @@
-'use client';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { useAtomValue } from 'jotai';
-import { dispatchTag } from '../tags/index';
-import { getUiConfig, getAllUiConfigPatches, restoreUiConfigPatches } from '../tags/uiConfig';
-import { getAllCharacterSlots, getAllBackgroundSlots, setSpriteAssets } from '../tags/spriteAssets';
-import { getDefaultStepProvider } from './defaultStepProvider';
-import { registerInstance, unregisterInstance, registerSelf, unregisterSelf } from './instanceRegistry';
-import { getStore } from './store';
-import { camAtomFamily, shakeAtomFamily, flashAtomFamily, typeSpeedAtomFamily, disposeBasicAtoms } from './atoms';
-import * as backgroundManager from './managers/backgroundManager';
-import * as characterManager from './managers/characterManager';
-import * as speakerManager from './managers/speakerManager';
-import * as positionManager from './managers/positionManager';
-import * as messageManager from './managers/messageManager';
-import * as choiceManager from './managers/choiceManager';
-import * as backlogManager from './managers/backlogManager';
-import * as windowVisibilityManager from './managers/windowVisibilityManager';
-import * as typeManager from './managers/typeManager';
-import * as navigationManager from './managers/navigationManager';
-import * as waitManager from './managers/waitManager';
-import * as contextManager from './managers/contextManager';
-import * as timelineManager from './managers/timelineManager';
-import * as interruptManager from './managers/interruptManager';
-import { TagDispatchError, StoryRuntimeError, reportError } from './errors';
-import { getDefaultSaveProvider } from './defaultSaveProvider';
-import type { StepProvider } from './StepProvider';
-import type { SaveProvider } from './SaveProvider';
-import type { RunResult, SetContextOptions, StoryEngine, ActiveMessage } from './types';
+"use client";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useAtomValue } from "jotai";
+import { dispatchTag } from "../tags/index";
+import {
+  getUiConfig,
+  getAllUiConfigPatches,
+  restoreUiConfigPatches,
+} from "../tags/uiConfig";
+import {
+  getAllCharacterSlots,
+  getAllBackgroundSlots,
+  setSpriteAssets,
+} from "../tags/spriteAssets";
+import { getDefaultStepProvider } from "./defaultStepProvider";
+import {
+  registerInstance,
+  unregisterInstance,
+  registerSelf,
+  unregisterSelf,
+} from "./instanceRegistry";
+import { getStore } from "./store";
+import {
+  camAtomFamily,
+  shakeAtomFamily,
+  flashAtomFamily,
+  typeSpeedAtomFamily,
+  disposeBasicAtoms,
+} from "./atoms";
+import * as backgroundManager from "./managers/backgroundManager";
+import * as characterManager from "./managers/characterManager";
+import * as speakerManager from "./managers/speakerManager";
+import * as positionManager from "./managers/positionManager";
+import * as messageManager from "./managers/messageManager";
+import * as choiceManager from "./managers/choiceManager";
+import * as backlogManager from "./managers/backlogManager";
+import * as windowVisibilityManager from "./managers/windowVisibilityManager";
+import * as typeManager from "./managers/typeManager";
+import * as navigationManager from "./managers/navigationManager";
+import * as waitManager from "./managers/waitManager";
+import * as contextManager from "./managers/contextManager";
+import * as timelineManager from "./managers/timelineManager";
+import * as interruptManager from "./managers/interruptManager";
+import { TagDispatchError, StoryRuntimeError, reportError } from "./errors";
+import { getDefaultSaveProvider } from "./defaultSaveProvider";
+import type { StepProvider } from "./StepProvider";
+import type { SaveProvider } from "./SaveProvider";
+import type {
+  RunResult,
+  SetContextOptions,
+  StoryEngine,
+  ActiveMessage,
+} from "./types";
 
 // タグシステム大改修フェーズ3: 「useStoryEngine.tsの責務過多を解消し、タグ
 // 追加のたびにここを改修しなくて済むようにする」という狙いで全面的に
@@ -72,11 +96,13 @@ export function useStoryEngine(
     saveProvider?: SaveProvider | null;
     onNavigate?: (path: string) => void;
     instanceId?: string;
-  } = {}
+  } = {},
 ): StoryEngine {
   const stepProvider = options.stepProvider ?? getDefaultStepProvider();
   const saveProvider =
-    options.saveProvider === null ? null : (options.saveProvider ?? getDefaultSaveProvider());
+    options.saveProvider === null
+      ? null
+      : (options.saveProvider ?? getDefaultSaveProvider());
   const onNavigate = options.onNavigate;
   const instanceId = options.instanceId;
 
@@ -87,18 +113,28 @@ export function useStoryEngine(
   // 書き込みはタグ(basic/special問わず)か、このフック自身(ink進行に
   // 伴う同期処理)がマネージャー関数を呼んで行う。
   const bg = useAtomValue(backgroundManager.bgAtomFamily(atomKey));
-  const characters = useAtomValue(characterManager.charactersAtomFamily(atomKey));
+  const characters = useAtomValue(
+    characterManager.charactersAtomFamily(atomKey),
+  );
   const speaker = useAtomValue(speakerManager.speakerAtomFamily(atomKey));
   const cam = useAtomValue(camAtomFamily(atomKey));
   const shake = useAtomValue(shakeAtomFamily(atomKey));
   const flash = useAtomValue(flashAtomFamily(atomKey));
   const typeSpeedMs = useAtomValue(typeSpeedAtomFamily(atomKey));
-  const positionOverrides = useAtomValue(positionManager.positionOverridesAtomFamily(atomKey));
-  const activeMessage = useAtomValue(messageManager.activeMessageAtomFamily(atomKey));
+  const positionOverrides = useAtomValue(
+    positionManager.positionOverridesAtomFamily(atomKey),
+  );
+  const activeMessage = useAtomValue(
+    messageManager.activeMessageAtomFamily(atomKey),
+  );
   const choices = useAtomValue(choiceManager.choicesAtomFamily(atomKey));
-  const choicesHidden = useAtomValue(choiceManager.choicesHiddenAtomFamily(atomKey));
+  const choicesHidden = useAtomValue(
+    choiceManager.choicesHiddenAtomFamily(atomKey),
+  );
   const lines = useAtomValue(backlogManager.linesAtomFamily(atomKey));
-  const messageWindowHidden = useAtomValue(windowVisibilityManager.messageWindowHiddenAtomFamily(atomKey));
+  const messageWindowHidden = useAtomValue(
+    windowVisibilityManager.messageWindowHiddenAtomFamily(atomKey),
+  );
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -153,13 +189,25 @@ export function useStoryEngine(
 
         if (step.content) {
           speakerManager.setSpeaker(atomKey, step.speaker);
-          backlogManager.pushLine(atomKey, instanceId, step.speaker, step.content);
+          backlogManager.pushLine(
+            atomKey,
+            instanceId,
+            step.speaker,
+            step.content,
+          );
           const currentTypeSpeed = typeManager.getTypeSpeed(atomKey);
-          messageManager.showMessage(atomKey, step.speaker, step.content, currentTypeSpeed);
+          messageManager.showMessage(
+            atomKey,
+            step.speaker,
+            step.content,
+            currentTypeSpeed,
+          );
 
           if (typeManager.isTypeWaitEnabled(atomKey)) {
-            const typingMs = currentTypeSpeed > 0 ? step.content.length * currentTypeSpeed : 0;
-            const estimatedMs = typingMs + typeManager.getTypeWaitBufferMs(atomKey);
+            const typingMs =
+              currentTypeSpeed > 0 ? step.content.length * currentTypeSpeed : 0;
+            const estimatedMs =
+              typingMs + typeManager.getTypeWaitBufferMs(atomKey);
             if (isStale()) return;
             await waitManager.wait(atomKey, estimatedMs);
           }
@@ -173,7 +221,10 @@ export function useStoryEngine(
         if (onNavigate) {
           onNavigate(pendingGoto);
         } else {
-          console.warn('[useStoryEngine] goto tag encountered but no onNavigate handler was provided:', pendingGoto);
+          console.warn(
+            "[useStoryEngine] goto tag encountered but no onNavigate handler was provided:",
+            pendingGoto,
+          );
         }
       }
 
@@ -213,18 +264,25 @@ export function useStoryEngine(
                 // 「保存時点で表示完了していた」とみなす。type:wait:offの
                 // 場合はプレイヤーが実際どこまで読み終えていたか分からない
                 // ため、安全側(最初からタイプさせ直す)に倒す。
-                return { ...current, startRevealed: typeManager.isTypeWaitEnabled(atomKey) };
+                return {
+                  ...current,
+                  startRevealed: typeManager.isTypeWaitEnabled(atomKey),
+                };
               })(),
               backlogLines: backlogManager.getLines(atomKey),
               savedAt: Date.now(),
             });
           })
           .catch((e) => {
-            reportError(new StoryRuntimeError('failed to persist save data', { cause: e }));
+            reportError(
+              new StoryRuntimeError("failed to persist save data", {
+                cause: e,
+              }),
+            );
           });
       }
     },
-    [atomKey, instanceId, onNavigate, clip, stepProvider, saveProvider]
+    [atomKey, instanceId, onNavigate, clip, stepProvider, saveProvider],
   );
 
   const init = useCallback(async () => {
@@ -252,15 +310,19 @@ export function useStoryEngine(
           // 統合済みspriteレジストリ(tags/spriteAssets.ts)へ書き戻す形に
           // 変換する(SaveData自体のフラットな形は変更していない)。
           if (saved.characterSlots) {
-            const patch: Record<string, { originX: number; originY: number }> = {};
+            const patch: Record<string, { originX: number; originY: number }> =
+              {};
             for (const [name, slot] of Object.entries(saved.characterSlots)) {
               patch[name] = { originX: slot.originX, originY: slot.originY };
             }
             setSpriteAssets(patch);
           }
           if (saved.backgroundSlots) {
-            const variants: Record<string, { color?: string; src?: string }> = {};
-            for (const [bgName, slot] of Object.entries(saved.backgroundSlots)) {
+            const variants: Record<string, { color?: string; src?: string }> =
+              {};
+            for (const [bgName, slot] of Object.entries(
+              saved.backgroundSlots,
+            )) {
               variants[bgName] = { color: slot.color, src: slot.image };
             }
             setSpriteAssets({ bg: { variants } });
@@ -273,7 +335,10 @@ export function useStoryEngine(
         }
       } catch (e) {
         reportError(
-          new StoryRuntimeError('failed to restore from save data, starting fresh instead', { cause: e }),
+          new StoryRuntimeError(
+            "failed to restore from save data, starting fresh instead",
+            { cause: e },
+          ),
         );
         result = null;
         restoredMessage = undefined;
@@ -328,9 +393,14 @@ export function useStoryEngine(
       if (isProcessingRef.current) {
         const isAmbient = choices
           .find((c) => c.index === index)
-          ?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
+          ?.tags?.some(
+            (t) =>
+              t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
+          );
         if (!isAmbient) {
-          console.warn(`[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`);
+          console.warn(
+            `[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`,
+          );
         }
         return;
       }
@@ -341,20 +411,30 @@ export function useStoryEngine(
 
       const chosen = choices.find((c) => c.index === index);
       const isAmbientChoice = chosen?.tags?.some(
-        (t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt'
+        (t) => t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
       );
       if (chosen && !isAmbientChoice) {
         const visibleAtChoiceTime = choices.filter(
-          (c) => !c.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt')
+          (c) =>
+            !c.tags?.some(
+              (t) =>
+                t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt",
+            ),
         );
-        const number = visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
-        backlogManager.pushChoice(atomKey, instanceId, number > 0 ? number : 1, chosen.text);
+        const number =
+          visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
+        backlogManager.pushChoice(
+          atomKey,
+          instanceId,
+          number > 0 ? number : 1,
+          chosen.text,
+        );
       }
 
       const result = await stepProvider.choose(clip, index, atomKey);
       await advance(result);
     },
-    [choices, advance, clip, stepProvider, atomKey, instanceId]
+    [choices, advance, clip, stepProvider, atomKey, instanceId],
   );
 
   // tick/interrupt(event_loopパターン)の自動choose()。
@@ -363,7 +443,9 @@ export function useStoryEngine(
     // 選択肢が更新されるたび無条件に消費/破棄する(waitManager.
     // consumePendingInterrupt()自体が読み取りと同時にfalseへ戻す)。
     const hadPendingInterrupt = waitManager.consumePendingInterrupt(atomKey);
-    const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
+    const interruptChoice = choices.find((c) =>
+      c.tags?.some((t) => t.split(":")[0] === "interrupt"),
+    );
     if (interruptChoice && hadPendingInterrupt) {
       // 実際に#interrupt付き選択肢へ割り込む、この瞬間だけ演出中の全
       // GSAP timelineを一時停止する(notify:trueの全呼び出しで毎回pauseする
@@ -378,19 +460,21 @@ export function useStoryEngine(
       return;
     }
 
-    const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(':')[0] === 'tick'));
+    const tickChoices = choices.filter((c) =>
+      c.tags?.some((t) => t.split(":")[0] === "tick"),
+    );
     if (tickChoices.length === 0) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
     for (const tickChoice of tickChoices) {
-      const tickTag = tickChoice.tags.find((t) => t.split(':')[0] === 'tick');
-      const seconds = tickTag ? Number(tickTag.split(':')[1]) : NaN;
+      const tickTag = tickChoice.tags.find((t) => t.split(":")[0] === "tick");
+      const seconds = tickTag ? Number(tickTag.split(":")[1]) : NaN;
       if (!Number.isFinite(seconds) || seconds <= 0) continue;
 
       timers.push(
         setTimeout(() => {
           choose(tickChoice.index);
-        }, seconds * 1000)
+        }, seconds * 1000),
       );
     }
 
@@ -418,7 +502,12 @@ export function useStoryEngine(
     // 元々存在しない)ため、ここでも同じ範囲(cam/positionOverrides/
     // activeMessage/messageWindowHidden/contextStore)だけをリセットし、
     // 挙動を変えないようにしている。
-    getStore().set(camAtomFamily(atomKey), { target: '', scale: 1, originX: 50, originY: 50 });
+    getStore().set(camAtomFamily(atomKey), {
+      target: "",
+      scale: 1,
+      originX: 50,
+      originY: 50,
+    });
     positionManager.reset(atomKey);
     messageManager.reset(atomKey);
     windowVisibilityManager.reset(atomKey);
@@ -445,14 +534,14 @@ export function useStoryEngine(
         await stepProvider.idle(clip, varName, value, atomKey);
       }
     },
-    [atomKey, clip, stepProvider]
+    [atomKey, clip, stepProvider],
   );
 
   const getContextVars = useCallback(
     async (varNames?: string[]): Promise<Record<string, unknown>> => {
       return contextManager.getContextVars(atomKey, varNames);
     },
-    [atomKey]
+    [atomKey],
   );
 
   // #emit(他VN宛、3引数形)用の自己登録: このVNインスタンスが自分の

@@ -1,4 +1,4 @@
-import type { SaveProvider, SaveData } from '../SaveProvider';
+import type { SaveProvider, SaveData } from "../SaveProvider";
 
 export type CookieSaveProviderOptions = {
   keyPrefix?: string;
@@ -15,30 +15,31 @@ export type CookieSaveProviderOptions = {
 export function createCookieSaveProvider(
   options: CookieSaveProviderOptions = {},
 ): SaveProvider {
-  const prefix = options.keyPrefix ?? 'vnlayer_save_';
+  const prefix = options.keyPrefix ?? "vnlayer_save_";
   const maxAgeDays = options.maxAgeDays ?? 30;
 
   function cookieName(key: string): string {
     // Cookie名には使えない記号(コロン等)が混ざりうるので、安全な文字だけに正規化する。
-    return `${prefix}${key}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    return `${prefix}${key}`.replace(/[^a-zA-Z0-9_-]/g, "_");
   }
 
   function readCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === "undefined") return null;
     const match = document.cookie
-      .split('; ')
+      .split("; ")
       .find((row) => row.startsWith(`${name}=`));
     return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
   }
 
   function writeCookie(name: string, value: string): void {
-    if (typeof document === 'undefined') return;
-    const maxAge = maxAgeDays > 0 ? `; max-age=${maxAgeDays * 24 * 60 * 60}` : '';
+    if (typeof document === "undefined") return;
+    const maxAge =
+      maxAgeDays > 0 ? `; max-age=${maxAgeDays * 24 * 60 * 60}` : "";
     document.cookie = `${name}=${encodeURIComponent(value)}; path=/${maxAge}`;
   }
 
   function deleteCookie(name: string): void {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
     document.cookie = `${name}=; path=/; max-age=0`;
   }
 
@@ -47,7 +48,10 @@ export function createCookieSaveProvider(
       try {
         writeCookie(cookieName(key), JSON.stringify(data));
       } catch (e) {
-        console.warn('[VNLayer] cookie save failed (likely too large for a cookie):', e);
+        console.warn(
+          "[VNLayer] cookie save failed (likely too large for a cookie):",
+          e,
+        );
       }
     },
     async load(key) {
@@ -56,7 +60,7 @@ export function createCookieSaveProvider(
       try {
         return JSON.parse(raw) as SaveData;
       } catch (e) {
-        console.warn('[VNLayer] cookie save data corrupted, ignoring:', e);
+        console.warn("[VNLayer] cookie save data corrupted, ignoring:", e);
         return null;
       }
     },

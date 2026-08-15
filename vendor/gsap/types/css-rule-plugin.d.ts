@@ -1,16 +1,14 @@
 declare namespace gsap {
-
   interface TweenVars {
     cssRule?: object; // TODO make more specific
   }
 }
 
 declare namespace gsap.plugins {
-
   interface CSSRulePlugin extends Plugin {
     /**
      * Gets the style sheet object associated with a particular selector.
-     * 
+     *
      * ```js
      * var rule = CSSRulePlugin.getRule(".myClass::before");
      * // Then do what you want with it, such as:
@@ -26,7 +24,7 @@ declare namespace gsap.plugins {
   }
 
   interface CSSRulePluginClass extends CSSRulePlugin {
-    new(): PluginScope & CSSRulePlugin;
+    new (): PluginScope & CSSRulePlugin;
     prototype: PluginScope & CSSRulePlugin;
   }
 

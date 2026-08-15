@@ -1,4 +1,4 @@
 export type UiTagConfig = {
-    transientDurationMs: number;
+  transientDurationMs: number;
 };
 //# sourceMappingURL=ui.d.ts.map

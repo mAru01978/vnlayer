@@ -1,7 +1,7 @@
-import { registerTag } from '../../registry';
-import { numericOrLabel } from '../../numericOrLabel';
-import * as waitManager from '../../../core/managers/waitManager';
-import * as timelineManager from '../../../core/managers/timelineManager';
+import { registerTag } from "../../registry";
+import { numericOrLabel } from "../../numericOrLabel";
+import * as waitManager from "../../../core/managers/waitManager";
+import * as timelineManager from "../../../core/managers/timelineManager";
 
 export type WaitConfig = { durations: Record<string, number> };
 
@@ -29,10 +29,10 @@ const defaultConfig: WaitConfig = {
 // basicタグ化する動機が薄い(書き込み先のatomが無い)。specialタグとして
 // 現状維持。
 registerTag<WaitConfig>({
-  key: 'wait',
+  key: "wait",
   defaultConfig,
   run: async ({ args, handlers, config }) => {
-    if (args[0] === 'timeline') {
+    if (args[0] === "timeline") {
       await timelineManager.waitForIdle(handlers.atomKey);
       return;
     }

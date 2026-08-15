@@ -1,12 +1,14 @@
-System.register(['@babel/core', '@babel/template'], (function (exports) {
-  'use strict';
+System.register(["@babel/core", "@babel/template"], function (exports) {
+  "use strict";
   var _templateBuilder;
   return {
-    setters: [null, function (module) {
-      _templateBuilder = module.default;
-    }],
-    execute: (function () {
-
+    setters: [
+      null,
+      function (module) {
+        _templateBuilder = module.default;
+      },
+    ],
+    execute: function () {
       exports("default", debugLabelPlugin);
 
       function isAtom(t, callee, customAtomNames = []) {
@@ -59,23 +61,35 @@ System.register(['@babel/core', '@babel/template'], (function (exports) {
         // jotai-cache
         "atomWithCache",
         // jotai-recoil
-        "atomWithRecoilValue"
+        "atomWithRecoilValue",
       ];
 
       const templateBuilder = _templateBuilder.default || _templateBuilder;
       function debugLabelPlugin({ types: t }, options) {
         console.warn(
-          "[DEPRECATED] jotai/babel/plugin-debug-label is deprecated and will be removed in v3.\nPlease use the `jotai-babel` package instead: https://github.com/jotaijs/jotai-babel"
+          "[DEPRECATED] jotai/babel/plugin-debug-label is deprecated and will be removed in v3.\nPlease use the `jotai-babel` package instead: https://github.com/jotaijs/jotai-babel",
         );
         return {
           visitor: {
             ExportDefaultDeclaration(nodePath, state) {
               const { node } = nodePath;
-              if (t.isCallExpression(node.declaration) && isAtom(t, node.declaration.callee, options == null ? void 0 : options.customAtomNames)) {
-                const filename = (state.filename || "unknown").replace(/\.\w+$/, "");
+              if (
+                t.isCallExpression(node.declaration) &&
+                isAtom(
+                  t,
+                  node.declaration.callee,
+                  options == null ? void 0 : options.customAtomNames,
+                )
+              ) {
+                const filename = (state.filename || "unknown").replace(
+                  /\.\w+$/,
+                  "",
+                );
                 let displayName = filename.split("/").pop();
                 if (displayName === "index") {
-                  displayName = filename.slice(0, -"/index".length).split("/").pop() || "unknown";
+                  displayName =
+                    filename.slice(0, -"/index".length).split("/").pop() ||
+                    "unknown";
                 }
                 const buildExport = templateBuilder(`
           const %%atomIdentifier%% = %%atom%%;
@@ -83,31 +97,38 @@ System.register(['@babel/core', '@babel/template'], (function (exports) {
           `);
                 const ast = buildExport({
                   atomIdentifier: t.identifier(displayName),
-                  atom: node.declaration
+                  atom: node.declaration,
                 });
                 nodePath.replaceWithMultiple(ast);
               }
             },
             VariableDeclarator(path) {
-              if (t.isIdentifier(path.node.id) && t.isCallExpression(path.node.init) && isAtom(t, path.node.init.callee, options == null ? void 0 : options.customAtomNames)) {
+              if (
+                t.isIdentifier(path.node.id) &&
+                t.isCallExpression(path.node.init) &&
+                isAtom(
+                  t,
+                  path.node.init.callee,
+                  options == null ? void 0 : options.customAtomNames,
+                )
+              ) {
                 path.parentPath.insertAfter(
                   t.expressionStatement(
                     t.assignmentExpression(
                       "=",
                       t.memberExpression(
                         t.identifier(path.node.id.name),
-                        t.identifier("debugLabel")
+                        t.identifier("debugLabel"),
                       ),
-                      t.stringLiteral(path.node.id.name)
-                    )
-                  )
+                      t.stringLiteral(path.node.id.name),
+                    ),
+                  ),
                 );
               }
-            }
-          }
+            },
+          },
         };
       }
-
-    })
+    },
   };
-}));
+});

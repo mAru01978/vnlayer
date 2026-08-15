@@ -1,5 +1,12 @@
-export declare function register(atomKey: string, name: string, timeline: gsap.core.Timeline): void;
-export declare function unregister(atomKey: string, timeline: gsap.core.Timeline): void;
+export declare function register(
+  atomKey: string,
+  name: string,
+  timeline: gsap.core.Timeline,
+): void;
+export declare function unregister(
+  atomKey: string,
+  timeline: gsap.core.Timeline,
+): void;
 export declare function pauseAll(atomKey: string): void;
 export declare function resumeAll(atomKey: string): void;
 export declare function killByName(atomKey: string, name: string): void;

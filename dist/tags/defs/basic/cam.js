@@ -4,17 +4,17 @@ import { camAtomFamily } from "../../../core/atoms";
 import { positionOverridesAtomFamily } from "../../../core/managers/positionManager";
 import { getCharacterSlot } from "../../spriteAssets";
 const defaultConfig = {
-    scales: {
-        zoom: 1.6,
-        // ズームアウト。特定のキャラを画面いっぱいに見せるzoomとは逆に、引きの画にしたい時用。
-        zoomout: 0.8,
-        reset: 1.0,
-    },
-    durations: {
-        zoom: 500,
-        zoomout: 500,
-        reset: 500,
-    },
+  scales: {
+    zoom: 1.6,
+    // ズームアウト。特定のキャラを画面いっぱいに見せるzoomとは逆に、引きの画にしたい時用。
+    zoomout: 0.8,
+    reset: 1.0,
+  },
+  durations: {
+    zoom: 500,
+    zoomout: 500,
+    reset: 500,
+  },
 };
 // タグシステム大改修(Jotai導入)フェーズ2: #camをregisterBasicTag経由に移行。
 //
@@ -31,36 +31,36 @@ const defaultConfig = {
 // ink側の書式は変わらない:
 //   # cam:zoom:alice / # cam:1.8:alice(生の倍率) / # cam:zoom:alice:650(時間上書き)
 registerBasicTag({
-    key: "cam",
-    defaultConfig,
-    atomFamily: camAtomFamily,
-    resolve: (args, config, { atomKey, store }) => {
-        const motion = args[0];
-        const target = args[1];
-        const scale = isNumeric(motion)
-            ? Number(motion)
-            : (config.scales[motion] ?? config.scales.reset);
-        const prev = store.get(camAtomFamily(atomKey));
-        const overrides = store.get(positionOverridesAtomFamily(atomKey));
-        const slot = target
-            ? (overrides[target] ??
-                getCharacterSlot(target) ?? {
-                originX: prev.originX,
-                originY: prev.originY,
-            })
-            : { originX: prev.originX, originY: prev.originY };
-        return {
-            target: target ?? prev.target,
-            scale,
-            originX: slot.originX,
-            originY: slot.originY,
-        };
-    },
-    resolveWaitMs: (args, config) => {
-        const motion = args[0];
-        const labelDuration = config.durations[motion] ?? config.durations.reset;
-        return isNumeric(args[2]) ? Number(args[2]) : labelDuration;
-    },
+  key: "cam",
+  defaultConfig,
+  atomFamily: camAtomFamily,
+  resolve: (args, config, { atomKey, store }) => {
+    const motion = args[0];
+    const target = args[1];
+    const scale = isNumeric(motion)
+      ? Number(motion)
+      : (config.scales[motion] ?? config.scales.reset);
+    const prev = store.get(camAtomFamily(atomKey));
+    const overrides = store.get(positionOverridesAtomFamily(atomKey));
+    const slot = target
+      ? (overrides[target] ??
+        getCharacterSlot(target) ?? {
+          originX: prev.originX,
+          originY: prev.originY,
+        })
+      : { originX: prev.originX, originY: prev.originY };
+    return {
+      target: target ?? prev.target,
+      scale,
+      originX: slot.originX,
+      originY: slot.originY,
+    };
+  },
+  resolveWaitMs: (args, config) => {
+    const motion = args[0];
+    const labelDuration = config.durations[motion] ?? config.durations.reset;
+    return isNumeric(args[2]) ? Number(args[2]) : labelDuration;
+  },
 });
 // 旧#c(キャラ表情タグ)は#sに統合されて廃止されたため、頭文字'c'が
 // 空いている。#camの短縮形として使えるようにする(# c:zoom:alice)。

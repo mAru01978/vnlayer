@@ -1,5 +1,4 @@
 declare namespace gsap {
-
   // GSAP specific
   interface CSSProperties {
     [key: string]: any;
@@ -522,7 +521,7 @@ declare namespace gsap {
     zoom: TweenValue;
   }
 
-  interface CSSVars extends Partial<CSSProperties> { }
+  interface CSSVars extends Partial<CSSProperties> {}
 
   interface TweenVars extends CSSVars {
     css?: CSSVars;
@@ -535,11 +534,10 @@ declare namespace gsap {
 }
 
 declare namespace gsap.plugins {
-
   interface CSSPlugin extends Plugin {}
 
   interface CSSPluginClass extends CSSPlugin {
-    new(): PluginScope & CSSPlugin;
+    new (): PluginScope & CSSPlugin;
     prototype: PluginScope & CSSPlugin;
   }
 

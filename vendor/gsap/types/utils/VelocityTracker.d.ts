@@ -1,5 +1,4 @@
 declare namespace gsap {
-
   type VelocityType = "num" | "deg" | "rad";
 
   interface VelocityMap {
@@ -19,12 +18,21 @@ declare namespace gsap {
     getByTarget(target: TweenTarget): VelocityTrackerInstance;
     getVelocity(target: TweenTarget, property: string): number;
     isTracking(target: TweenTarget, property?: string): boolean;
-    track(target: TweenTarget, properties: string, type?: VelocityType): VelocityTrackerInstance[];
+    track(
+      target: TweenTarget,
+      properties: string,
+      type?: VelocityType,
+    ): VelocityTrackerInstance[];
     untrack(target: TweenTarget, properties?: string): void;
   }
 
   interface VelocityTracker extends VelocityTrackerStatic {
-    new(target: TweenTarget, properties?: string, type?: VelocityType, next?: VelocityTrackerInstance): VelocityTrackerInstance;
+    new (
+      target: TweenTarget,
+      properties?: string,
+      type?: VelocityType,
+      next?: VelocityTrackerInstance,
+    ): VelocityTrackerInstance;
     prototype: VelocityTrackerInstance;
     register(core: typeof gsap): void;
   }

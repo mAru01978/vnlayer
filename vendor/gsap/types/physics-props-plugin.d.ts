@@ -11,19 +11,16 @@ declare namespace PhysicsPropsPlugin {
 }
 
 declare namespace gsap {
-
   interface TweenVars {
     physicsProps?: PhysicsPropsPlugin.Vars;
   }
 }
 
 declare namespace gsap.plugins {
-  interface PhysicsPropsPlugin extends Plugin {
-     
-  }
+  interface PhysicsPropsPlugin extends Plugin {}
 
   interface PhysicsPropsPluginClass extends PhysicsPropsPlugin {
-    new(): PluginScope & PhysicsPropsPlugin;
+    new (): PluginScope & PhysicsPropsPlugin;
     prototype: PluginScope & PhysicsPropsPlugin;
   }
 

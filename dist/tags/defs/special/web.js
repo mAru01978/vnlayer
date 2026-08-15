@@ -39,60 +39,64 @@ import { reportError, TagDispatchError } from "../../../core/errors";
 // basic/special分離での位置づけ: action(goto/open/scroll/emit)ごとに書き込み先
 // が全く異なる統合タグのため、specialタグとして現状維持。
 registerTag({
-    key: "web",
-    run: ({ args, handlers }) => {
-        const { atomKey, instanceId } = handlers;
-        const [action, target, durationArg] = args;
-        const resolveDestination = (raw) => {
-            // "/"始まりは自サイト内のパスとみなし、無条件で許可する。
-            if (raw.startsWith("/"))
-                return raw;
-            // それ以外は「登録済みリンク名」として解決する。未登録なら弾く。
-            const resolved = getWebLink(raw);
-            if (!resolved) {
-                console.warn(`[VNLayer] web:${action}:${raw} は許可済みリンクに登録されていません(ブロックしました)`);
-                return null;
-            }
-            return resolved;
-        };
-        switch (action) {
-            case "goto": {
-                const dest = resolveDestination(target);
-                if (dest)
-                    navigationManager.requestGoto(atomKey, dest);
-                break;
-            }
-            case "open": {
-                const dest = resolveDestination(target);
-                if (dest)
-                    webManager.openUrl(dest);
-                break;
-            }
-            case "scroll":
-                webManager.scrollTo(target, isNumeric(durationArg) ? Number(durationArg) : undefined);
-                break;
-            case "emit": {
-                // args = ['emit', eventName, value]
-                const [, eventName, rawValue] = args;
-                if (!eventName) {
-                    reportError(new TagDispatchError(`web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`));
-                    break;
-                }
-                let value = rawValue;
-                if (isNumeric(rawValue)) {
-                    value = Number(rawValue);
-                }
-                else {
-                    const on = parseOnOff(rawValue);
-                    if (on !== undefined)
-                        value = on;
-                }
-                webManager.emitToWeb(instanceId, eventName, value);
-                break;
-            }
-            default:
-                warnUnknownTag(["web", action, target].filter(Boolean).join(":"));
+  key: "web",
+  run: ({ args, handlers }) => {
+    const { atomKey, instanceId } = handlers;
+    const [action, target, durationArg] = args;
+    const resolveDestination = (raw) => {
+      // "/"始まりは自サイト内のパスとみなし、無条件で許可する。
+      if (raw.startsWith("/")) return raw;
+      // それ以外は「登録済みリンク名」として解決する。未登録なら弾く。
+      const resolved = getWebLink(raw);
+      if (!resolved) {
+        console.warn(
+          `[VNLayer] web:${action}:${raw} は許可済みリンクに登録されていません(ブロックしました)`,
+        );
+        return null;
+      }
+      return resolved;
+    };
+    switch (action) {
+      case "goto": {
+        const dest = resolveDestination(target);
+        if (dest) navigationManager.requestGoto(atomKey, dest);
+        break;
+      }
+      case "open": {
+        const dest = resolveDestination(target);
+        if (dest) webManager.openUrl(dest);
+        break;
+      }
+      case "scroll":
+        webManager.scrollTo(
+          target,
+          isNumeric(durationArg) ? Number(durationArg) : undefined,
+        );
+        break;
+      case "emit": {
+        // args = ['emit', eventName, value]
+        const [, eventName, rawValue] = args;
+        if (!eventName) {
+          reportError(
+            new TagDispatchError(
+              `web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`,
+            ),
+          );
+          break;
         }
-    },
+        let value = rawValue;
+        if (isNumeric(rawValue)) {
+          value = Number(rawValue);
+        } else {
+          const on = parseOnOff(rawValue);
+          if (on !== undefined) value = on;
+        }
+        webManager.emitToWeb(instanceId, eventName, value);
+        break;
+      }
+      default:
+        warnUnknownTag(["web", action, target].filter(Boolean).join(":"));
+    }
+  },
 });
 //# sourceMappingURL=web.js.map

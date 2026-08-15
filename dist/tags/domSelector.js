@@ -16,10 +16,8 @@
 //            例: <div data-vn-id="alice">...</div> を # web:scroll:alice:1000
 //            のように参照できる)
 export function resolveDomSelectorToken(token) {
-    if (token.startsWith("@"))
-        return `#${token.slice(1)}`;
-    if (token.startsWith("."))
-        return token;
-    return `[data-vn-id="${token}"]`;
+  if (token.startsWith("@")) return `#${token.slice(1)}`;
+  if (token.startsWith(".")) return token;
+  return `[data-vn-id="${token}"]`;
 }
 //# sourceMappingURL=domSelector.js.map

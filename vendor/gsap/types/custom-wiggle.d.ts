@@ -13,7 +13,7 @@ declare class CustomWiggle {
   ease: EaseFunction;
 
   constructor(id: string, vars?: CustomWiggleVars);
-  
+
   static create(id: string, vars?: CustomWiggleVars): EaseFunction;
   static register(core: object): void;
 }

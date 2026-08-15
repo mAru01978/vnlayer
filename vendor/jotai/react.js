@@ -1,61 +1,82 @@
-'use client';
-'use strict';
+"use client";
+"use strict";
 
-var React = require('react');
-var vanilla = require('jotai/vanilla');
-var internals = require('jotai/vanilla/internals');
+var React = require("react");
+var vanilla = require("jotai/vanilla");
+var internals = require("jotai/vanilla/internals");
 
 var StoreContext = React.createContext(undefined);
 function useStore(options) {
   var store = React.useContext(StoreContext);
-  return (options == null ? void 0 : options.store) || store || vanilla.getDefaultStore();
+  return (
+    (options == null ? void 0 : options.store) ||
+    store ||
+    vanilla.getDefaultStore()
+  );
 }
 function Provider(_ref) {
   var children = _ref.children,
     store = _ref.store;
   var storeRef = React.useRef(null);
   if (store) {
-    return React.createElement(StoreContext.Provider, {
-      value: store
-    }, children);
+    return React.createElement(
+      StoreContext.Provider,
+      {
+        value: store,
+      },
+      children,
+    );
   }
   if (storeRef.current === null) {
     storeRef.current = vanilla.createStore();
   }
-  return React.createElement(StoreContext.Provider, {
-    value: storeRef.current
-  }, children);
+  return React.createElement(
+    StoreContext.Provider,
+    {
+      value: storeRef.current,
+    },
+    children,
+  );
 }
 
 var isPromiseLike = function isPromiseLike(x) {
-  return typeof (x == null ? void 0 : x.then) === 'function';
+  return typeof (x == null ? void 0 : x.then) === "function";
 };
 var attachPromiseStatus = function attachPromiseStatus(promise) {
   if (!promise.status) {
-    promise.status = 'pending';
-    promise.then(function (v) {
-      promise.status = 'fulfilled';
-      promise.value = v;
-    }, function (e) {
-      promise.status = 'rejected';
-      promise.reason = e;
-    });
+    promise.status = "pending";
+    promise.then(
+      function (v) {
+        promise.status = "fulfilled";
+        promise.value = v;
+      },
+      function (e) {
+        promise.status = "rejected";
+        promise.reason = e;
+      },
+    );
   }
 };
-var use = React.use || function (promise) {
-  if (promise.status === 'pending') {
-    throw promise;
-  } else if (promise.status === 'fulfilled') {
-    return promise.value;
-  } else if (promise.status === 'rejected') {
-    throw promise.reason;
-  } else {
-    attachPromiseStatus(promise);
-    throw promise;
-  }
-};
+var use =
+  React.use ||
+  function (promise) {
+    if (promise.status === "pending") {
+      throw promise;
+    } else if (promise.status === "fulfilled") {
+      return promise.value;
+    } else if (promise.status === "rejected") {
+      throw promise.reason;
+    } else {
+      attachPromiseStatus(promise);
+      throw promise;
+    }
+  };
 var continuablePromiseMap = new WeakMap();
-var createContinuablePromise = function createContinuablePromise(store, promise, getValue) {
+var createContinuablePromise = function createContinuablePromise(
+  store,
+  promise,
+  getValue,
+) {
   var buildingBlocks = internals.INTERNAL_getBuildingBlocksRev3(store);
   var registerAbortHandler = buildingBlocks[26];
   var continuablePromise = continuablePromiseMap.get(promise);
@@ -102,17 +123,26 @@ function useAtomValue(atom, options) {
   var _ref = options || {},
     delay = _ref.delay,
     _ref$unstable_promise = _ref.unstable_promiseStatus,
-    promiseStatus = _ref$unstable_promise === void 0 ? !React.use : _ref$unstable_promise;
+    promiseStatus =
+      _ref$unstable_promise === void 0 ? !React.use : _ref$unstable_promise;
   var store = useStore(options);
-  var _useReducer = React.useReducer(function (prev) {
-      var nextValue = store.get(atom);
-      if (Object.is(prev[0], nextValue) && prev[1] === store && prev[2] === atom) {
-        return prev;
-      }
-      return [nextValue, store, atom];
-    }, undefined, function () {
-      return [store.get(atom), store, atom];
-    }),
+  var _useReducer = React.useReducer(
+      function (prev) {
+        var nextValue = store.get(atom);
+        if (
+          Object.is(prev[0], nextValue) &&
+          prev[1] === store &&
+          prev[2] === atom
+        ) {
+          return prev;
+        }
+        return [nextValue, store, atom];
+      },
+      undefined,
+      function () {
+        return [store.get(atom), store, atom];
+      },
+    ),
     _useReducer$ = _useReducer[0],
     valueFromReducer = _useReducer$[0],
     storeFromReducer = _useReducer$[1],
@@ -123,28 +153,35 @@ function useAtomValue(atom, options) {
     rerender();
     value = store.get(atom);
   }
-  React.useEffect(function () {
-    var unsub = store.sub(atom, function () {
-      if (promiseStatus) {
-        try {
-          var _value = store.get(atom);
-          if (isPromiseLike(_value)) {
-            attachPromiseStatus(createContinuablePromise(store, _value, function () {
-              return store.get(atom);
-            }));
-          }
-        } catch (_unused) {}
-      }
-      if (typeof delay === 'number') {
-        console.warn("[DEPRECATED] delay option is deprecated and will be removed in v3.\n\nMigration guide:\n\nCreate a custom hook like the following.\n\nfunction useAtomValueWithDelay<Value>(\n  atom: Atom<Value>,\n  options: { delay: number },\n): Value {\n  const { delay } = options\n  const store = useStore(options)\n  const [value, setValue] = useState(() => store.get(atom))\n  useEffect(() => {\n    const unsub = store.sub(atom, () => {\n      setTimeout(() => setValue(store.get(atom)), delay)\n    })\n    return unsub\n  }, [store, atom, delay])\n  return value\n}\n");
-        setTimeout(rerender, delay);
-        return;
-      }
+  React.useEffect(
+    function () {
+      var unsub = store.sub(atom, function () {
+        if (promiseStatus) {
+          try {
+            var _value = store.get(atom);
+            if (isPromiseLike(_value)) {
+              attachPromiseStatus(
+                createContinuablePromise(store, _value, function () {
+                  return store.get(atom);
+                }),
+              );
+            }
+          } catch (_unused) {}
+        }
+        if (typeof delay === "number") {
+          console.warn(
+            "[DEPRECATED] delay option is deprecated and will be removed in v3.\n\nMigration guide:\n\nCreate a custom hook like the following.\n\nfunction useAtomValueWithDelay<Value>(\n  atom: Atom<Value>,\n  options: { delay: number },\n): Value {\n  const { delay } = options\n  const store = useStore(options)\n  const [value, setValue] = useState(() => store.get(atom))\n  useEffect(() => {\n    const unsub = store.sub(atom, () => {\n      setTimeout(() => setValue(store.get(atom)), delay)\n    })\n    return unsub\n  }, [store, atom, delay])\n  return value\n}\n",
+          );
+          setTimeout(rerender, delay);
+          return;
+        }
+        rerender();
+      });
       rerender();
-    });
-    rerender();
-    return unsub;
-  }, [store, atom, delay, promiseStatus]);
+      return unsub;
+    },
+    [store, atom, delay, promiseStatus],
+  );
   React.useDebugValue(value);
   if (isPromiseLike(value)) {
     var promise = createContinuablePromise(store, value, function () {
@@ -160,15 +197,22 @@ function useAtomValue(atom, options) {
 
 function useSetAtom(atom, options) {
   var store = useStore(options);
-  var setAtom = React.useCallback(function () {
-    if (process.env.NODE_ENV !== 'production' && !('write' in atom)) {
-      throw new Error('not writable atom');
-    }
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-    return store.set.apply(store, [atom].concat(args));
-  }, [store, atom]);
+  var setAtom = React.useCallback(
+    function () {
+      if (process.env.NODE_ENV !== "production" && !("write" in atom)) {
+        throw new Error("not writable atom");
+      }
+      for (
+        var _len = arguments.length, args = new Array(_len), _key = 0;
+        _key < _len;
+        _key++
+      ) {
+        args[_key] = arguments[_key];
+      }
+      return store.set.apply(store, [atom].concat(args));
+    },
+    [store, atom],
+  );
   return setAtom;
 }
 

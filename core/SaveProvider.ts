@@ -1,5 +1,10 @@
-import type { VisualState, PositionOverrides, ActiveMessage, LineEntry } from './types';
-import type { UiConfigPatch } from '../tags/uiConfig';
+import type {
+  VisualState,
+  PositionOverrides,
+  ActiveMessage,
+  LineEntry,
+} from "./types";
+import type { UiConfigPatch } from "../tags/uiConfig";
 
 // 素材統合(2026-08-09)により characterSlots.ts / backgroundSlots.ts は
 // tags/spriteAssets.tsへ統合された。SaveDataの保存形式自体は変更せず

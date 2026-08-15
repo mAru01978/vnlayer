@@ -1,14 +1,11 @@
 declare namespace gsap {
-
   interface TweenVars {
     morphSVG?: SVGPathValue | gsap.plugins.MorphSVGVars;
   }
 }
 
 declare namespace gsap.plugins {
-
   interface MorphSVGPlugin extends Plugin {
-    
     defaultRender?: Function;
     defaultType?: String;
     defaultUpdateTarget?: Boolean;
@@ -21,12 +18,15 @@ declare namespace gsap.plugins {
      * ```
      *
      * @param {DOMTarget} shape
-     * @param {boolean} [swap] 
+     * @param {boolean} [swap]
      * @returns {SVGPathElement[]} The converted paths
      * @memberof MorphSVGPlugin
      * @link https://greensock.com/docs/v3/Plugins/MorphSVGPlugin/static.convertToPath()
      */
-    convertToPath(shape: string | SVGPrimitive | (string | SVGPrimitive)[], swap?: boolean): SVGPathElement[];
+    convertToPath(
+      shape: string | SVGPrimitive | (string | SVGPrimitive)[],
+      swap?: boolean,
+    ): SVGPathElement[];
 
     /**
      * Returns a RawPath associated with whatever is passed in (path data string, selector text, <path> element, or a RawPath)
@@ -56,7 +56,11 @@ declare namespace gsap.plugins {
      * @memberof MorphSVGPlugin
      * @link https://greensock.com/docs/v3/Plugins/MorphSVGPlugin/static.normalizeStrings()
      */
-    normalizeStrings(shape1: string, shape2: string, config?: NormalizeVars): string[];
+    normalizeStrings(
+      shape1: string,
+      shape2: string,
+      config?: NormalizeVars,
+    ): string[];
 
     /**
      * Converts a RawPath into a string of path data.
@@ -93,7 +97,7 @@ declare namespace gsap.plugins {
   }
 
   interface MorphSVGPluginClass extends MorphSVGPlugin {
-    new(): PluginScope & MorphSVGPlugin;
+    new (): PluginScope & MorphSVGPlugin;
     prototype: PluginScope & MorphSVGPlugin;
   }
 

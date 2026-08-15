@@ -1,11 +1,10 @@
 declare namespace gsap {
-
   type InertiaEndFunction<T> = (value: T) => T;
 
   interface InertiaDuration {
     min?: number;
     max?: number;
-    overshoot?: number; 
+    overshoot?: number;
   }
 
   interface InertiaLinkedProps {
@@ -16,16 +15,16 @@ declare namespace gsap {
     min?: number;
     max?: number;
     end?: number | number[] | InertiaEndFunction<any>;
-    // end?: number | number[] | InertiaEndFunction<number> | InertiaEndFunction<InertiaLinkedProps>; 
+    // end?: number | number[] | InertiaEndFunction<number> | InertiaEndFunction<InertiaLinkedProps>;
     velocity?: number | "auto";
   }
 
   type InertiaVars = {
-    duration?: number | InertiaDuration,
-    linkedProps?: string,
-    resistance?: number
+    duration?: number | InertiaDuration;
+    linkedProps?: string;
+    resistance?: number;
   } & {
-    [key: string]: TweenValue | InertiaObject
+    [key: string]: TweenValue | InertiaObject;
   };
 
   interface TweenVars {
@@ -34,7 +33,6 @@ declare namespace gsap {
 }
 
 declare namespace gsap.plugins {
-
   interface InertiaPlugin extends Plugin, VelocityTrackerStatic {
     // TODO add missing methods
     // TODO improve docs on site as well
@@ -45,18 +43,18 @@ declare namespace gsap.plugins {
      * ```js
      * InertiaPlugin.getVelocity(obj, "x,y");
      * ```
-     * 
+     *
      * @param {Element} target
      * @param {string} props
      * @returns {number} The current velocity
      * @memberof InertiaPlugin
      * @link https://greensock.com/docs/v3/Plugins/InertiaPlugin/static.getVelocity()
      */
-     getVelocity(target: Element, props: string): number;
+    getVelocity(target: Element, props: string): number;
   }
 
   interface InertiaPluginClass extends InertiaPlugin {
-    new(): PluginScope & InertiaPlugin;
+    new (): PluginScope & InertiaPlugin;
     prototype: PluginScope & InertiaPlugin;
   }
 

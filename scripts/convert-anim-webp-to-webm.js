@@ -26,31 +26,37 @@
 // 変換コマンドの実体(参考、シェルで直接試す場合):
 //   ffmpeg -i input.webp -c:v libvpx-vp9 -pix_fmt yuva420p output.webm
 
-const fs = require('fs');
-const path = require('path');
-const { execFileSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { execFileSync } = require("child_process");
 
 let ffmpegPath;
 try {
-  ffmpegPath = require('ffmpeg-static');
+  ffmpegPath = require("ffmpeg-static");
 } catch (e) {
-  console.error('[convert-anim] ffmpeg-static が見つかりません。VNLayerのdevDependenciesに含まれているはずなので、');
-  console.error('              まず `npm install` を実行してください。');
+  console.error(
+    "[convert-anim] ffmpeg-static が見つかりません。VNLayerのdevDependenciesに含まれているはずなので、",
+  );
+  console.error("              まず `npm install` を実行してください。");
   process.exit(1);
 }
 if (!ffmpegPath) {
-  console.error('[convert-anim] ffmpeg-static がこのプラットフォーム向けのffmpegバイナリを提供できませんでした。');
+  console.error(
+    "[convert-anim] ffmpeg-static がこのプラットフォーム向けのffmpegバイナリを提供できませんでした。",
+  );
   process.exit(1);
 }
 
 const args = process.argv.slice(2);
-const force = args.includes('--force');
-const positional = args.filter((a) => !a.startsWith('--'));
+const force = args.includes("--force");
+const positional = args.filter((a) => !a.startsWith("--"));
 const inputArg = positional[0];
 const outputArg = positional[1];
 
 if (!inputArg) {
-  console.error('使い方: node VNLayer/scripts/convert-anim-webp-to-webm.js <入力ディレクトリ> [出力ディレクトリ] [--force]');
+  console.error(
+    "使い方: node VNLayer/scripts/convert-anim-webp-to-webm.js <入力ディレクトリ> [出力ディレクトリ] [--force]",
+  );
   process.exit(1);
 }
 
@@ -64,10 +70,14 @@ if (!fs.existsSync(inputDir)) {
 
 fs.mkdirSync(outputDir, { recursive: true });
 
-const webpFiles = fs.readdirSync(inputDir).filter((f) => f.toLowerCase().endsWith('.webp'));
+const webpFiles = fs
+  .readdirSync(inputDir)
+  .filter((f) => f.toLowerCase().endsWith(".webp"));
 
 if (webpFiles.length === 0) {
-  console.log(`[convert-anim] ${path.relative(process.cwd(), inputDir)} に .webp ファイルが見つかりませんでした。`);
+  console.log(
+    `[convert-anim] ${path.relative(process.cwd(), inputDir)} に .webp ファイルが見つかりませんでした。`,
+  );
   process.exit(0);
 }
 
@@ -77,13 +87,15 @@ let failed = 0;
 
 for (const file of webpFiles) {
   const inputPath = path.join(inputDir, file);
-  const outputPath = path.join(outputDir, file.replace(/\.webp$/i, '.webm'));
+  const outputPath = path.join(outputDir, file.replace(/\.webp$/i, ".webm"));
 
   if (!force && fs.existsSync(outputPath)) {
     const srcMtime = fs.statSync(inputPath).mtimeMs;
     const outMtime = fs.statSync(outputPath).mtimeMs;
     if (outMtime >= srcMtime) {
-      console.log(`skip: ${file} (変換済み。再変換するには --force を付けて実行)`);
+      console.log(
+        `skip: ${file} (変換済み。再変換するには --force を付けて実行)`,
+      );
       skipped += 1;
       continue;
     }
@@ -94,14 +106,17 @@ for (const file of webpFiles) {
     execFileSync(
       ffmpegPath,
       [
-        '-y', // 既存の出力ファイルを無confirmationで上書き
-        '-i', inputPath,
-        '-c:v', 'libvpx-vp9',
-        '-pix_fmt', 'yuva420p', // アルファチャンネル(透過)を維持する
-        '-an', // 音声トラックは不要(演出用アニメーションのため)
+        "-y", // 既存の出力ファイルを無confirmationで上書き
+        "-i",
+        inputPath,
+        "-c:v",
+        "libvpx-vp9",
+        "-pix_fmt",
+        "yuva420p", // アルファチャンネル(透過)を維持する
+        "-an", // 音声トラックは不要(演出用アニメーションのため)
         outputPath,
       ],
-      { stdio: 'inherit' }
+      { stdio: "inherit" },
     );
     converted += 1;
   } catch (e) {
@@ -110,6 +125,8 @@ for (const file of webpFiles) {
   }
 }
 
-console.log('');
-console.log(`✓ 完了: ${converted}件変換 / ${skipped}件スキップ / ${failed}件失敗`);
+console.log("");
+console.log(
+  `✓ 完了: ${converted}件変換 / ${skipped}件スキップ / ${failed}件失敗`,
+);
 if (failed > 0) process.exit(1);

@@ -5,7 +5,11 @@ import type { RunResult, VisualState } from "./types";
 import { StoryLoadError, StoryRuntimeError, reportError } from "./errors";
 import * as interruptManager from "./managers/interruptManager";
 import type { SaveData, StorySaveData } from "./SaveProvider";
-import { loadJson, type ResourceLoaderOptions, type ResourceSource } from "./ResourceLoader";
+import {
+  loadJson,
+  type ResourceLoaderOptions,
+  type ResourceSource,
+} from "./ResourceLoader";
 
 // index.html + vnlayer.js + assets(素材・ink) だけで動く運用向けのStepProvider。
 // Next.jsのcookieセッション/replay方式とは違い、ページを開いている間はブラウザの
@@ -80,7 +84,7 @@ function cacheKey(clip: string, atomKey?: string): string {
 async function loadStoryJson(
   clip: string,
   dataBaseUrl: string,
-  loaderOptions: Pick<ResourceLoaderOptions, 'source' | 'resolveLocal'>,
+  loaderOptions: Pick<ResourceLoaderOptions, "source" | "resolveLocal">,
 ): Promise<Record<string, unknown>> {
   try {
     return await loadJson<Record<string, unknown>>(`${clip}/story.json`, {
@@ -88,14 +92,16 @@ async function loadStoryJson(
       ...loaderOptions,
     });
   } catch (e) {
-    throw new StoryLoadError(`failed to load story.json for clip "${clip}"`, { cause: e });
+    throw new StoryLoadError(`failed to load story.json for clip "${clip}"`, {
+      cause: e,
+    });
   }
 }
 
 async function createStoryHandle(
   clip: string,
   dataBaseUrl: string,
-  loaderOptions: Pick<ResourceLoaderOptions, 'source' | 'resolveLocal'>,
+  loaderOptions: Pick<ResourceLoaderOptions, "source" | "resolveLocal">,
   key: string,
 ): Promise<StoryHandle> {
   const storyJson = await loadStoryJson(clip, dataBaseUrl, loaderOptions);
@@ -106,7 +112,10 @@ async function createStoryHandle(
   story.onError = (message: string, type: unknown) => {
     reportError(new StoryRuntimeError(`[${clip}] (${type}) ${message}`));
   };
-  const handle: StoryHandle = { story, visual: { bg: "", characters: {}, speaker: "" } };
+  const handle: StoryHandle = {
+    story,
+    visual: { bg: "", characters: {}, speaker: "" },
+  };
 
   // #interrupt(SwitchFlow+ObserveVariable)用に、このStoryインスタンスを
   // 操作する権限(host)をinterruptManagerへ渡す。
@@ -144,7 +153,10 @@ export function createStaticStepProvider(
   options: StaticStepProviderOptions = {},
 ): StepProvider {
   const dataBaseUrl = options.dataBaseUrl ?? "./data";
-  const loaderOptions = { source: options.source, resolveLocal: options.resolveLocal };
+  const loaderOptions = {
+    source: options.source,
+    resolveLocal: options.resolveLocal,
+  };
 
   function ensureStory(clip: string, atomKey?: string): Promise<StoryHandle> {
     const key = cacheKey(clip, atomKey);
@@ -202,14 +214,20 @@ export function createStaticStepProvider(
         try {
           handle.story.ChooseChoiceIndex(index);
         } catch (e) {
-          reportError(new StoryRuntimeError("ChooseChoiceIndex failed", { cause: e }));
+          reportError(
+            new StoryRuntimeError("ChooseChoiceIndex failed", { cause: e }),
+          );
         }
         const result = runAndCache(handle);
         // #interrupt(SwitchFlow)対応: 今選んだ選択肢が割り込みflow自身のもの
         // だった場合、そのflowがまだ続くか(=result.choicesが割り込みflow側の
         // 続きの選択肢)、ちょうど尽きたか(=元フローへ自動で戻す)をここで
         // 判定する。割り込み中でなければ何もせずresultをそのまま返す。
-        const resumed = interruptManager.finishFlowIfDone(key, handle.story, result);
+        const resumed = interruptManager.finishFlowIfDone(
+          key,
+          handle.story,
+          result,
+        );
         handle.visual = resumed.visual;
         return resumed;
       });

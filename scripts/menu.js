@@ -14,7 +14,6 @@ const path = require("path");
 const projectRoot = process.env.INIT_CWD || path.resolve(__dirname, "..", "..");
 const defaultDataDir = path.join(projectRoot, "data");
 
-
 const VENDOR_MENU_ITEMS = [
   {
     label: "全て更新",
@@ -133,29 +132,23 @@ const MENU_ITEMS = [
     },
   },
   {
-  label: "vendorを更新(update-vendor.js)",
-  run: async () => {
-    const item = await showMenu(
-      VENDOR_MENU_ITEMS,
-      "vendor更新対象選択",
-    );
+    label: "vendorを更新(update-vendor.js)",
+    run: async () => {
+      const item = await showMenu(VENDOR_MENU_ITEMS, "vendor更新対象選択");
 
-    if (item.value === null) {
-      return;
-    }
+      if (item.value === null) {
+        return;
+      }
 
-    const args = [
-      "node",
-      path.join(__dirname, "update-vendor.js"),
-    ];
+      const args = ["node", path.join(__dirname, "update-vendor.js")];
 
-    if (item.value) {
-      args.push(item.value);
-    }
+      if (item.value) {
+        args.push(item.value);
+      }
 
-    runDirect(args);
+      runDirect(args);
+    },
   },
-},
   {
     label:
       "VNLayerのJSビルド、React等のランタイム全バンドル(build-vnlayer-standalone.js)",
@@ -245,11 +238,9 @@ function showMenu(items, title = "メニュー") {
 
     function render() {
       console.clear();
-      console.log(
-  `=== ${title}(↑↓で選択、Enterで実行、Ctrl+Cで終了) ===\n`,
-);
+      console.log(`=== ${title}(↑↓で選択、Enterで実行、Ctrl+Cで終了) ===\n`);
 
-items.forEach((item, i) => {
+      items.forEach((item, i) => {
         const cursor = i === selected ? "> " : "  ";
         console.log(`${cursor}${item.label}`);
       });

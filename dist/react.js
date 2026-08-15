@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { jsx as _jsx } from "react/jsx-runtime";
 // vnlayer/react … VNLayerをReactらしいJSXコンポーネント+ref越しの命令的APIとして
 // 使うための別エントリポイント(package.jsonのexports."./react"参照)。
@@ -25,90 +25,129 @@ import { jsx as _jsx } from "react/jsx-runtime";
 // createLocalStorageSaveProvider())が使われる(core/defaultStepProvider.ts /
 // core/defaultSaveProvider.ts参照。入口がJS/TSC/Reactのどれでも既定挙動は
 // 統一されている)。
-import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef } from 'react';
-import VNLayerOverlayInternal from './components/VNLayerOverlay';
-import { setUiConfig, setTagConfig, setWebLinks } from './tags/index';
-import { setAnimAssets } from './tags/animAssets';
-import { setSpriteAssets } from './tags/spriteAssets';
-import { setAssetsConfig } from './tags/assetsConfig';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+} from "react";
+import VNLayerOverlayInternal from "./components/VNLayerOverlay";
+import { setUiConfig, setTagConfig, setWebLinks } from "./tags/index";
+import { setAnimAssets } from "./tags/animAssets";
+import { setSpriteAssets } from "./tags/spriteAssets";
+import { setAssetsConfig } from "./tags/assetsConfig";
 // <VNLayer ref={vnRef} clip="Alice" mode="overlay" ui={{...}} onReady={...} />
-export const VNLayer = forwardRef(function VNLayer({ clip, mode, uiAnchor, showUi, stepProvider, saveProvider, onNavigate, ui, instanceId, onReady }, ref) {
-    const generatedId = useId();
-    const effectiveInstanceId = instanceId ?? generatedId;
-    const handleRef = useRef(null);
-    const readyNotifiedRef = useRef(false);
-    // instance固有のui上書き。vanilla版のVNLayer.configure({ui}, selector)と
-    // 同じsetUiConfig()経由(tags/uiConfig.ts、後から書いた方が勝つ共有ストア)。
-    useEffect(() => {
-        if (ui)
-            setUiConfig(ui, effectiveInstanceId);
-    }, [ui, effectiveInstanceId]);
-    useImperativeHandle(ref, () => ({
-        setContext: (vars, options) => {
-            if (!handleRef.current) {
-                console.warn('[VNLayer] setContext called before the instance finished initializing; ignoring this call.');
-                return Promise.resolve();
-            }
-            return handleRef.current.setContextVars(vars, options);
-        },
-        getContext: (varNames) => {
-            if (!handleRef.current) {
-                console.warn('[VNLayer] getContext called before the instance finished initializing.');
-                return Promise.resolve({});
-            }
-            return handleRef.current.getContextVars(varNames);
-        },
-        reset: () => {
-            if (!handleRef.current)
-                return Promise.resolve();
-            return handleRef.current.resetStory();
-        },
-    }), []);
-    const handleReady = useCallback((handle) => {
-        handleRef.current = handle;
-        if (!readyNotifiedRef.current) {
-            readyNotifiedRef.current = true;
-            onReady?.();
+export const VNLayer = forwardRef(function VNLayer(
+  {
+    clip,
+    mode,
+    uiAnchor,
+    showUi,
+    stepProvider,
+    saveProvider,
+    onNavigate,
+    ui,
+    instanceId,
+    onReady,
+  },
+  ref,
+) {
+  const generatedId = useId();
+  const effectiveInstanceId = instanceId ?? generatedId;
+  const handleRef = useRef(null);
+  const readyNotifiedRef = useRef(false);
+  // instance固有のui上書き。vanilla版のVNLayer.configure({ui}, selector)と
+  // 同じsetUiConfig()経由(tags/uiConfig.ts、後から書いた方が勝つ共有ストア)。
+  useEffect(() => {
+    if (ui) setUiConfig(ui, effectiveInstanceId);
+  }, [ui, effectiveInstanceId]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      setContext: (vars, options) => {
+        if (!handleRef.current) {
+          console.warn(
+            "[VNLayer] setContext called before the instance finished initializing; ignoring this call.",
+          );
+          return Promise.resolve();
         }
-    }, [onReady]);
-    return (_jsx(VNLayerOverlayInternal, { clip: clip, mode: mode, uiAnchor: uiAnchor, showUi: showUi, stepProvider: stepProvider, saveProvider: saveProvider, onNavigate: onNavigate, instanceId: effectiveInstanceId, onReady: handleReady }));
+        return handleRef.current.setContextVars(vars, options);
+      },
+      getContext: (varNames) => {
+        if (!handleRef.current) {
+          console.warn(
+            "[VNLayer] getContext called before the instance finished initializing.",
+          );
+          return Promise.resolve({});
+        }
+        return handleRef.current.getContextVars(varNames);
+      },
+      reset: () => {
+        if (!handleRef.current) return Promise.resolve();
+        return handleRef.current.resetStory();
+      },
+    }),
+    [],
+  );
+  const handleReady = useCallback(
+    (handle) => {
+      handleRef.current = handle;
+      if (!readyNotifiedRef.current) {
+        readyNotifiedRef.current = true;
+        onReady?.();
+      }
+    },
+    [onReady],
+  );
+  return _jsx(VNLayerOverlayInternal, {
+    clip: clip,
+    mode: mode,
+    uiAnchor: uiAnchor,
+    showUi: showUi,
+    stepProvider: stepProvider,
+    saveProvider: saveProvider,
+    onNavigate: onNavigate,
+    instanceId: effectiveInstanceId,
+    onReady: handleReady,
+  });
 });
 export function configureVNLayer(options) {
-    if (options.assets) {
-        const { sprite, anim, ...globalAssetsConfig } = options.assets;
-        if (Object.keys(globalAssetsConfig).length > 0)
-            setAssetsConfig(globalAssetsConfig);
-        if (sprite)
-            setSpriteAssets(sprite);
-        if (anim)
-            setAnimAssets(anim);
+  if (options.assets) {
+    const { sprite, anim, ...globalAssetsConfig } = options.assets;
+    if (Object.keys(globalAssetsConfig).length > 0)
+      setAssetsConfig(globalAssetsConfig);
+    if (sprite) setSpriteAssets(sprite);
+    if (anim) setAnimAssets(anim);
+  }
+  if (options.tags) {
+    for (const [key, partial] of Object.entries(options.tags)) {
+      setTagConfig(key, partial);
     }
-    if (options.tags) {
-        for (const [key, partial] of Object.entries(options.tags)) {
-            setTagConfig(key, partial);
-        }
-    }
-    if (options.ui)
-        setUiConfig(options.ui);
-    if (options.webLinks)
-        setWebLinks(options.webLinks);
+  }
+  if (options.ui) setUiConfig(options.ui);
+  if (options.webLinks) setWebLinks(options.webLinks);
 }
 // refを持ちたくない場合向けの薄いhook(アイデア段階の案、シンプルな実装に
 // 留めている)。depsが変わるたびに自動でsetContext(vars, options)する。
 //   const vnRef = useRef<VNLayerRef>(null);
 //   useVNLayerContext(vnRef, { hp, mp }, [hp, mp]);
 export function useVNLayerContext(vnRef, vars, deps, options) {
-    useEffect(() => {
-        vnRef.current?.setContext(vars, options);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, deps);
+  useEffect(() => {
+    vnRef.current?.setContext(vars, options);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 }
 // StepProvider/SaveProviderのfactory類もvnlayer/react側から使えるよう
 // re-exportしておく(vanilla版api.tsのVNLayerオブジェクトのプロパティと
 // 同じ実体)。
-export { createStaticStepProvider } from './core/staticStepProvider';
-export { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
-export { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
-export { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
-export { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
+export { createStaticStepProvider } from "./core/staticStepProvider";
+export {
+  serverStepProvider,
+  createServerStepProvider,
+} from "./core/serverStepProvider";
+export { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
+export { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
+export { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
 //# sourceMappingURL=react.js.map

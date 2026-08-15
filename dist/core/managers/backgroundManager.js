@@ -19,26 +19,26 @@ import { getUiConfig } from "../../tags/uiConfig";
 import * as messageManager from "./messageManager";
 export const bgAtomFamily = atomFamily((_atomKey) => atom(""));
 export function setBackground(atomKey, instanceId, name) {
-    const store = getStore();
-    const target = bgAtomFamily(atomKey);
-    const changed = store.get(target) !== name;
-    store.set(target, name);
-    if (changed && getUiConfig(instanceId).messageWindow.autoHideOnBgChange) {
-        messageManager.clear(atomKey);
-    }
+  const store = getStore();
+  const target = bgAtomFamily(atomKey);
+  const changed = store.get(target) !== name;
+  store.set(target, name);
+  if (changed && getUiConfig(instanceId).messageWindow.autoHideOnBgChange) {
+    messageManager.clear(atomKey);
+  }
 }
 // core/useStoryEngine.tsのadvance()末尾、ink側の蓄積スナップショットとの
 // 同期専用。autoHideOnBgChangeの判定はしない(上記コメント参照)。
 export function restoreBackground(atomKey, name) {
-    getStore().set(bgAtomFamily(atomKey), name);
+  getStore().set(bgAtomFamily(atomKey), name);
 }
 export function getBackground(atomKey) {
-    return getStore().get(bgAtomFamily(atomKey));
+  return getStore().get(bgAtomFamily(atomKey));
 }
 export function reset(atomKey) {
-    getStore().set(bgAtomFamily(atomKey), "");
+  getStore().set(bgAtomFamily(atomKey), "");
 }
 export function dispose(atomKey) {
-    bgAtomFamily.remove(atomKey);
+  bgAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=backgroundManager.js.map

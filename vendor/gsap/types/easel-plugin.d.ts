@@ -5,20 +5,16 @@ declare namespace EaselPlugin {
 }
 
 declare namespace gsap {
-
   interface TweenVars {
     easel?: EaselPlugin.Vars;
   }
 }
 
 declare namespace gsap.plugins {
-
-  interface EaselPlugin extends Plugin {
-
-  }
+  interface EaselPlugin extends Plugin {}
 
   interface EaselPluginClass extends EaselPlugin {
-    new(): PluginScope & EaselPlugin;
+    new (): PluginScope & EaselPlugin;
     prototype: PluginScope & EaselPlugin;
   }
 

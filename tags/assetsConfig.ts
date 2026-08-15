@@ -7,8 +7,8 @@
 // 見た目は何も描画しない(開発中に「素材の指定漏れ」に気づけるようにする
 // ための既定値)。開発中に見た目を仮確認したい場合だけ、
 // VNLayer.configure({ assets: { fallbackToMock: true } }) で明示的にonにする。
-import { reportError, AssetError } from '../core/errors';
-import type { ResourceSource } from '../core/ResourceLoader';
+import { reportError, AssetError } from "../core/errors";
+import type { ResourceSource } from "../core/ResourceLoader";
 
 export type AssetsGlobalConfig = {
   // 素材配信のベースパス(story.jsonのdataBaseUrlとは別物)。
@@ -26,11 +26,11 @@ export type AssetsGlobalConfig = {
 };
 
 const defaultConfig: AssetsGlobalConfig = {
-  basePath: './assets',
-  source: 'fetch',
+  basePath: "./assets",
+  source: "fetch",
   fallbackToMock: false,
-  spriteExtension: 'png',
-  animExtension: 'webm',
+  spriteExtension: "png",
+  animExtension: "webm",
 };
 
 let current: AssetsGlobalConfig = { ...defaultConfig };
@@ -63,6 +63,8 @@ export function getAssetsConfig(): AssetsGlobalConfig {
 // (呼び出し側=components/Renderer.tsxはこのfalseを見て何も描画しない)。
 export function shouldFallbackToMock(context: string): boolean {
   if (current.fallbackToMock) return true;
-  reportError(new AssetError(`asset not found and fallbackToMock is off: ${context}`));
+  reportError(
+    new AssetError(`asset not found and fallbackToMock is off: ${context}`),
+  );
   return false;
 }

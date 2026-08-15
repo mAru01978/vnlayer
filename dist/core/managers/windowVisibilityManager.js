@@ -4,14 +4,16 @@
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
 import { getStore } from "../store";
-export const messageWindowHiddenAtomFamily = atomFamily((_atomKey) => atom(false));
+export const messageWindowHiddenAtomFamily = atomFamily((_atomKey) =>
+  atom(false),
+);
 export function setMessageWindowVisible(atomKey, visible) {
-    getStore().set(messageWindowHiddenAtomFamily(atomKey), !visible);
+  getStore().set(messageWindowHiddenAtomFamily(atomKey), !visible);
 }
 export function reset(atomKey) {
-    getStore().set(messageWindowHiddenAtomFamily(atomKey), false);
+  getStore().set(messageWindowHiddenAtomFamily(atomKey), false);
 }
 export function dispose(atomKey) {
-    messageWindowHiddenAtomFamily.remove(atomKey);
+  messageWindowHiddenAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=windowVisibilityManager.js.map

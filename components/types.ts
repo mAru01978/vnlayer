@@ -2,7 +2,7 @@
 // 本番で素材が揃ったら realRenderer.tsx を新しく作り、importを1行差し替えるだけで
 // 全体の見た目を切り替えられるようにする。
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type CharacterState = {
   expression: string;

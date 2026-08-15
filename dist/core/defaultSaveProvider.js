@@ -6,9 +6,9 @@ import { createLocalStorageSaveProvider } from "./saveProviders/localStorageSave
 // 共通の既定値にするため)。
 let current = createLocalStorageSaveProvider();
 export function setDefaultSaveProvider(provider) {
-    current = provider;
+  current = provider;
 }
 export function getDefaultSaveProvider() {
-    return current;
+  return current;
 }
 //# sourceMappingURL=defaultSaveProvider.js.map
