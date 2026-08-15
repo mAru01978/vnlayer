@@ -42,46 +42,31 @@ import { reportError, TagDispatchError } from "../../../core/errors";
 // atomFamily(atomKey)という設計そのものと噛み合わないため、specialタグ
 // として現状維持。
 function resolveValue(rawValue) {
-  if (isNumeric(rawValue)) return Number(rawValue);
-  const on = parseOnOff(rawValue);
-  return on !== undefined ? on : rawValue;
+    if (isNumeric(rawValue))
+        return Number(rawValue);
+    const on = parseOnOff(rawValue);
+    return on !== undefined ? on : rawValue;
 }
 registerTag({
-  key: "emit",
-  run: ({ args, handlers }) => {
-    if (args.length >= 3) {
-      // # emit:<selector>:<varName>:<value> (別VNインスタンスへ)
-      const [selector, varName, rawValue] = args;
-      if (!selector || !varName) {
-        reportError(
-          new TagDispatchError(
-            `emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`,
-          ),
-        );
-        return;
-      }
-      emitToInstance(
-        selector,
-        { [varName]: resolveValue(rawValue) },
-        { notify: true, expose: false },
-      );
-      return;
-    }
-    // # emit:<varName>:<value> (同一Ink=自分自身へ)
-    const [varName, rawValue] = args;
-    if (!varName) {
-      reportError(
-        new TagDispatchError(
-          `emit の書式が不正です(# emit:<varName>:<value> または # emit:<selector>:<varName>:<value>): ${args.join(":")}`,
-        ),
-      );
-      return;
-    }
-    emitToSelf(
-      handlers.atomKey,
-      { [varName]: resolveValue(rawValue) },
-      { notify: true, expose: false },
-    );
-  },
+    key: "emit",
+    run: ({ args, handlers }) => {
+        if (args.length >= 3) {
+            // # emit:<selector>:<varName>:<value> (別VNインスタンスへ)
+            const [selector, varName, rawValue] = args;
+            if (!selector || !varName) {
+                reportError(new TagDispatchError(`emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`));
+                return;
+            }
+            emitToInstance(selector, { [varName]: resolveValue(rawValue) }, { notify: true, expose: false });
+            return;
+        }
+        // # emit:<varName>:<value> (同一Ink=自分自身へ)
+        const [varName, rawValue] = args;
+        if (!varName) {
+            reportError(new TagDispatchError(`emit の書式が不正です(# emit:<varName>:<value> または # emit:<selector>:<varName>:<value>): ${args.join(":")}`));
+            return;
+        }
+        emitToSelf(handlers.atomKey, { [varName]: resolveValue(rawValue) }, { notify: true, expose: false });
+    },
 });
 //# sourceMappingURL=emit.js.map

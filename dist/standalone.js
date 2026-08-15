@@ -16,8 +16,7 @@
 import { createStaticStepProvider } from "./core/staticStepProvider";
 import { setDefaultStepProvider } from "./core/defaultStepProvider";
 import "./api"; // side-effect: window.VNLayer を公開する
-const dataBaseUrl =
-  typeof window !== "undefined"
+const dataBaseUrl = typeof window !== "undefined"
     ? (window.VNLAYER_DATA_BASE_URL ?? "./data")
     : "./data";
 // Next.js運用(context/StoryContext.tsx)と違い、こちらは既定でサーバーを

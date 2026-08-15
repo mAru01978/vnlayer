@@ -11,11 +11,11 @@ import { setDefaultOnNavigate } from "../core/defaultNavigate";
 // importしていない。next/navigationへの依存をここ1箇所に閉じ込めることで、
 // vnlayer.js(静的バンドル)側は"App Routerが無い"環境でクラッシュしなくなる。
 export function NextNavigationBridge() {
-  const router = useRouter();
-  useEffect(() => {
-    setDefaultOnNavigate((path) => router.push(path));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
-  return null;
+    const router = useRouter();
+    useEffect(() => {
+        setDefaultOnNavigate((path) => router.push(path));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [router]);
+    return null;
 }
 //# sourceMappingURL=NextNavigationBridge.js.map

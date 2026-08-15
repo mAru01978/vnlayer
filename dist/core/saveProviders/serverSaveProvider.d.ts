@@ -1,8 +1,6 @@
 import type { SaveProvider } from "../SaveProvider";
 export type ServerSaveProviderOptions = {
-  endpoint?: string;
+    endpoint?: string;
 };
-export declare function createServerSaveProvider(
-  options?: ServerSaveProviderOptions,
-): SaveProvider;
+export declare function createServerSaveProvider(options?: ServerSaveProviderOptions): SaveProvider;
 //# sourceMappingURL=serverSaveProvider.d.ts.map

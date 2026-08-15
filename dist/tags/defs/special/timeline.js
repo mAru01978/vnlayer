@@ -19,31 +19,27 @@ import { reportError, TagDispatchError } from "../../../core/errors";
 // 例えば「ink側の選択肢待ちはそのままで、画面のシェイクだけ手動で止めたい」
 // といった使い分けができるようにするため。
 registerTag({
-  key: "timeline",
-  run: ({ args, handlers }) => {
-    const [action, name] = args;
-    const atomKey = handlers.atomKey;
-    switch (action) {
-      case "pause":
-        timelineManager.pauseAll(atomKey);
-        break;
-      case "resume":
-        timelineManager.resumeAll(atomKey);
-        break;
-      case "kill":
-        if (!name) {
-          reportError(
-            new TagDispatchError(
-              `timeline:kill の書式が不正です(# timeline:kill:<name>): ${args.join(":")}`,
-            ),
-          );
-          break;
+    key: "timeline",
+    run: ({ args, handlers }) => {
+        const [action, name] = args;
+        const atomKey = handlers.atomKey;
+        switch (action) {
+            case "pause":
+                timelineManager.pauseAll(atomKey);
+                break;
+            case "resume":
+                timelineManager.resumeAll(atomKey);
+                break;
+            case "kill":
+                if (!name) {
+                    reportError(new TagDispatchError(`timeline:kill の書式が不正です(# timeline:kill:<name>): ${args.join(":")}`));
+                    break;
+                }
+                timelineManager.killByName(atomKey, name);
+                break;
+            default:
+                warnUnknownTag(["timeline", action, name].filter(Boolean).join(":"));
         }
-        timelineManager.killByName(atomKey, name);
-        break;
-      default:
-        warnUnknownTag(["timeline", action, name].filter(Boolean).join(":"));
-    }
-  },
+    },
 });
 //# sourceMappingURL=timeline.js.map

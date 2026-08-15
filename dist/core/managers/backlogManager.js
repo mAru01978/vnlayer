@@ -16,27 +16,27 @@ import { getUiConfig } from "../../tags/uiConfig";
 import { pushGlobalBacklogEntry, clearGlobalBacklog } from "../globalBacklog";
 export const linesAtomFamily = atomFamily((_atomKey) => atom([]));
 function pushEntry(atomKey, instanceId, entry) {
-  const store = getStore();
-  const target = linesAtomFamily(atomKey);
-  store.set(target, [...store.get(target), entry]);
-  // 修正メモ(2026-08-09): 以前は「自分のbacklog.modeがglobalの時だけ」全VN
-  // 共通バックログへも書き込んでいたが、これだと「#ui:backlog:mode:global を
-  // 設定したVN自身」の発言しか共通ログに乗らず、他のVNインスタンス側でも
-  // 個別にmode:globalを設定しない限りそちらの発言は一切共通ログに現れない、
-  // という分かりにくい挙動になっていた(mode:globalが「自分の発言を共通ログへ
-  // 提供するか」と「共通ログを自分の表示に使うか」の両方を兼ねてしまっていた
-  // のが原因)。常に全VNインスタンスの発言を共通ログへ書き込むようにし、
-  // mode:globalは「どちらを表示するか」の切り替えだけに責務を絞った。
-  pushGlobalBacklogEntry(entry, instanceId);
+    const store = getStore();
+    const target = linesAtomFamily(atomKey);
+    store.set(target, [...store.get(target), entry]);
+    // 修正メモ(2026-08-09): 以前は「自分のbacklog.modeがglobalの時だけ」全VN
+    // 共通バックログへも書き込んでいたが、これだと「#ui:backlog:mode:global を
+    // 設定したVN自身」の発言しか共通ログに乗らず、他のVNインスタンス側でも
+    // 個別にmode:globalを設定しない限りそちらの発言は一切共通ログに現れない、
+    // という分かりにくい挙動になっていた(mode:globalが「自分の発言を共通ログへ
+    // 提供するか」と「共通ログを自分の表示に使うか」の両方を兼ねてしまっていた
+    // のが原因)。常に全VNインスタンスの発言を共通ログへ書き込むようにし、
+    // mode:globalは「どちらを表示するか」の切り替えだけに責務を絞った。
+    pushGlobalBacklogEntry(entry, instanceId);
 }
 export function pushLine(atomKey, instanceId, speaker, content) {
-  pushEntry(atomKey, instanceId, { kind: "line", speaker, content });
+    pushEntry(atomKey, instanceId, { kind: "line", speaker, content });
 }
 export function pushChoice(atomKey, instanceId, number, text) {
-  pushEntry(atomKey, instanceId, { kind: "choice", number, text });
+    pushEntry(atomKey, instanceId, { kind: "choice", number, text });
 }
 export function getLines(atomKey) {
-  return getStore().get(linesAtomFamily(atomKey));
+    return getStore().get(linesAtomFamily(atomKey));
 }
 // 簡易セーブ機能(core/SaveProvider.ts)の復元専用。保存時点のlinesを
 // そのまま丸ごと置き換える(pushLine/pushChoiceのようなglobalBacklogへの
@@ -52,27 +52,27 @@ export function getLines(atomKey) {
 // バックログが空に見える」不具合になる(表示側は共通ログを見ているのに、
 // 復元がインスタンス専用ログにしか書いていなかったため)。
 export function restore(atomKey, instanceId, lines) {
-  getStore().set(linesAtomFamily(atomKey), lines);
-  for (const line of lines) {
-    pushGlobalBacklogEntry(line, instanceId);
-  }
+    getStore().set(linesAtomFamily(atomKey), lines);
+    for (const line of lines) {
+        pushGlobalBacklogEntry(line, instanceId);
+    }
 }
 // #ui:backlog:clear 用。実効設定がmode:'global'なら全VN共通のバックログも
 // クリアする(perInstanceならこのインスタンスのlinesだけをクリアする)。
 export function clear(atomKey, instanceId) {
-  getStore().set(linesAtomFamily(atomKey), []);
-  if (getUiConfig(instanceId).backlog.mode === "global") {
-    clearGlobalBacklog();
-  }
+    getStore().set(linesAtomFamily(atomKey), []);
+    if (getUiConfig(instanceId).backlog.mode === "global") {
+        clearGlobalBacklog();
+    }
 }
 // resetStory()用。注意: 全VN共通のバックログ(core/globalBacklog.ts)は、
 // 他のVNインスタンスの分も含んだ共有ログのため、このインスタンス1つの
 // resetでは意図的にクリアしない(#ui:backlog:clearによる明示的なクリアのみ
 // クリア対象にする、という以前からの設計判断を踏襲)。
 export function reset(atomKey) {
-  getStore().set(linesAtomFamily(atomKey), []);
+    getStore().set(linesAtomFamily(atomKey), []);
 }
 export function dispose(atomKey) {
-  linesAtomFamily.remove(atomKey);
+    linesAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=backlogManager.js.map

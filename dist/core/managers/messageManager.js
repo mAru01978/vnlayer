@@ -16,34 +16,34 @@ export const activeMessageAtomFamily = atomFamily((_atomKey) => atom(null));
 const nextRevealFade = new Map();
 const transientTimers = new Map();
 function clearTransientTimer(atomKey) {
-  const timer = transientTimers.get(atomKey);
-  if (timer) {
-    clearTimeout(timer);
-    transientTimers.delete(atomKey);
-  }
+    const timer = transientTimers.get(atomKey);
+    if (timer) {
+        clearTimeout(timer);
+        transientTimers.delete(atomKey);
+    }
 }
 export function setNextRevealFade(atomKey, fadeIn) {
-  nextRevealFade.set(atomKey, fadeIn);
+    nextRevealFade.set(atomKey, fadeIn);
 }
 // 呼ぶと同時に「消費」してfalseへ戻す(1回のメッセージ表示にだけ効く)。
 function consumeNextRevealFade(atomKey) {
-  const value = nextRevealFade.get(atomKey) ?? false;
-  nextRevealFade.set(atomKey, false);
-  return value;
+    const value = nextRevealFade.get(atomKey) ?? false;
+    nextRevealFade.set(atomKey, false);
+    return value;
 }
 // core/useStoryEngine.tsのadvance()が、文章を伴う行を処理するたびに呼ぶ。
 export function showMessage(atomKey, speaker, content, typeSpeedMs) {
-  clearTransientTimer(atomKey);
-  const fadeIn = consumeNextRevealFade(atomKey);
-  getStore().set(activeMessageAtomFamily(atomKey), {
-    speaker,
-    content,
-    fadeIn,
-    typeSpeedMs,
-    // 通常表示は常にタイプライターアニメーションから始める
-    // (startRevealedは簡易セーブ復元専用のフラグなのでここでは付けない)。
-    startRevealed: false,
-  });
+    clearTransientTimer(atomKey);
+    const fadeIn = consumeNextRevealFade(atomKey);
+    getStore().set(activeMessageAtomFamily(atomKey), {
+        speaker,
+        content,
+        fadeIn,
+        typeSpeedMs,
+        // 通常表示は常にタイプライターアニメーションから始める
+        // (startRevealedは簡易セーブ復元専用のフラグなのでここでは付けない)。
+        startRevealed: false,
+    });
 }
 // 簡易セーブ機能(core/SaveProvider.ts)の復元専用。保存時点のactiveMessageを
 // そのまま書き戻す。startRevealedは呼び出し側(core/useStoryEngine.ts)が
@@ -51,54 +51,54 @@ export function showMessage(atomKey, speaker, content, typeSpeedMs) {
 // (components/StageView.tsx側がこのフラグを見てタイプライター演出の
 // スキップ可否を決める)。
 export function restoreMessage(atomKey, message) {
-  clearTransientTimer(atomKey);
-  getStore().set(activeMessageAtomFamily(atomKey), message);
+    clearTransientTimer(atomKey);
+    getStore().set(activeMessageAtomFamily(atomKey), message);
 }
 // #ui:messageWindow:mode:hide/transient/persist 用。
 export function setMode(atomKey, mode, transientDurationMs) {
-  if (mode === "hide") {
+    if (mode === "hide") {
+        clearTransientTimer(atomKey);
+        getStore().set(activeMessageAtomFamily(atomKey), null);
+        return;
+    }
+    if (mode === "transient") {
+        clearTransientTimer(atomKey);
+        const timer = setTimeout(() => {
+            getStore().set(activeMessageAtomFamily(atomKey), null);
+        }, transientDurationMs ?? 4000);
+        transientTimers.set(atomKey, timer);
+        return;
+    }
     clearTransientTimer(atomKey);
-    getStore().set(activeMessageAtomFamily(atomKey), null);
-    return;
-  }
-  if (mode === "transient") {
-    clearTransientTimer(atomKey);
-    const timer = setTimeout(() => {
-      getStore().set(activeMessageAtomFamily(atomKey), null);
-    }, transientDurationMs ?? 4000);
-    transientTimers.set(atomKey, timer);
-    return;
-  }
-  clearTransientTimer(atomKey);
 }
 // 現在のメッセージを無条件でクリアする(backgroundManagerのautoHideOnBgChange用)。
 export function clear(atomKey) {
-  clearTransientTimer(atomKey);
-  getStore().set(activeMessageAtomFamily(atomKey), null);
+    clearTransientTimer(atomKey);
+    getStore().set(activeMessageAtomFamily(atomKey), null);
 }
 // 現在のメッセージの話者が指定した名前の時だけクリアする
 // (characterManagerのautoHideOnCharHide用。他のキャラの発言中に無関係な
 // hideが発生してもクリアしない)。
 export function clearIfSpeakerIs(atomKey, name) {
-  const store = getStore();
-  const target = activeMessageAtomFamily(atomKey);
-  const current = store.get(target);
-  if (current && current.speaker === name) {
-    clearTransientTimer(atomKey);
-    store.set(target, null);
-  }
+    const store = getStore();
+    const target = activeMessageAtomFamily(atomKey);
+    const current = store.get(target);
+    if (current && current.speaker === name) {
+        clearTransientTimer(atomKey);
+        store.set(target, null);
+    }
 }
 export function getActiveMessage(atomKey) {
-  return getStore().get(activeMessageAtomFamily(atomKey));
+    return getStore().get(activeMessageAtomFamily(atomKey));
 }
 export function reset(atomKey) {
-  clearTransientTimer(atomKey);
-  nextRevealFade.delete(atomKey);
-  getStore().set(activeMessageAtomFamily(atomKey), null);
+    clearTransientTimer(atomKey);
+    nextRevealFade.delete(atomKey);
+    getStore().set(activeMessageAtomFamily(atomKey), null);
 }
 export function dispose(atomKey) {
-  clearTransientTimer(atomKey);
-  nextRevealFade.delete(atomKey);
-  activeMessageAtomFamily.remove(atomKey);
+    clearTransientTimer(atomKey);
+    nextRevealFade.delete(atomKey);
+    activeMessageAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=messageManager.js.map

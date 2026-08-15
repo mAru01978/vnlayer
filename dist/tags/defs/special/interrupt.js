@@ -18,25 +18,26 @@ import * as interruptManager from "../../../core/managers/interruptManager";
 // +[#tick:0.1] -> knot の形で選択肢待ちの中でしか使えない)とは役割分担が
 // 完全に分かれる: #interruptはイベント駆動専用。
 registerTag({
-  key: "interrupt",
-  run: ({ args, handlers }) => {
-    const { atomKey } = handlers;
-    const [first, second] = args;
-    if (first === "clear") {
-      if (second) {
-        interruptManager.clearVar(atomKey, second);
-      } else {
-        interruptManager.clearAll(atomKey);
-      }
-      return;
-    }
-    const knot = first;
-    const varName = second;
-    if (!knot || !varName) {
-      warnUnknownTag(["interrupt", ...args].filter(Boolean).join(":"));
-      return;
-    }
-    interruptManager.registerPermission(atomKey, knot, varName);
-  },
+    key: "interrupt",
+    run: ({ args, handlers }) => {
+        const { atomKey } = handlers;
+        const [first, second] = args;
+        if (first === "clear") {
+            if (second) {
+                interruptManager.clearVar(atomKey, second);
+            }
+            else {
+                interruptManager.clearAll(atomKey);
+            }
+            return;
+        }
+        const knot = first;
+        const varName = second;
+        if (!knot || !varName) {
+            warnUnknownTag(["interrupt", ...args].filter(Boolean).join(":"));
+            return;
+        }
+        interruptManager.registerPermission(atomKey, knot, varName);
+    },
 });
 //# sourceMappingURL=interrupt.js.map

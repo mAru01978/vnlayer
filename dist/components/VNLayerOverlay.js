@@ -7,49 +7,29 @@ import StageView from "./StageView";
 // 橋渡しするだけの非表示コンポーネント。engineオブジェクト自体は毎レンダー
 // 新しく作られるが、handle経由で呼べば常に最新のsetContextVars/resetStoryを
 // 呼び出せるようにしてある(onReadyは初回マウント時に1回だけ呼ぶ)。
-function EngineBridge({ onReady }) {
-  const engine = useStory();
-  const engineRef = useRef(engine);
-  engineRef.current = engine;
-  const notifiedRef = useRef(false);
-  useEffect(() => {
-    if (notifiedRef.current || !onReady) return;
-    notifiedRef.current = true;
-    onReady({
-      setContextVars: (vars, options) =>
-        engineRef.current.setContextVars(vars, options),
-      getContextVars: (varNames) => engineRef.current.getContextVars(varNames),
-      resetStory: () => engineRef.current.resetStory(),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return null;
+function EngineBridge({ onReady, }) {
+    const engine = useStory();
+    const engineRef = useRef(engine);
+    engineRef.current = engine;
+    const notifiedRef = useRef(false);
+    useEffect(() => {
+        if (notifiedRef.current || !onReady)
+            return;
+        notifiedRef.current = true;
+        onReady({
+            setContextVars: (vars, options) => engineRef.current.setContextVars(vars, options),
+            getContextVars: (varNames) => engineRef.current.getContextVars(varNames),
+            resetStory: () => engineRef.current.resetStory(),
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return null;
 }
 // StoryProviderをこのコンポーネント自身が内包しているので、
 // <VNLayerOverlay clip="BlogIntro" mode="overlay" /> をどのページに置いても
 // それだけでそのクリップ用のエンジン一式が独立して動く。
 // (旧VNLayer.tsxと同じ役割。描画自体はStageViewに一本化されている)
-export default function VNLayerOverlay({
-  clip = "Scenario1",
-  mode = "overlay",
-  uiAnchor,
-  showUi,
-  stepProvider,
-  saveProvider,
-  onNavigate,
-  onReady,
-  instanceId,
-}) {
-  return _jsxs(StoryProvider, {
-    clip: clip,
-    stepProvider: stepProvider,
-    saveProvider: saveProvider,
-    onNavigate: onNavigate,
-    instanceId: instanceId,
-    children: [
-      _jsx(EngineBridge, { onReady: onReady }),
-      _jsx(StageView, { mode: mode, uiAnchor: uiAnchor, showUi: showUi }),
-    ],
-  });
+export default function VNLayerOverlay({ clip = "Scenario1", mode = "overlay", uiAnchor, showUi, stepProvider, saveProvider, onNavigate, onReady, instanceId, }) {
+    return (_jsxs(StoryProvider, { clip: clip, stepProvider: stepProvider, saveProvider: saveProvider, onNavigate: onNavigate, instanceId: instanceId, children: [_jsx(EngineBridge, { onReady: onReady }), _jsx(StageView, { mode: mode, uiAnchor: uiAnchor, showUi: showUi })] }));
 }
 //# sourceMappingURL=VNLayerOverlay.js.map

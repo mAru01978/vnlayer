@@ -8,18 +8,18 @@
 // 判断(バッチの終わり)自体はink進行ループの責務としてuseStoryEngine.ts側に残す。
 const pendingGoto = new Map();
 export function requestGoto(atomKey, path) {
-  pendingGoto.set(atomKey, path);
+    pendingGoto.set(atomKey, path);
 }
 // 呼ぶと同時に「消費」して予約を消す。
 export function consumePendingGoto(atomKey) {
-  const path = pendingGoto.get(atomKey);
-  pendingGoto.delete(atomKey);
-  return path;
+    const path = pendingGoto.get(atomKey);
+    pendingGoto.delete(atomKey);
+    return path;
 }
 export function reset(atomKey) {
-  pendingGoto.delete(atomKey);
+    pendingGoto.delete(atomKey);
 }
 export function dispose(atomKey) {
-  pendingGoto.delete(atomKey);
+    pendingGoto.delete(atomKey);
 }
 //# sourceMappingURL=navigationManager.js.map

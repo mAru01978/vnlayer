@@ -9,41 +9,40 @@
 // VNLayer.configure({ assets: { fallbackToMock: true } }) で明示的にonにする。
 import { reportError, AssetError } from "../core/errors";
 const defaultConfig = {
-  basePath: "./assets",
-  source: "fetch",
-  fallbackToMock: false,
-  spriteExtension: "png",
-  animExtension: "webm",
+    basePath: "./assets",
+    source: "fetch",
+    fallbackToMock: false,
+    spriteExtension: "png",
+    animExtension: "webm",
 };
 let current = { ...defaultConfig };
 let version = 0;
 const listeners = new Set();
 function bumpVersion() {
-  version += 1;
-  listeners.forEach((l) => l());
+    version += 1;
+    listeners.forEach((l) => l());
 }
 export function subscribeAssetsConfig(listener) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+    listeners.add(listener);
+    return () => listeners.delete(listener);
 }
 export function getAssetsConfigVersion() {
-  return version;
+    return version;
 }
 export function setAssetsConfig(patch) {
-  current = { ...current, ...patch };
-  bumpVersion();
+    current = { ...current, ...patch };
+    bumpVersion();
 }
 export function getAssetsConfig() {
-  return current;
+    return current;
 }
 // 素材が見つからない場合の共通報告口。fallbackToMockがtrueならモック表示
 // してよいのでtrueを返す。falseならAssetErrorを報告してfalseを返す
 // (呼び出し側=components/Renderer.tsxはこのfalseを見て何も描画しない)。
 export function shouldFallbackToMock(context) {
-  if (current.fallbackToMock) return true;
-  reportError(
-    new AssetError(`asset not found and fallbackToMock is off: ${context}`),
-  );
-  return false;
+    if (current.fallbackToMock)
+        return true;
+    reportError(new AssetError(`asset not found and fallbackToMock is off: ${context}`));
+    return false;
 }
 //# sourceMappingURL=assetsConfig.js.map

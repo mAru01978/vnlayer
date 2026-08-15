@@ -37,52 +37,17 @@ import "./defs/special/timeline";
 import "./defs/special/interrupt";
 import { runTag } from "./registry";
 function parseTag(tag) {
-  const [key, ...args] = tag.split(":").map((s) => s.trim());
-  return { key, args };
+    const [key, ...args] = tag.split(":").map((s) => s.trim());
+    return { key, args };
 }
 export async function dispatchTag(tag, handlers) {
-  const { key, args } = parseTag(tag);
-  await runTag(key, args, handlers);
+    const { key, args } = parseTag(tag);
+    await runTag(key, args, handlers);
 }
-export {
-  setTagConfig,
-  getTagConfig,
-  registerTag,
-  registerAlias,
-  registerBasicTag,
-  warnUnknownTag,
-} from "./registry";
-export {
-  setSpriteAssets,
-  getCharacterSlot,
-  getAllCharacterSlots,
-  getBackgroundSlot,
-  getAllBackgroundSlots,
-  resolveSpriteSrc,
-  subscribeSpriteAssets,
-  getSpriteAssetsVersion,
-} from "./spriteAssets";
-export {
-  setAnimAssets,
-  setAnimAssetResolver,
-  getAnimAsset,
-  getAllAnimAssets,
-  subscribeAnimAssets,
-  getAnimAssetsVersion,
-} from "./animAssets";
-export {
-  setAssetsConfig,
-  getAssetsConfig,
-  subscribeAssetsConfig,
-  getAssetsConfigVersion,
-} from "./assetsConfig";
-export {
-  setUiConfig,
-  getUiConfig,
-  subscribeUiConfig,
-  getUiConfigVersion,
-  getAllUiConfigPatches,
-  restoreUiConfigPatches,
-} from "./uiConfig";
+export { setTagConfig, getTagConfig, registerTag, registerAlias, registerBasicTag, warnUnknownTag, } from "./registry";
+export { setSpriteAssets, getCharacterSlot, getAllCharacterSlots, getBackgroundSlot, getAllBackgroundSlots, resolveSpriteSrc, subscribeSpriteAssets, getSpriteAssetsVersion, } from "./spriteAssets";
+export { setAnimAssets, setAnimAssetResolver, getAnimAsset, getAllAnimAssets, subscribeAnimAssets, getAnimAssetsVersion, } from "./animAssets";
+export { setAssetsConfig, getAssetsConfig, subscribeAssetsConfig, getAssetsConfigVersion, } from "./assetsConfig";
+export { setUiConfig, getUiConfig, subscribeUiConfig, getUiConfigVersion, getAllUiConfigPatches, restoreUiConfigPatches, } from "./uiConfig";
 export { setWebLinks, getWebLink } from "./webLinks";
 //# sourceMappingURL=index.js.map

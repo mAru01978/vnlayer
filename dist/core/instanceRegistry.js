@@ -40,47 +40,39 @@
 // 完全に分離してある。
 import { reportError, TagDispatchError } from "./errors";
 function normalizeSelector(selector) {
-  return selector.replace(/^[#.@]/, "");
+    return selector.replace(/^[#.@]/, "");
 }
 const registry = new Map();
 // atomKey単位の自己登録用(instanceId未指定のインスタンスでも必ず動く)。
 const selfRegistry = new Map();
 export function registerInstance(selector, target) {
-  registry.set(normalizeSelector(selector), target);
+    registry.set(normalizeSelector(selector), target);
 }
 export function unregisterInstance(selector) {
-  registry.delete(normalizeSelector(selector));
+    registry.delete(normalizeSelector(selector));
 }
 export async function emitToInstance(selector, vars, options) {
-  const target = registry.get(normalizeSelector(selector));
-  if (!target) {
-    reportError(
-      new TagDispatchError(
-        `emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`,
-      ),
-    );
-    return;
-  }
-  await target.setContextVars(vars, options);
+    const target = registry.get(normalizeSelector(selector));
+    if (!target) {
+        reportError(new TagDispatchError(`emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`));
+        return;
+    }
+    await target.setContextVars(vars, options);
 }
 // core/useStoryEngine.ts側が、instanceIdの有無に関わらず必ず自分の
 // atomKeyで自己登録する(# emit:<varName>:<value> の2引数=自己通知形用)。
 export function registerSelf(atomKey, target) {
-  selfRegistry.set(atomKey, target);
+    selfRegistry.set(atomKey, target);
 }
 export function unregisterSelf(atomKey) {
-  selfRegistry.delete(atomKey);
+    selfRegistry.delete(atomKey);
 }
 export async function emitToSelf(atomKey, vars, options) {
-  const target = selfRegistry.get(atomKey);
-  if (!target) {
-    reportError(
-      new TagDispatchError(
-        `emit: instance not ready yet (atomKey "${atomKey}")`,
-      ),
-    );
-    return;
-  }
-  await target.setContextVars(vars, options);
+    const target = selfRegistry.get(atomKey);
+    if (!target) {
+        reportError(new TagDispatchError(`emit: instance not ready yet (atomKey "${atomKey}")`));
+        return;
+    }
+    await target.setContextVars(vars, options);
 }
 //# sourceMappingURL=instanceRegistry.js.map

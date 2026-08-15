@@ -200,10 +200,11 @@ function CharacterSprite({
     setImageFailed(false);
   }, [name, state.expression, spriteSrc]);
 
-  const allowMock = state.motion
+  const allowMock =
+  hasRealAsset ||
+  (state.motion
     ? shouldFallbackForAnim(name, state.motion)
-    : shouldFallbackForSprite(name, state.expression);
-
+    : shouldFallbackForSprite(name, state.expression));
   const gazeAngle = state.gaze
     ? computeGazeAngleDeg(
         slot.originX,

@@ -20,9 +20,9 @@ import { createStaticStepProvider } from "./staticStepProvider";
 // 依存していた場合は、明示的な指定が必要になる)。
 let current = createStaticStepProvider({ dataBaseUrl: "./data" });
 export function setDefaultStepProvider(provider) {
-  current = provider;
+    current = provider;
 }
 export function getDefaultStepProvider() {
-  return current;
+    return current;
 }
 //# sourceMappingURL=defaultStepProvider.js.map

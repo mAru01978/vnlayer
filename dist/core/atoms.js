@@ -18,48 +18,46 @@ import { atomFamily } from "jotai-family";
 import { getTagConfig } from "../tags/registry";
 import { getStore } from "./store";
 function createCamAtom() {
-  return atom({ target: "", scale: 1, originX: 50, originY: 50 });
+    return atom({ target: "", scale: 1, originX: 50, originY: 50 });
 }
 function createShakeAtom() {
-  return atom({ nonce: 0, amplitude: 0, duration: 300 });
+    return atom({ nonce: 0, amplitude: 0, duration: 300 });
 }
 function createFlashAtom() {
-  return atom(null);
+    return atom(null);
 }
 function createTypeSpeedAtom() {
-  // 初期値はatom生成(=このinstanceKeyでの初回アクセス)時点でgetTagConfigを
-  // 引く。VNLayer.configure({ tags: { type: {...} } })でnormal速度が
-  // 上書きされていても、その後に最初のuseStoryEngine初期化が走る限りは
-  // 反映される。
-  return atom(getTagConfig("type")?.speeds.normal ?? 30);
+    // 初期値はatom生成(=このinstanceKeyでの初回アクセス)時点でgetTagConfigを
+    // 引く。VNLayer.configure({ tags: { type: {...} } })でnormal速度が
+    // 上書きされていても、その後に最初のuseStoryEngine初期化が走る限りは
+    // 反映される。
+    return atom(getTagConfig("type")?.speeds.normal ?? 30);
 }
 export const camAtomFamily = atomFamily((_atomKey) => createCamAtom());
 export const shakeAtomFamily = atomFamily((_atomKey) => createShakeAtom());
 export const flashAtomFamily = atomFamily((_atomKey) => createFlashAtom());
-export const typeSpeedAtomFamily = atomFamily((_atomKey) =>
-  createTypeSpeedAtom(),
-);
+export const typeSpeedAtomFamily = atomFamily((_atomKey) => createTypeSpeedAtom());
 // cam/shake/flashは専用のマネージャーファイルを持たない(resolve()の中で
 // 完結するbasicタグの実体そのものであるため)。resetStory()/unmount時の
 // 後片付けだけ、ここにまとめて用意しておく。
 export function resetBasicAtoms(atomKey) {
-  const store = getStore();
-  store.set(camAtomFamily(atomKey), {
-    target: "",
-    scale: 1,
-    originX: 50,
-    originY: 50,
-  });
-  store.set(shakeAtomFamily(atomKey), {
-    nonce: 0,
-    amplitude: 0,
-    duration: 300,
-  });
-  store.set(flashAtomFamily(atomKey), null);
+    const store = getStore();
+    store.set(camAtomFamily(atomKey), {
+        target: "",
+        scale: 1,
+        originX: 50,
+        originY: 50,
+    });
+    store.set(shakeAtomFamily(atomKey), {
+        nonce: 0,
+        amplitude: 0,
+        duration: 300,
+    });
+    store.set(flashAtomFamily(atomKey), null);
 }
 export function disposeBasicAtoms(atomKey) {
-  camAtomFamily.remove(atomKey);
-  shakeAtomFamily.remove(atomKey);
-  flashAtomFamily.remove(atomKey);
+    camAtomFamily.remove(atomKey);
+    shakeAtomFamily.remove(atomKey);
+    flashAtomFamily.remove(atomKey);
 }
 //# sourceMappingURL=atoms.js.map
