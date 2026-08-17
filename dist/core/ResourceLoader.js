@@ -1,16 +1,16 @@
-import { ResourceLoadError, reportError } from './errors';
+import { ResourceLoadError, reportError } from "./errors";
 function joinPath(basePath, path) {
     if (!basePath)
         return path;
-    const trimmedBase = basePath.replace(/\/+$/, '');
-    const trimmedPath = path.replace(/^\/+/, '');
+    const trimmedBase = basePath.replace(/\/+$/, "");
+    const trimmedPath = path.replace(/^\/+/, "");
     return `${trimmedBase}/${trimmedPath}`;
 }
 // story.json等、JSONとして読み込みたいリソース用。
 export async function loadJson(path, options = {}) {
     const fullPath = joinPath(options.basePath, path);
-    const source = options.source ?? 'fetch';
-    if (source === 'local') {
+    const source = options.source ?? "fetch";
+    if (source === "local") {
         if (!options.resolveLocal) {
             throw new ResourceLoadError(`source:'local' requires resolveLocal to be provided (path: "${fullPath}")`);
         }
@@ -18,7 +18,9 @@ export async function loadJson(path, options = {}) {
             return (await options.resolveLocal(fullPath));
         }
         catch (e) {
-            throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, { cause: e });
+            throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, {
+                cause: e,
+            });
         }
     }
     let res;
@@ -39,14 +41,14 @@ export async function loadJson(path, options = {}) {
 // 返す前提。
 export async function resolveUrl(path, options = {}) {
     const fullPath = joinPath(options.basePath, path);
-    const source = options.source ?? 'fetch';
-    if (source === 'local') {
+    const source = options.source ?? "fetch";
+    if (source === "local") {
         if (!options.resolveLocal) {
             throw new ResourceLoadError(`source:'local' requires resolveLocal to be provided (path: "${fullPath}")`);
         }
         try {
             const resolved = await options.resolveLocal(fullPath);
-            if (typeof resolved !== 'string') {
+            if (typeof resolved !== "string") {
                 throw new ResourceLoadError(`resolveLocal must return a URL string for resolveUrl() (path: "${fullPath}")`);
             }
             return resolved;
@@ -54,7 +56,9 @@ export async function resolveUrl(path, options = {}) {
         catch (e) {
             if (e instanceof ResourceLoadError)
                 throw e;
-            throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, { cause: e });
+            throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, {
+                cause: e,
+            });
         }
     }
     return fullPath;
@@ -83,7 +87,9 @@ export function resolveUrlCached(cacheKey, path, options, onResolved) {
             .catch((e) => {
             reportError(e instanceof ResourceLoadError
                 ? e
-                : new ResourceLoadError(`failed to resolve asset "${path}"`, { cause: e }));
+                : new ResourceLoadError(`failed to resolve asset "${path}"`, {
+                    cause: e,
+                }));
         })
             .finally(() => {
             pendingResolutions.delete(cacheKey);

@@ -1,16 +1,16 @@
-'use client';
-import { createRoot } from 'react-dom/client';
-import { createElement } from 'react';
-import VNLayerOverlay from './components/VNLayerOverlay';
-import { setSpriteAssets } from './tags/spriteAssets';
-import { setTagConfig, setUiConfig, setWebLinks } from './tags/index';
-import { setAnimAssets } from './tags/animAssets';
-import { setAssetsConfig } from './tags/assetsConfig';
-import { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
-import { createStaticStepProvider } from './core/staticStepProvider';
-import { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
-import { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
-import { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
+"use client";
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+import VNLayerOverlay from "./components/VNLayerOverlay";
+import { setSpriteAssets, } from "./tags/spriteAssets";
+import { setTagConfig, setUiConfig, setWebLinks, } from "./tags/index";
+import { setAnimAssets } from "./tags/animAssets";
+import { setAssetsConfig } from "./tags/assetsConfig";
+import { serverStepProvider, createServerStepProvider, } from "./core/serverStepProvider";
+import { createStaticStepProvider } from "./core/staticStepProvider";
+import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
+import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
+import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
 const instances = new Map();
 function resolveElement(selector) {
     const el = document.querySelector(selector);
@@ -39,8 +39,8 @@ function mount(selector, options) {
     instances.set(selector, instance);
     return new Promise((resolve) => {
         root.render(createElement(VNLayerOverlay, {
-            clip: options.clip ?? 'Scenario1',
-            mode: options.mode ?? 'overlay',
+            clip: options.clip ?? "Scenario1",
+            mode: options.mode ?? "overlay",
             uiAnchor: options.uiAnchor,
             showUi: options.showUi,
             stepProvider: options.stepProvider,
@@ -84,14 +84,16 @@ function unmount(selector) {
 // notify:trueは逆にホスト側の実イベントをInkに伝える経路であり、
 // #tickを置き換えるものではない。
 async function setContext(vars, selector, options) {
-    const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+    const targets = selector
+        ? [instances.get(selector)].filter(Boolean)
+        : Array.from(instances.values());
     if (targets.length === 0) {
-        console.warn('[VNLayer] setContext called but no instance is mounted yet.');
+        console.warn("[VNLayer] setContext called but no instance is mounted yet.");
         return;
     }
     await Promise.all(targets.map((instance) => {
         if (!instance?.handle) {
-            console.warn('[VNLayer] setContext called before the instance finished initializing; ignoring this call.');
+            console.warn("[VNLayer] setContext called before the instance finished initializing; ignoring this call.");
             return Promise.resolve();
         }
         return instance.handle.setContextVars(vars, options);
@@ -121,10 +123,14 @@ async function getContext(varNames, selector) {
         return {};
     }
     if (!instance?.handle) {
-        console.warn('[VNLayer] getContext called before the instance finished initializing, or no matching instance is mounted.');
+        console.warn("[VNLayer] getContext called before the instance finished initializing, or no matching instance is mounted.");
         return {};
     }
-    const names = varNames === undefined ? undefined : Array.isArray(varNames) ? varNames : [varNames];
+    const names = varNames === undefined
+        ? undefined
+        : Array.isArray(varNames)
+            ? varNames
+            : [varNames];
     return instance.handle.getContextVars(names);
 }
 // VNLayer.reset(selector?)
@@ -137,14 +143,16 @@ async function getContext(varNames, selector) {
 // セーブも(saveProviderが設定されていれば)一緒にクリアされる
 // (core/useStoryEngine.tsのresetStory()参照)。
 async function reset(selector) {
-    const targets = selector ? [instances.get(selector)].filter(Boolean) : Array.from(instances.values());
+    const targets = selector
+        ? [instances.get(selector)].filter(Boolean)
+        : Array.from(instances.values());
     if (targets.length === 0) {
-        console.warn('[VNLayer] reset called but no instance is mounted yet.');
+        console.warn("[VNLayer] reset called but no instance is mounted yet.");
         return;
     }
     await Promise.all(targets.map((instance) => {
         if (!instance?.handle) {
-            console.warn('[VNLayer] reset called before the instance finished initializing; ignoring this call.');
+            console.warn("[VNLayer] reset called before the instance finished initializing; ignoring this call.");
             return Promise.resolve();
         }
         return instance.handle.resetStory();
@@ -181,10 +189,10 @@ function getDataElements(name, selector) {
         : document;
     if (!root)
         return [];
-    const nodeList = root.querySelectorAll('[data-vn-key]');
+    const nodeList = root.querySelectorAll("[data-vn-key]");
     const results = [];
     nodeList.forEach((el) => {
-        const key = el.getAttribute('data-vn-key') ?? '';
+        const key = el.getAttribute("data-vn-key") ?? "";
         if (name && key !== name && !key.startsWith(`${name}:`))
             return;
         results.push({ key, type: el.constructor.name, element: el });
@@ -213,7 +221,7 @@ export const VNLayer = {
 };
 // ブラウザで素朴に <script> 読み込みする運用(将来のvnlayer.js)に備えて
 // window.VNLayer にも公開しておく。Next.jsのSSR中(windowが無い環境)では何もしない。
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     window.VNLayer = VNLayer;
 }
 //# sourceMappingURL=api.js.map

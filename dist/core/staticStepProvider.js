@@ -2,7 +2,7 @@ import { Story } from "inkjs";
 import { continueUntilChoice } from "./inkStepRunner";
 import { StoryLoadError, StoryRuntimeError, reportError } from "./errors";
 import * as interruptManager from "./managers/interruptManager";
-import { loadJson } from "./ResourceLoader";
+import { loadJson, } from "./ResourceLoader";
 const liveStoryPromises = new Map();
 // #interrupt(SwitchFlow)がinit/choose/resetのレスポンスを介さず非同期に
 // pushしてくるRunResultの購読先。キーはcacheKey()と同じ。
@@ -53,7 +53,9 @@ async function loadStoryJson(clip, dataBaseUrl, loaderOptions) {
         });
     }
     catch (e) {
-        throw new StoryLoadError(`failed to load story.json for clip "${clip}"`, { cause: e });
+        throw new StoryLoadError(`failed to load story.json for clip "${clip}"`, {
+            cause: e,
+        });
     }
 }
 async function createStoryHandle(clip, dataBaseUrl, loaderOptions, key) {
@@ -65,7 +67,10 @@ async function createStoryHandle(clip, dataBaseUrl, loaderOptions, key) {
     story.onError = (message, type) => {
         reportError(new StoryRuntimeError(`[${clip}] (${type}) ${message}`));
     };
-    const handle = { story, visual: { bg: "", characters: {}, speaker: "" } };
+    const handle = {
+        story,
+        visual: { bg: "", characters: {}, speaker: "" },
+    };
     // #interrupt(SwitchFlow+ObserveVariable)用に、このStoryインスタンスを
     // 操作する権限(host)をinterruptManagerへ渡す。
     interruptManager.attachStory(key, {
@@ -82,7 +87,10 @@ async function createStoryHandle(clip, dataBaseUrl, loaderOptions, key) {
 }
 export function createStaticStepProvider(options = {}) {
     const dataBaseUrl = options.dataBaseUrl ?? "./data";
-    const loaderOptions = { source: options.source, resolveLocal: options.resolveLocal };
+    const loaderOptions = {
+        source: options.source,
+        resolveLocal: options.resolveLocal,
+    };
     function ensureStory(clip, atomKey) {
         const key = cacheKey(clip, atomKey);
         let handlePromise = liveStoryPromises.get(key);
@@ -208,10 +216,24 @@ export function createStaticStepProvider(options = {}) {
                 if (!handle.story.currentFlowIsDefaultFlow) {
                     return null;
                 }
-                return {
-                    inkStateJson: handle.story.state.ToJson(),
-                    visual: handle.visual,
-                };
+                // 選択肢が無い（END/DONE 直後など）は保存しない
+                //    復元しても「待ち状態」として意味が薄い／壊れやすい
+                if (handle.story.currentChoices.length === 0) {
+                    return null;
+                }
+                // 3) ToJson 自体を try/catch
+                //    previousPointer 等が無効な瞬間はスキップ
+                try {
+                    const inkStateJson = handle.story.state.ToJson();
+                    return {
+                        inkStateJson,
+                        visual: handle.visual,
+                    };
+                }
+                catch (e) {
+                    reportError(new StoryRuntimeError("failed to persist save data (story state not serializable at this moment; skipped)", { cause: e }));
+                    return null;
+                }
             });
         },
         async restore(clip, save, atomKey) {

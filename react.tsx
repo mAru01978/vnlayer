@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // vnlayer/react … VNLayerをReactらしいJSXコンポーネント+ref越しの命令的APIとして
 // 使うための別エントリポイント(package.jsonのexports."./react"参照)。
 //
@@ -24,16 +24,35 @@
 // createLocalStorageSaveProvider())が使われる(core/defaultStepProvider.ts /
 // core/defaultSaveProvider.ts参照。入口がJS/TSC/Reactのどれでも既定挙動は
 // 統一されている)。
-import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, type DependencyList, type RefObject } from 'react';
-import VNLayerOverlayInternal, { type VNLayerMode } from './components/VNLayerOverlay';
-import type { UiAnchor } from './components/StageView';
-import { setUiConfig, setTagConfig, setWebLinks, type UiConfigPatch } from './tags/index';
-import { setAnimAssets, type AnimAssetConfig } from './tags/animAssets';
-import { setSpriteAssets, type SpriteCharacterConfig } from './tags/spriteAssets';
-import { setAssetsConfig, type AssetsGlobalConfig } from './tags/assetsConfig';
-import type { StepProvider } from './core/StepProvider';
-import type { SaveProvider } from './core/SaveProvider';
-import type { SetContextOptions, VNLayerHandle } from './core/types';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  type DependencyList,
+  type RefObject,
+} from "react";
+import VNLayerOverlayInternal, {
+  type VNLayerMode,
+} from "./components/VNLayerOverlay";
+import type { UiAnchor } from "./components/StageView";
+import {
+  setUiConfig,
+  setTagConfig,
+  setWebLinks,
+  type UiConfigPatch,
+} from "./tags/index";
+import { setAnimAssets, type AnimAssetConfig } from "./tags/animAssets";
+import {
+  setSpriteAssets,
+  type SpriteCharacterConfig,
+} from "./tags/spriteAssets";
+import { setAssetsConfig, type AssetsGlobalConfig } from "./tags/assetsConfig";
+import type { StepProvider } from "./core/StepProvider";
+import type { SaveProvider } from "./core/SaveProvider";
+import type { SetContextOptions, VNLayerHandle } from "./core/types";
 
 export type VNLayerProps = {
   clip?: string;
@@ -57,14 +76,28 @@ export type VNLayerProps = {
 };
 
 export type VNLayerRef = {
-  setContext: (vars: Record<string, unknown>, options?: SetContextOptions) => Promise<void>;
+  setContext: (
+    vars: Record<string, unknown>,
+    options?: SetContextOptions,
+  ) => Promise<void>;
   getContext: (varNames?: string[]) => Promise<Record<string, unknown>>;
   reset: () => Promise<void>;
 };
 
 // <VNLayer ref={vnRef} clip="Alice" mode="overlay" ui={{...}} onReady={...} />
 export const VNLayer = forwardRef<VNLayerRef, VNLayerProps>(function VNLayer(
-  { clip, mode, uiAnchor, showUi, stepProvider, saveProvider, onNavigate, ui, instanceId, onReady },
+  {
+    clip,
+    mode,
+    uiAnchor,
+    showUi,
+    stepProvider,
+    saveProvider,
+    onNavigate,
+    ui,
+    instanceId,
+    onReady,
+  },
   ref,
 ) {
   const generatedId = useId();
@@ -84,14 +117,18 @@ export const VNLayer = forwardRef<VNLayerRef, VNLayerProps>(function VNLayer(
     (): VNLayerRef => ({
       setContext: (vars, options) => {
         if (!handleRef.current) {
-          console.warn('[VNLayer] setContext called before the instance finished initializing; ignoring this call.');
+          console.warn(
+            "[VNLayer] setContext called before the instance finished initializing; ignoring this call.",
+          );
           return Promise.resolve();
         }
         return handleRef.current.setContextVars(vars, options);
       },
       getContext: (varNames) => {
         if (!handleRef.current) {
-          console.warn('[VNLayer] getContext called before the instance finished initializing.');
+          console.warn(
+            "[VNLayer] getContext called before the instance finished initializing.",
+          );
           return Promise.resolve({});
         }
         return handleRef.current.getContextVars(varNames);
@@ -149,7 +186,8 @@ export type ConfigureVNLayerOptions = {
 export function configureVNLayer(options: ConfigureVNLayerOptions): void {
   if (options.assets) {
     const { sprite, anim, ...globalAssetsConfig } = options.assets;
-    if (Object.keys(globalAssetsConfig).length > 0) setAssetsConfig(globalAssetsConfig);
+    if (Object.keys(globalAssetsConfig).length > 0)
+      setAssetsConfig(globalAssetsConfig);
     if (sprite) setSpriteAssets(sprite);
     if (anim) setAnimAssets(anim);
   }
@@ -186,14 +224,21 @@ export function useVNLayerContext(
 // vanilla版と同じくdata-vn-key属性(components/Renderer.tsx・
 // components/StageView.tsxがJSXに付与しているもの)だけが対象で、
 // core/(inkjs実行やStory操作等の内部状態)には一切触れない。
-export type VNLayerDataElement = { key: string; type: string; element: HTMLElement };
+export type VNLayerDataElement = {
+  key: string;
+  type: string;
+  element: HTMLElement;
+};
 
-export function getDataElements(name?: string, root?: Element | Document): VNLayerDataElement[] {
+export function getDataElements(
+  name?: string,
+  root?: Element | Document,
+): VNLayerDataElement[] {
   const scope: ParentNode = root ?? document;
-  const nodeList = scope.querySelectorAll<HTMLElement>('[data-vn-key]');
+  const nodeList = scope.querySelectorAll<HTMLElement>("[data-vn-key]");
   const results: VNLayerDataElement[] = [];
   nodeList.forEach((el) => {
-    const key = el.getAttribute('data-vn-key') ?? '';
+    const key = el.getAttribute("data-vn-key") ?? "";
     if (name && key !== name && !key.startsWith(`${name}:`)) return;
     results.push({ key, type: el.constructor.name, element: el });
   });
@@ -203,11 +248,14 @@ export function getDataElements(name?: string, root?: Element | Document): VNLay
 // StepProvider/SaveProviderのfactory類もvnlayer/react側から使えるよう
 // re-exportしておく(vanilla版api.tsのVNLayerオブジェクトのプロパティと
 // 同じ実体)。
-export { createStaticStepProvider } from './core/staticStepProvider';
-export { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
-export { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
-export { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
-export { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
-export type { StepProvider } from './core/StepProvider';
-export type { SaveProvider, SaveData } from './core/SaveProvider';
-export type { VNLayerHandle, SetContextOptions } from './core/types';
+export { createStaticStepProvider } from "./core/staticStepProvider";
+export {
+  serverStepProvider,
+  createServerStepProvider,
+} from "./core/serverStepProvider";
+export { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
+export { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
+export { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+export type { StepProvider } from "./core/StepProvider";
+export type { SaveProvider, SaveData } from "./core/SaveProvider";
+export type { VNLayerHandle, SetContextOptions } from "./core/types";

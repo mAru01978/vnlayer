@@ -32,7 +32,12 @@ export function createServerStepProvider(
     init: (clip, atomKey) =>
       callStoryApi<RunResult>(endpoint, { action: "init", clip, atomKey }),
     choose: (clip, index, atomKey) =>
-      callStoryApi<RunResult>(endpoint, { action: "choose", index, clip, atomKey }),
+      callStoryApi<RunResult>(endpoint, {
+        action: "choose",
+        index,
+        clip,
+        atomKey,
+      }),
     idle: async (clip, varName, value, atomKey) => {
       await callStoryApi<{ ok: boolean }>(endpoint, {
         action: "idle",

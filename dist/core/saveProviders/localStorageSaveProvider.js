@@ -1,11 +1,12 @@
 export function createLocalStorageSaveProvider(options = {}) {
-    const prefix = options.keyPrefix ?? 'vnlayer:save:';
+    const prefix = options.keyPrefix ?? "vnlayer:save:";
     function storageKey(key) {
         return `${prefix}${key}`;
     }
     function hasStorage() {
         try {
-            return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+            return (typeof window !== "undefined" &&
+                typeof window.localStorage !== "undefined");
         }
         catch {
             // Safariのプライベートブラウズ等、localStorageへのアクセス自体が
@@ -21,7 +22,7 @@ export function createLocalStorageSaveProvider(options = {}) {
                 window.localStorage.setItem(storageKey(key), JSON.stringify(data));
             }
             catch (e) {
-                console.warn('[VNLayer] localStorage save failed (quota exceeded, or private mode?):', e);
+                console.warn("[VNLayer] localStorage save failed (quota exceeded, or private mode?):", e);
             }
         },
         async load(key) {
@@ -34,7 +35,7 @@ export function createLocalStorageSaveProvider(options = {}) {
                 return JSON.parse(raw);
             }
             catch (e) {
-                console.warn('[VNLayer] localStorage save data corrupted, ignoring:', e);
+                console.warn("[VNLayer] localStorage save data corrupted, ignoring:", e);
                 return null;
             }
         },

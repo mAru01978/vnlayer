@@ -16,7 +16,14 @@ function update(atomKey, updater) {
     store.set(target, updater(store.get(target)));
 }
 export function setExpression(atomKey, name, expression) {
-    update(atomKey, (prev) => ({ ...prev, [name]: { expression } }));
+    update(atomKey, (prev) => ({
+        ...prev,
+        [name]: {
+            ...prev[name],
+            expression,
+            zIndex: prev[name]?.zIndex,
+        },
+    }));
 }
 export function setAnimMotion(atomKey, name, motion) {
     update(atomKey, (prev) => ({
@@ -29,6 +36,7 @@ export function setAnimMotion(atomKey, name, motion) {
             animLoop: false,
             animReverse: false,
             animSpeed: prev[name]?.animSpeed,
+            zIndex: prev[name]?.zIndex,
         },
     }));
 }
@@ -124,7 +132,11 @@ export function mergeVisualSnapshot(atomKey, visualCharacters) {
     update(atomKey, (prev) => {
         const merged = {};
         for (const [name, charState] of Object.entries(visualCharacters)) {
-            merged[name] = { ...charState, gaze: prev[name]?.gaze };
+            merged[name] = {
+                ...charState,
+                gaze: prev[name]?.gaze,
+                zIndex: charState.zIndex ?? prev[name]?.zIndex,
+            };
         }
         return merged;
     });
@@ -134,5 +146,15 @@ export function reset(atomKey) {
 }
 export function dispose(atomKey) {
     charactersAtomFamily.remove(atomKey);
+}
+export function setZIndex(atomKey, name, zIndex) {
+    update(atomKey, (prev) => ({
+        ...prev,
+        [name]: {
+            ...prev[name],
+            expression: prev[name]?.expression ?? "normal",
+            zIndex,
+        },
+    }));
 }
 //# sourceMappingURL=characterManager.js.map

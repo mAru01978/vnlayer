@@ -7,13 +7,13 @@
 // 見た目は何も描画しない(開発中に「素材の指定漏れ」に気づけるようにする
 // ための既定値)。開発中に見た目を仮確認したい場合だけ、
 // VNLayer.configure({ assets: { fallbackToMock: true } }) で明示的にonにする。
-import { reportError, AssetError } from '../core/errors';
+import { reportError, AssetError } from "../core/errors";
 const defaultConfig = {
-    basePath: './assets',
-    source: 'fetch',
+    basePath: "./assets",
+    source: "fetch",
     fallbackToMock: false,
-    spriteExtension: 'png',
-    animExtension: 'webm',
+    spriteExtension: "png",
+    animExtension: "webm",
 };
 let current = { ...defaultConfig };
 let version = 0;

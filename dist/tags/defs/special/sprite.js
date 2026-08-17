@@ -69,16 +69,43 @@ registerTag({
         const { atomKey, instanceId } = handlers;
         const [name, mode, ...rest] = args;
         if (name === BG_PSEUDO_NAME) {
-            // #bg統合分岐。modeがそのまま背景名(#s:bg:<名前>の<名前>)を指す
-            // (bgには「話者だけ指定して見た目は変えない」という省略形が無いため)。
             const bgName = mode;
             if (!bgName)
                 return;
-            const [colorMode, colorValue] = rest;
-            if (colorMode === "color" && colorValue) {
-                setSpriteAssets({ [BG_PSEUDO_NAME]: { variants: { [bgName]: { color: colorValue } } } });
+            // # s:bg:z:5  … 現在背景の z のみ
+            if (bgName === "z") {
+                const z = rest[0];
+                if (isNumeric(z)) {
+                    backgroundManager.setBackgroundZIndex(atomKey, Number(z));
+                }
+                return;
+            }
+            // # s:bg:name:z:5
+            // # s:bg:name:color:#fff
+            // # s:bg:name:color:#fff:z:5
+            const [a, b, c, d] = rest;
+            if (a === "z" && isNumeric(b)) {
+                backgroundManager.setBackground(atomKey, instanceId, bgName);
+                backgroundManager.setBackgroundZIndex(atomKey, Number(b));
+                return;
+            }
+            if (a === "color" && b) {
+                setSpriteAssets({
+                    [BG_PSEUDO_NAME]: { variants: { [bgName]: { color: b } } },
+                });
+                if (c === "z" && isNumeric(d)) {
+                    backgroundManager.setBackgroundZIndex(atomKey, Number(d));
+                }
             }
             backgroundManager.setBackground(atomKey, instanceId, bgName);
+            return;
+        }
+        // 通常キャラ
+        if (mode === "z") {
+            const [z] = rest;
+            if (isNumeric(z)) {
+                characterManager.setZIndex(atomKey, name, Number(z));
+            }
             return;
         }
         // 重要: ここで即座にsetSpeakerを呼ぶ。core/inkStepRunner.tsは「テキストを

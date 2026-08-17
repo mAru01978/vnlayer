@@ -1,6 +1,6 @@
-import { continueUntilChoice } from '../inkStepRunner';
-import { InterruptError, reportError } from '../errors';
-const FLOW_NAME_PREFIX = 'interrupt_';
+import { continueUntilChoice } from "../inkStepRunner";
+import { InterruptError, reportError } from "../errors";
+const FLOW_NAME_PREFIX = "interrupt_";
 let flowCounter = 0;
 const permissions = new Map(); // atomKey -> (varName -> knot)
 const pendingValues = new Map(); // atomKey -> (varName -> 許可待ちの最新値)
@@ -141,7 +141,11 @@ export function finishFlowIfDone(atomKey, story, result) {
         index: i,
         tags: c.tags ?? [],
     }));
-    return { steps: result.steps, choices: resumedChoices, visual: result.visual };
+    return {
+        steps: result.steps,
+        choices: resumedChoices,
+        visual: result.visual,
+    };
 }
 // 後方互換のエイリアス(旧名)。core/staticStepProvider.ts側もこちらの
 // 新名(finishFlowIfDone)を使うよう更新済みだが、念のため同じ実体を

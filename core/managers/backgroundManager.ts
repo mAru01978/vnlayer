@@ -1,6 +1,6 @@
-// 背景(#bg)を管理するマネージャー。
+// 背景(#s:bg)を管理するマネージャー。
 //
-// setBackground()は#bgタグから呼ばれる「本来の」書き込み経路で、
+// setBackground()は#s:bgタグから呼ばれる「本来の」書き込み経路で、
 // autoHideOnBgChange(場面転換時に吹き出しを自動で消す設定)の判定込み。
 // この判定はtags/uiConfig.tsの実効設定(instanceIdスコープ、未指定=グローバル)
 // を見るため、atomKey(状態の隔離キー)とは別にinstanceId(公開スコープ
@@ -19,6 +19,10 @@ import { getUiConfig } from "../../tags/uiConfig";
 import * as messageManager from "./messageManager";
 
 export const bgAtomFamily = atomFamily((_atomKey: string) => atom(""));
+
+export const bgZIndexAtomFamily = atomFamily((_atomKey: string) =>
+  atom(undefined as number | undefined),
+);
 
 export function setBackground(
   atomKey: string,
@@ -46,8 +50,18 @@ export function getBackground(atomKey: string): string {
 
 export function reset(atomKey: string): void {
   getStore().set(bgAtomFamily(atomKey), "");
+  getStore().set(bgZIndexAtomFamily(atomKey), undefined);
 }
 
 export function dispose(atomKey: string): void {
   bgAtomFamily.remove(atomKey);
+  bgZIndexAtomFamily.remove(atomKey);
+}
+
+export function setBackgroundZIndex(atomKey: string, zIndex: number): void {
+  getStore().set(bgZIndexAtomFamily(atomKey), zIndex);
+}
+
+export function getBackgroundZIndex(atomKey: string): number | undefined {
+  return getStore().get(bgZIndexAtomFamily(atomKey));
 }

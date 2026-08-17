@@ -52,6 +52,12 @@ registerTag<AnimConfig>({
       case "reverse":
         characterManager.setAnimReverse(atomKey, name, value);
         break;
+      case "z": {
+        if (isNumeric(value)) {
+          characterManager.setZIndex(atomKey, name, Number(value));
+        }
+        break;
+      }
       default:
         warnUnknownTag(["anim", name, mode, value].filter(Boolean).join(":"));
     }

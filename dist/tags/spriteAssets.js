@@ -17,9 +17,9 @@
 // (${basePath}/sprite/${name}/${variant}.${spriteExtension}) →
 // (3)fallbackToMockがtrueならモック表示、falseならAssetErrorを報告して
 // 何も描画しない(components/Renderer.tsx参照)。
-import { getAssetsConfig, shouldFallbackToMock, getAssetsConfigVersion } from './assetsConfig';
-import { resolveUrlCached } from '../core/ResourceLoader';
-const BG_PSEUDO_NAME = 'bg';
+import { getAssetsConfig, shouldFallbackToMock, getAssetsConfigVersion, } from "./assetsConfig";
+import { resolveUrlCached } from "../core/ResourceLoader";
+const BG_PSEUDO_NAME = "bg";
 const registry = new Map();
 let version = 0;
 const listeners = new Set();
@@ -71,7 +71,10 @@ export function getBackgroundSlot(bgName) {
     const variant = registry.get(BG_PSEUDO_NAME)?.variants?.[bgName];
     if (!variant)
         return undefined;
-    return { color: variant.color, image: resolveSpriteSrc(BG_PSEUDO_NAME, bgName) ?? variant.src };
+    return {
+        color: variant.color,
+        image: resolveSpriteSrc(BG_PSEUDO_NAME, bgName) ?? variant.src,
+    };
 }
 export function getAllBackgroundSlots() {
     const variants = registry.get(BG_PSEUDO_NAME)?.variants ?? {};
@@ -88,8 +91,8 @@ export function getAllBackgroundSlots() {
 // 指定することを推奨する — 非同期解決が必要なため)。
 function conventionSpritePath(name, variant) {
     const { basePath, spriteExtension } = getAssetsConfig();
-    const base = (basePath ?? './assets').replace(/\/+$/, '');
-    return `${base}/sprite/${name}/${variant}.${spriteExtension ?? 'png'}`;
+    const base = (basePath ?? "./assets").replace(/\/+$/, "");
+    return `${base}/sprite/${name}/${variant}.${spriteExtension ?? "png"}`;
 }
 // 表情/背景画像の解決(手動指定優先 → フォルダ規約)。
 // source(取得方法)の優先順位は「その素材自身のsource指定 > グローバル
@@ -108,10 +111,10 @@ export function resolveSpriteSrc(name, variant) {
     const entry = registry.get(name)?.variants?.[variant];
     const manual = entry?.src;
     const globalCfg = getAssetsConfig();
-    const source = entry?.source ?? globalCfg.source ?? 'fetch';
+    const source = entry?.source ?? globalCfg.source ?? "fetch";
     const resolveLocal = entry?.resolveLocal ?? globalCfg.resolveLocal;
     if (manual) {
-        if (source === 'local') {
+        if (source === "local") {
             return resolveUrlCached(`sprite:${name}:${variant}`, manual, { source, resolveLocal }, bumpVersion);
         }
         return manual;
@@ -127,7 +130,7 @@ export function resolveSpriteSrc(name, variant) {
     const characterCfg = registry.get(name);
     if (!characterCfg)
         return undefined;
-    if (source === 'local')
+    if (source === "local")
         return undefined;
     return conventionSpritePath(name, variant);
 }

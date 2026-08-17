@@ -19,7 +19,7 @@
 // できる(core/types.tsのSetContextOptionsコメント参照)。配列はinkが
 // 扱える値ではないため、フラット化の対象にはせず、そのまま1つの値として
 // 渡す(呼び出し側で意図的にJSON文字列化する等は別途行う必要がある)。
-import * as waitManager from './waitManager';
+import * as waitManager from "./waitManager";
 const contextStore = new Map();
 const contextSeq = new Map();
 const lastWakeAt = new Map();
@@ -41,7 +41,7 @@ function getSeqRecord(atomKey) {
     return record;
 }
 function isPlainObject(value) {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 // varsを「ink変数名 → 値」の1階層フラットな形に変換する。
 //   flattenVars({ weather: { temp: 22.2, text: "晴れ" } })
@@ -54,15 +54,25 @@ export function flattenVars(vars, keyNames, prefix) {
     for (const [key, value] of Object.entries(vars)) {
         const override = keyNames?.[key];
         if (isPlainObject(value)) {
-            const nestedKeyNames = isPlainObject(override) ? override : undefined;
+            const nestedKeyNames = isPlainObject(override)
+                ? override
+                : undefined;
             // overrideが文字列の場合、その値をこのネストしたオブジェクト全体の
             // 新しいprefixとして使う("weather"→"w"のように途中の階層名だけ
             // 差し替えたいケース向け)。無ければ既定通りprefix_keyを積み重ねる。
-            const nestedPrefix = typeof override === 'string' ? override : prefix ? `${prefix}_${key}` : key;
+            const nestedPrefix = typeof override === "string"
+                ? override
+                : prefix
+                    ? `${prefix}_${key}`
+                    : key;
             Object.assign(result, flattenVars(value, nestedKeyNames, nestedPrefix));
             continue;
         }
-        const flatKey = typeof override === 'string' ? override : prefix ? `${prefix}_${key}` : key;
+        const flatKey = typeof override === "string"
+            ? override
+            : prefix
+                ? `${prefix}_${key}`
+                : key;
         result[flatKey] = value;
     }
     return result;

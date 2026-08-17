@@ -1,5 +1,5 @@
-import type { Story } from 'inkjs';
-import type { RunResult, VisualState } from '../types';
+import type { Story } from "inkjs";
+import type { RunResult, VisualState } from "../types";
 export type InterruptHost = {
     story: Story;
     getVisual: () => VisualState;

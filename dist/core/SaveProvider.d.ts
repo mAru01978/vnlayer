@@ -1,5 +1,5 @@
-import type { VisualState, PositionOverrides, ActiveMessage, LineEntry } from './types';
-import type { UiConfigPatch } from '../tags/uiConfig';
+import type { VisualState, PositionOverrides, ActiveMessage, LineEntry } from "./types";
+import type { UiConfigPatch } from "../tags/uiConfig";
 type SavedCharacterSlot = {
     originX: number;
     originY: number;

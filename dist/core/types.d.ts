@@ -13,6 +13,7 @@ export type CharacterState = {
         x: number;
         y: number;
     };
+    zIndex?: number;
 };
 export type CamState = {
     target: string;
@@ -26,11 +27,11 @@ export type ShakeState = {
     duration: number;
 };
 export type LineEntry = {
-    kind: 'line';
+    kind: "line";
     speaker: string;
     content: string;
 } | {
-    kind: 'choice';
+    kind: "choice";
     number: number;
     text: string;
 };
@@ -78,6 +79,7 @@ export type StoryEngine = {
     lines: LineEntry[];
     choices: Choice[];
     bg: string;
+    bgZIndex?: number;
     characters: Record<string, CharacterState>;
     speaker: string;
     cam: CamState;

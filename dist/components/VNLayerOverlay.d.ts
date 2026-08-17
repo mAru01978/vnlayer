@@ -1,10 +1,10 @@
 /// <reference types="react" />
-import type { StepProvider } from '../core/StepProvider';
-import type { SaveProvider } from '../core/SaveProvider';
-import type { VNLayerHandle } from '../core/types';
-import { type StageMode, type UiAnchor } from './StageView';
+import type { StepProvider } from "../core/StepProvider";
+import type { SaveProvider } from "../core/SaveProvider";
+import type { VNLayerHandle } from "../core/types";
+import { type StageMode, type UiAnchor } from "./StageView";
 export type VNLayerMode = StageMode;
-export type { VNLayerHandle } from '../core/types';
+export type { VNLayerHandle } from "../core/types";
 export type VNLayerOverlayProps = {
     clip?: string;
     mode?: VNLayerMode;

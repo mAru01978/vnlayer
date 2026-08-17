@@ -9,6 +9,7 @@ export type CharacterState = {
         x: number;
         y: number;
     };
+    zIndex?: number;
 };
 export type Slot = {
     originX: number;
@@ -18,6 +19,7 @@ export type Slot = {
 export type BackgroundProps = {
     bg: string;
     atomKey: string;
+    zIndex?: number;
 };
 export type CharacterSpriteProps = {
     name: string;

@@ -27,7 +27,12 @@ export interface StepProvider {
   init(clip: string, atomKey?: string): Promise<RunResult>;
   choose(clip: string, index: number, atomKey?: string): Promise<RunResult>;
   // Ink本文の進行には触れない、一方通行の変数書き込み(アイドル演出・setContext用)
-  idle(clip: string, varName: string, value: unknown, atomKey?: string): Promise<void>;
+  idle(
+    clip: string,
+    varName: string,
+    value: unknown,
+    atomKey?: string,
+  ): Promise<void>;
   reset(clip: string, atomKey?: string): Promise<RunResult>;
   // #interrupt(SwitchFlow経由の割り込み)のように、init/choose/resetの
   // レスポンスを介さず「非同期に」新しいRunResultが発生する場合の購読口。

@@ -31,7 +31,14 @@ export function setExpression(
   name: string,
   expression: string,
 ): void {
-  update(atomKey, (prev) => ({ ...prev, [name]: { expression } }));
+  update(atomKey, (prev) => ({
+    ...prev,
+    [name]: {
+      ...prev[name],
+      expression,
+      zIndex: prev[name]?.zIndex,
+    },
+  }));
 }
 
 export function setAnimMotion(
@@ -49,6 +56,7 @@ export function setAnimMotion(
       animLoop: false,
       animReverse: false,
       animSpeed: prev[name]?.animSpeed,
+      zIndex: prev[name]?.zIndex,
     },
   }));
 }
@@ -172,7 +180,11 @@ export function mergeVisualSnapshot(
   update(atomKey, (prev) => {
     const merged: Record<string, CharacterState> = {};
     for (const [name, charState] of Object.entries(visualCharacters)) {
-      merged[name] = { ...charState, gaze: prev[name]?.gaze };
+      merged[name] = {
+        ...charState,
+        gaze: prev[name]?.gaze,
+        zIndex: charState.zIndex ?? prev[name]?.zIndex,
+      };
     }
     return merged;
   });
@@ -184,4 +196,15 @@ export function reset(atomKey: string): void {
 
 export function dispose(atomKey: string): void {
   charactersAtomFamily.remove(atomKey);
+}
+
+export function setZIndex(atomKey: string, name: string, zIndex: number): void {
+  update(atomKey, (prev) => ({
+    ...prev,
+    [name]: {
+      ...prev[name],
+      expression: prev[name]?.expression ?? "normal",
+      zIndex,
+    },
+  }));
 }

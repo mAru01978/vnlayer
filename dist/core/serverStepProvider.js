@@ -14,7 +14,12 @@ export function createServerStepProvider(options = {}) {
     const endpoint = options.endpoint ?? "/api/story";
     return {
         init: (clip, atomKey) => callStoryApi(endpoint, { action: "init", clip, atomKey }),
-        choose: (clip, index, atomKey) => callStoryApi(endpoint, { action: "choose", index, clip, atomKey }),
+        choose: (clip, index, atomKey) => callStoryApi(endpoint, {
+            action: "choose",
+            index,
+            clip,
+            atomKey,
+        }),
         idle: async (clip, varName, value, atomKey) => {
             await callStoryApi(endpoint, {
                 action: "idle",

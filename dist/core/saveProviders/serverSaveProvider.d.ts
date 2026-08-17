@@ -1,4 +1,4 @@
-import type { SaveProvider } from '../SaveProvider';
+import type { SaveProvider } from "../SaveProvider";
 export type ServerSaveProviderOptions = {
     endpoint?: string;
 };

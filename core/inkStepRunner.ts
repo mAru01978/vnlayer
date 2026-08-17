@@ -183,7 +183,9 @@ export function continueUntilChoice(
     }
   } catch (e) {
     reportError(
-      new StoryRuntimeError("runtime error during Continue(), stopping here", { cause: e }),
+      new StoryRuntimeError("runtime error during Continue(), stopping here", {
+        cause: e,
+      }),
     );
   }
 

@@ -1,4 +1,4 @@
-import { ResourceLoadError, reportError } from './errors';
+import { ResourceLoadError, reportError } from "./errors";
 
 // story.json(ink)とsprite/anim素材、両方から使う共通のリソース取得口。
 // Next.js等の一部バンドラー環境では「fetchはpublicフォルダに置いたものしか
@@ -16,7 +16,7 @@ import { ResourceLoadError, reportError } from './errors';
 //
 // ink(StaticStepProviderOptions)側・素材(assets設定)側、どちらも同じ
 // この関数を経由するので、取得方法の切り替えロジックが重複しない。
-export type ResourceSource = 'local' | 'fetch';
+export type ResourceSource = "local" | "fetch";
 
 export type ResourceLoaderOptions = {
   source?: ResourceSource;
@@ -30,8 +30,8 @@ export type ResourceLoaderOptions = {
 
 function joinPath(basePath: string | undefined, path: string): string {
   if (!basePath) return path;
-  const trimmedBase = basePath.replace(/\/+$/, '');
-  const trimmedPath = path.replace(/^\/+/, '');
+  const trimmedBase = basePath.replace(/\/+$/, "");
+  const trimmedPath = path.replace(/^\/+/, "");
   return `${trimmedBase}/${trimmedPath}`;
 }
 
@@ -41,9 +41,9 @@ export async function loadJson<T>(
   options: ResourceLoaderOptions = {},
 ): Promise<T> {
   const fullPath = joinPath(options.basePath, path);
-  const source = options.source ?? 'fetch';
+  const source = options.source ?? "fetch";
 
-  if (source === 'local') {
+  if (source === "local") {
     if (!options.resolveLocal) {
       throw new ResourceLoadError(
         `source:'local' requires resolveLocal to be provided (path: "${fullPath}")`,
@@ -52,7 +52,9 @@ export async function loadJson<T>(
     try {
       return (await options.resolveLocal(fullPath)) as T;
     } catch (e) {
-      throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, { cause: e });
+      throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, {
+        cause: e,
+      });
     }
   }
 
@@ -77,9 +79,9 @@ export async function resolveUrl(
   options: ResourceLoaderOptions = {},
 ): Promise<string> {
   const fullPath = joinPath(options.basePath, path);
-  const source = options.source ?? 'fetch';
+  const source = options.source ?? "fetch";
 
-  if (source === 'local') {
+  if (source === "local") {
     if (!options.resolveLocal) {
       throw new ResourceLoadError(
         `source:'local' requires resolveLocal to be provided (path: "${fullPath}")`,
@@ -87,7 +89,7 @@ export async function resolveUrl(
     }
     try {
       const resolved = await options.resolveLocal(fullPath);
-      if (typeof resolved !== 'string') {
+      if (typeof resolved !== "string") {
         throw new ResourceLoadError(
           `resolveLocal must return a URL string for resolveUrl() (path: "${fullPath}")`,
         );
@@ -95,7 +97,9 @@ export async function resolveUrl(
       return resolved;
     } catch (e) {
       if (e instanceof ResourceLoadError) throw e;
-      throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, { cause: e });
+      throw new ResourceLoadError(`resolveLocal failed for "${fullPath}"`, {
+        cause: e,
+      });
     }
   }
 
@@ -133,7 +137,9 @@ export function resolveUrlCached(
         reportError(
           e instanceof ResourceLoadError
             ? e
-            : new ResourceLoadError(`failed to resolve asset "${path}"`, { cause: e }),
+            : new ResourceLoadError(`failed to resolve asset "${path}"`, {
+                cause: e,
+              }),
         );
       })
       .finally(() => {

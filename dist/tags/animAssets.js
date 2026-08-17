@@ -36,10 +36,10 @@
 // <video>タグのロードに委ねる)場合は、tags/assetsConfig.tsの
 // fallbackToMock設定に従ってモック表示にフォールバックするか、
 // AssetErrorを報告して何も描画しない(components/Renderer.tsx参照)。
-import { getAssetsConfig, shouldFallbackToMock, getAssetsConfigVersion } from './assetsConfig';
-import { resolveUrlCached } from '../core/ResourceLoader';
+import { getAssetsConfig, shouldFallbackToMock, getAssetsConfigVersion, } from "./assetsConfig";
+import { resolveUrlCached } from "../core/ResourceLoader";
 const registry = new Map();
-const EXPRESSION_WILDCARD = '*';
+const EXPRESSION_WILDCARD = "*";
 function composeKey(characterName, expression, motion) {
     return `${characterName}:${expression}:${motion}`;
 }
@@ -60,8 +60,10 @@ export function setAnimAssets(patch) {
     const flat = {};
     for (const [charName, motions] of Object.entries(patch)) {
         for (const [rawKey, config] of Object.entries(motions)) {
-            const parts = rawKey.split(':');
-            const [expression, motion] = parts.length > 1 ? [parts[0], parts[1]] : [EXPRESSION_WILDCARD, parts[0]];
+            const parts = rawKey.split(":");
+            const [expression, motion] = parts.length > 1
+                ? [parts[0], parts[1]]
+                : [EXPRESSION_WILDCARD, parts[0]];
             flat[composeKey(charName, expression, motion)] = config;
         }
     }
@@ -78,47 +80,55 @@ export function setAnimAssetResolver(fn) {
 let resolverFn;
 function conventionAnimPath(name, motion) {
     const { basePath, animExtension } = getAssetsConfig();
-    const base = (basePath ?? './assets').replace(/\/+$/, '');
-    return `${base}/anim/${name}/${motion}.${animExtension ?? 'webm'}`;
+    const base = (basePath ?? "./assets").replace(/\/+$/, "");
+    return `${base}/anim/${name}/${motion}.${animExtension ?? "webm"}`;
 }
 export function getAnimAsset(characterName, expression, motion) {
     if (!motion)
         return undefined;
-    const exp = expression ?? 'normal';
+    const exp = expression ?? "normal";
     const found = registry.get(composeKey(characterName, exp, motion)) ??
         registry.get(composeKey(characterName, EXPRESSION_WILDCARD, motion)) ??
         resolverFn?.(characterName, exp, motion);
     if (!found)
         return undefined;
     const globalCfg = getAssetsConfig();
-    const source = found.source ?? globalCfg.source ?? 'fetch';
+    const source = found.source ?? globalCfg.source ?? "fetch";
     const resolveLocal = found.resolveLocal ?? globalCfg.resolveLocal;
-    if (found.mode === 'single') {
+    if (found.mode === "single") {
         if (found.src) {
-            if (source === 'local') {
+            if (source === "local") {
                 const resolved = resolveUrlCached(`anim:${characterName}:${motion}:single`, found.src, { source, resolveLocal }, bumpVersion);
-                return { mode: 'single', src: resolved };
+                return { mode: "single", src: resolved };
             }
             return found;
         }
         // src未指定: source:'local'ではフォルダ規約フォールバックは使わない
         // (非同期解決の前提が崩れるため、手動指定を推奨)。
-        if (source === 'local')
-            return { mode: 'single', src: undefined };
-        return { mode: 'single', src: conventionAnimPath(characterName, motion) };
+        if (source === "local")
+            return { mode: "single", src: undefined };
+        return { mode: "single", src: conventionAnimPath(characterName, motion) };
     }
     // mode:'sequence'。各フレームがsource:'local'ならキャッシュ経由で解決する。
     // 1枚でも未解決ならこのタイミングではフレーム全体をundefinedのまま返さず、
     // 解決済みの分だけ反映した配列を返す(全部揃うまで表示を止めたくないため。
     // 未解決フレームは直前のキャッシュ値かundefinedのままになる)。
-    if (source === 'local') {
+    if (source === "local") {
         const resolvedFrames = found.frames.map((frame, i) => resolveUrlCached(`anim:${characterName}:${motion}:seq:${i}`, frame, { source, resolveLocal }, bumpVersion));
         if (resolvedFrames.some((f) => f === undefined)) {
             // まだ全フレーム解決していない: 解決済みの範囲だけでも使えるよう
             // フィルタして返す(空でも呼び出し側でframes.length===0を弾く)。
-            return { mode: 'sequence', frames: resolvedFrames.filter((f) => Boolean(f)), fps: found.fps };
+            return {
+                mode: "sequence",
+                frames: resolvedFrames.filter((f) => Boolean(f)),
+                fps: found.fps,
+            };
         }
-        return { mode: 'sequence', frames: resolvedFrames, fps: found.fps };
+        return {
+            mode: "sequence",
+            frames: resolvedFrames,
+            fps: found.fps,
+        };
     }
     return found;
 }

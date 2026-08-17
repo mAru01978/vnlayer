@@ -1,17 +1,17 @@
-'use client';
-import { useEffect, useRef } from 'react';
-import { StoryProvider, useStory } from '../context/StoryContext';
-import type { StepProvider } from '../core/StepProvider';
-import type { SaveProvider } from '../core/SaveProvider';
-import type { SetContextOptions, VNLayerHandle } from '../core/types';
-import StageView, { type StageMode, type UiAnchor } from './StageView';
+"use client";
+import { useEffect, useRef } from "react";
+import { StoryProvider, useStory } from "../context/StoryContext";
+import type { StepProvider } from "../core/StepProvider";
+import type { SaveProvider } from "../core/SaveProvider";
+import type { SetContextOptions, VNLayerHandle } from "../core/types";
+import StageView, { type StageMode, type UiAnchor } from "./StageView";
 
 export type VNLayerMode = StageMode;
 
 // VNLayerHandleの実体はcore/types.tsで一元定義している(vanilla版・React版で
 // 型がズレるのを防ぐための「設計上の要石」。api.ts側のコメントも参照)。
 // このファイルからも従来通りimportできるよう再exportしておく。
-export type { VNLayerHandle } from '../core/types';
+export type { VNLayerHandle } from "../core/types";
 
 export type VNLayerOverlayProps = {
   // 用語メモ(2026-08-08、Scenario→Clip改称): propは`clip`に統一。
@@ -44,7 +44,11 @@ export type VNLayerOverlayProps = {
 // 橋渡しするだけの非表示コンポーネント。engineオブジェクト自体は毎レンダー
 // 新しく作られるが、handle経由で呼べば常に最新のsetContextVars/resetStoryを
 // 呼び出せるようにしてある(onReadyは初回マウント時に1回だけ呼ぶ)。
-function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }) {
+function EngineBridge({
+  onReady,
+}: {
+  onReady?: (handle: VNLayerHandle) => void;
+}) {
   const engine = useStory();
   const engineRef = useRef(engine);
   engineRef.current = engine;
@@ -54,7 +58,8 @@ function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }
     if (notifiedRef.current || !onReady) return;
     notifiedRef.current = true;
     onReady({
-      setContextVars: (vars, options) => engineRef.current!.setContextVars(vars, options),
+      setContextVars: (vars, options) =>
+        engineRef.current!.setContextVars(vars, options),
       getContextVars: (varNames) => engineRef.current!.getContextVars(varNames),
       resetStory: () => engineRef.current!.resetStory(),
     });
@@ -69,8 +74,8 @@ function EngineBridge({ onReady }: { onReady?: (handle: VNLayerHandle) => void }
 // それだけでそのクリップ用のエンジン一式が独立して動く。
 // (旧VNLayer.tsxと同じ役割。描画自体はStageViewに一本化されている)
 export default function VNLayerOverlay({
-  clip = 'Scenario1',
-  mode = 'overlay',
+  clip = "Scenario1",
+  mode = "overlay",
   uiAnchor,
   showUi,
   stepProvider,
