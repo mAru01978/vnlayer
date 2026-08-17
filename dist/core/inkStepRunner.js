@@ -79,6 +79,14 @@ export function continueUntilChoice(story, initialVisual) {
                     if (!name || mode === undefined)
                         continue; // 話者だけの指定は見た目に影響しない
                     if (name === "bg") {
+                        // 修正メモ(2026-08-13): 以前は `[mode, ...args].join(":")` として
+                        // いたため、# s:bg:aiueo:color:test1 のようなタグで
+                        // visual.bg が "aiueo:color:test1" という不正な結合文字列に
+                        // なってしまっていた。実際に背景を切り替える
+                        // tags/defs/special/sprite.ts側は bgName = mode (例: "aiueo")
+                        // だけを使っているため、ここでも背景名はmodeだけを使う
+                        // (color:test1のような付随引数はここでのスナップショット
+                        // 復元には無関係)。
                         visual.bg = mode;
                         continue;
                     }
@@ -169,9 +177,7 @@ export function continueUntilChoice(story, initialVisual) {
         }
     }
     catch (e) {
-        reportError(new StoryRuntimeError("runtime error during Continue(), stopping here", {
-            cause: e,
-        }));
+        reportError(new StoryRuntimeError("runtime error during Continue(), stopping here", { cause: e }));
     }
     const choices = story.currentChoices.map((c, i) => ({
         text: c.text,

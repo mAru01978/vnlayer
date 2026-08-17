@@ -1,4 +1,4 @@
-import type { ResourceSource } from "../core/ResourceLoader";
+import type { ResourceSource } from '../core/ResourceLoader';
 export type AssetsGlobalConfig = {
     basePath?: string;
     source?: ResourceSource;

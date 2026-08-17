@@ -33,10 +33,10 @@
 //
 // 割り込みknot自体は選択肢を出してもよい(何段階でもOK、tags/defs/special/
 // interrupt.ts参照)。完了判定はfinishFlowIfDone()に集約している。
-import type { Story } from "inkjs";
-import { continueUntilChoice } from "../inkStepRunner";
-import type { RunResult, VisualState } from "../types";
-import { InterruptError, reportError } from "../errors";
+import type { Story } from 'inkjs';
+import { continueUntilChoice } from '../inkStepRunner';
+import type { RunResult, VisualState } from '../types';
+import { InterruptError, reportError } from '../errors';
 
 export type InterruptHost = {
   story: Story;
@@ -48,7 +48,7 @@ export type InterruptHost = {
   pushResult: (result: RunResult) => void;
 };
 
-const FLOW_NAME_PREFIX = "interrupt_";
+const FLOW_NAME_PREFIX = 'interrupt_';
 let flowCounter = 0;
 
 const permissions = new Map<string, Map<string, string>>(); // atomKey -> (varName -> knot)
@@ -105,11 +105,7 @@ export function attachStory(atomKey: string, host: InterruptHost): void {
 }
 
 // # interrupt:knot名:変数名 用。
-export function registerPermission(
-  atomKey: string,
-  knot: string,
-  varName: string,
-): void {
+export function registerPermission(atomKey: string, knot: string, varName: string): void {
   getPermissionMap(atomKey).set(varName, knot);
   ensureObserved(atomKey, varName);
 
@@ -132,11 +128,7 @@ export function clearVar(atomKey: string, varName: string): void {
   getPermissionMap(atomKey).delete(varName);
 }
 
-function onVariableChanged(
-  atomKey: string,
-  varName: string,
-  value: unknown,
-): void {
+function onVariableChanged(atomKey: string, varName: string, value: unknown): void {
   const knot = getPermissionMap(atomKey).get(varName);
   if (!knot) {
     // まだ許可が無い: 最新値だけ覚えておき、後で許可された時に発火させる。
@@ -165,9 +157,7 @@ function runInterrupt(atomKey: string, knot: string): void {
     const finalResult = finishFlowIfDone(atomKey, story, result);
     host.pushResult(finalResult);
   } catch (e) {
-    reportError(
-      new InterruptError(`interrupt knot "${knot}" failed`, { cause: e }),
-    );
+    reportError(new InterruptError(`interrupt knot "${knot}" failed`, { cause: e }));
     getOpenFlows(atomKey).delete(flowName);
     try {
       host.story.SwitchToDefaultFlow();
@@ -216,11 +206,7 @@ export function finishFlowIfDone(
     index: i,
     tags: c.tags ?? [],
   }));
-  return {
-    steps: result.steps,
-    choices: resumedChoices,
-    visual: result.visual,
-  };
+  return { steps: result.steps, choices: resumedChoices, visual: result.visual };
 }
 
 // 後方互換のエイリアス(旧名)。core/staticStepProvider.ts側もこちらの

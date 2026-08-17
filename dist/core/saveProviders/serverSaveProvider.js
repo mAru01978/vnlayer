@@ -3,13 +3,13 @@
 // (ブラウザ内実行)と組み合わせて「実行はブラウザ、セーブだけサーバーに
 // predict保存する」という構成も可能。
 export function createServerSaveProvider(options = {}) {
-    const endpoint = options.endpoint ?? "/api/save";
+    const endpoint = options.endpoint ?? '/api/save';
     return {
         async save(key, data) {
             const res = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ key, data }),
             });
             if (!res.ok) {
@@ -18,7 +18,7 @@ export function createServerSaveProvider(options = {}) {
         },
         async load(key) {
             const res = await fetch(`${endpoint}?key=${encodeURIComponent(key)}`, {
-                credentials: "include",
+                credentials: 'include',
             });
             if (!res.ok)
                 return null;
@@ -32,8 +32,8 @@ export function createServerSaveProvider(options = {}) {
         },
         async clear(key) {
             await fetch(`${endpoint}?key=${encodeURIComponent(key)}`, {
-                method: "DELETE",
-                credentials: "include",
+                method: 'DELETE',
+                credentials: 'include',
             });
         },
     };

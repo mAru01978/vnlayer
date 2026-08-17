@@ -1,12 +1,12 @@
-import { type ResourceSource } from "../core/ResourceLoader";
+import { type ResourceSource } from '../core/ResourceLoader';
 export type AnimAssetConfig = {
-    mode: "sequence";
+    mode: 'sequence';
     frames: string[];
     fps?: number;
     source?: ResourceSource;
     resolveLocal?: (path: string) => Promise<unknown>;
 } | {
-    mode: "single";
+    mode: 'single';
     src?: string;
     source?: ResourceSource;
     resolveLocal?: (path: string) => Promise<unknown>;

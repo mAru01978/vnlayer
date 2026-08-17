@@ -1,4 +1,4 @@
-import type { SaveProvider, SaveData } from "../SaveProvider";
+import type { SaveProvider, SaveData } from '../SaveProvider';
 
 export type ServerSaveProviderOptions = {
   // 既定は "/api/save"。以下の単純なREST規約を想定する(実際のAPI Route
@@ -16,14 +16,14 @@ export type ServerSaveProviderOptions = {
 export function createServerSaveProvider(
   options: ServerSaveProviderOptions = {},
 ): SaveProvider {
-  const endpoint = options.endpoint ?? "/api/save";
+  const endpoint = options.endpoint ?? '/api/save';
 
   return {
     async save(key, data) {
       const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ key, data }),
       });
       if (!res.ok) {
@@ -32,7 +32,7 @@ export function createServerSaveProvider(
     },
     async load(key) {
       const res = await fetch(`${endpoint}?key=${encodeURIComponent(key)}`, {
-        credentials: "include",
+        credentials: 'include',
       });
       if (!res.ok) return null;
       try {
@@ -44,8 +44,8 @@ export function createServerSaveProvider(
     },
     async clear(key) {
       await fetch(`${endpoint}?key=${encodeURIComponent(key)}`, {
-        method: "DELETE",
-        credentials: "include",
+        method: 'DELETE',
+        credentials: 'include',
       });
     },
   };

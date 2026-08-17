@@ -1,4 +1,4 @@
-import { type ResourceSource } from "../core/ResourceLoader";
+import { type ResourceSource } from '../core/ResourceLoader';
 export type SpriteVariantConfig = {
     src?: string;
     color?: string;

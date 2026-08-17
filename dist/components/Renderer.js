@@ -20,12 +20,12 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
 // DOM要素(=ブラウザ既定位置、だいたい左上)から正しい位置へ「びゅん」と
 // 動いて見えるバグになっていた。cleanup関数内で明示的にfalseへ戻すことで
 // 修正した。
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { getBackgroundSlot, resolveSpriteSrc, shouldFallbackForSprite, subscribeSpriteAssets, getSpriteAssetsVersion, } from "../tags/spriteAssets";
-import { getAnimAsset, shouldFallbackForAnim, subscribeAnimAssets, getAnimAssetsVersion, } from "../tags/animAssets";
-import * as timelineManager from "../core/managers/timelineManager";
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { getBackgroundSlot, resolveSpriteSrc, shouldFallbackForSprite, subscribeSpriteAssets, getSpriteAssetsVersion, } from '../tags/spriteAssets';
+import { getAnimAsset, shouldFallbackForAnim, subscribeAnimAssets, getAnimAssetsVersion, } from '../tags/animAssets';
+import * as timelineManager from '../core/managers/timelineManager';
 gsap.registerPlugin(useGSAP);
 // components/StageView.tsxのtags/uiConfig.ts購読と同じパターン
 // (version番号経由でuseSyncExternalStoreに載せる)。素材レジストリは
@@ -49,26 +49,31 @@ function shortestRotationTo(prevDeg, rawTargetDeg) {
     const delta = ((rawTargetDeg - prevDeg + 540) % 360) - 180;
     return prevDeg + delta;
 }
-const MOCK_BG_COLOR = "#333";
+const MOCK_BG_COLOR = '#333';
 function resolveBgVisual(bg) {
+    // 修正メモ(2026-08-13): ストーリー開始直後等、まだ一度も# s:bg:...が
+    // 来ていない間はbgアトムの初期値が空文字列のまま。これは「背景未設定」
+    // という正常な状態であり、素材が見つからない異常系ではないため、
+    // AssetErrorを報告せず静かに何も描画しない(shouldFallbackForSprite等の
+    // 呼び出し自体をスキップする)。
     if (!bg) {
-        return { kind: "none" };
+        return { kind: 'none' };
     }
     // 登録済みの背景素材を最優先する。
     const slot = getBackgroundSlot(bg);
     if (slot?.image) {
-        return { kind: "image", src: slot.image };
+        return { kind: 'image', src: slot.image };
     }
     if (slot?.color) {
-        return { kind: "color", color: slot.color };
+        return { kind: 'color', color: slot.color };
     }
     // 未登録時:
     // fallbackToMock=true なら汎用モック背景、
     // falseならAssetErrorを報告して何も描画しない。
-    if (!shouldFallbackForSprite("bg", bg)) {
-        return { kind: "none" };
+    if (!shouldFallbackForSprite('bg', bg)) {
+        return { kind: 'none' };
     }
-    return { kind: "color", color: MOCK_BG_COLOR };
+    return { kind: 'color', color: MOCK_BG_COLOR };
 }
 function Background({ bg, atomKey }) {
     useAssetsVersion();
@@ -86,25 +91,25 @@ function Background({ bg, atomKey }) {
             return;
         const tl = gsap.timeline();
         tlRef.current = tl;
-        timelineManager.register(atomKey, "bg", tl);
-        tl.fromTo(ref.current, { opacity: 0.4 }, { opacity: 1, duration: 0.4, ease: "power1.out", overwrite: "auto" });
+        timelineManager.register(atomKey, 'bg', tl);
+        tl.fromTo(ref.current, { opacity: 0.4 }, { opacity: 1, duration: 0.4, ease: 'power1.out', overwrite: 'auto' });
         return () => {
             tl.kill();
             timelineManager.unregister(atomKey, tl);
         };
     }, [bg, atomKey]);
-    if (visual.kind === "none")
+    if (visual.kind === 'none')
         return null;
-    return (_jsx("div", { ref: ref, style: {
-            position: "absolute",
+    return (_jsx("div", { ref: ref, "data-vn-key": "background", style: {
+            position: 'absolute',
             inset: 0,
-            background: visual.kind === "color" ? visual.color : undefined,
-            backgroundImage: visual.kind === "image" ? `url(${visual.src})` : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            background: visual.kind === 'color' ? visual.color : undefined,
+            backgroundImage: visual.kind === 'image' ? `url(${visual.src})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
         } }));
 }
-function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, atomKey, }) {
+function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, atomKey }) {
     useAssetsVersion();
     const rootRef = useRef(null);
     const arrowRef = useRef(null);
@@ -130,13 +135,18 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
     useEffect(() => {
         setImageFailed(false);
     }, [name, state.expression, spriteSrc]);
+    // 修正メモ(2026-08-13): shouldFallbackForSprite/shouldFallbackForAnimは
+    // 呼ばれるたびに「fallbackToMockがoffならAssetErrorを報告する」副作用を
+    // 持つ。hasRealAsset(=素材が実際に解決できている)の場合はそもそも
+    // フォールバック要否を判定する必要が無い(=呼んではいけない)。
+    // このガードが抜けていたため、画像が正常に解決・表示できているケースでも
+    // 毎回shouldFallbackForXxxが呼ばれ、「見つかっているのに見つからない」
+    // という誤ったAssetErrorが報告され続けていた。
     const allowMock = hasRealAsset ||
         (state.motion
             ? shouldFallbackForAnim(name, state.motion)
             : shouldFallbackForSprite(name, state.expression));
-    const gazeAngle = state.gaze
-        ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
-        : null;
+    const gazeAngle = state.gaze ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y) : null;
     // 位置移動(#s:...:pos:...)。初回マウント時はgsap.set()で即座に配置し
     // (アニメーションさせない)、以後の変化だけをtweenする。CSS transitionでは
     // durationMsを反映できないため、GSAPに明示的なdurationを渡す。
@@ -153,18 +163,15 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
         timelineManager.register(atomKey, `pos:${name}`, tl);
         if (!hasPositionedRef.current) {
             hasPositionedRef.current = true;
-            tl.set(rootRef.current, {
-                left: `${slot.originX}%`,
-                top: `${slot.originY}%`,
-            });
+            tl.set(rootRef.current, { left: `${slot.originX}%`, top: `${slot.originY}%` });
         }
         else {
             tl.to(rootRef.current, {
                 left: `${slot.originX}%`,
                 top: `${slot.originY}%`,
                 duration: (slot.durationMs ?? 500) / 1000,
-                ease: "power2.out",
-                overwrite: "auto",
+                ease: 'power2.out',
+                overwrite: 'auto',
             });
         }
         return () => {
@@ -207,12 +214,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
             tl.set(arrowRef.current, { rotate: targetRotation });
         }
         else {
-            tl.to(arrowRef.current, {
-                rotate: targetRotation,
-                duration: 0.15,
-                ease: "power1.out",
-                overwrite: "auto",
-            });
+            tl.to(arrowRef.current, { rotate: targetRotation, duration: 0.15, ease: 'power1.out', overwrite: 'auto' });
         }
         return () => {
             tl.kill();
@@ -230,10 +232,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
             timelineManager.unregister(atomKey, sequenceTlRef.current);
             sequenceTlRef.current = null;
         }
-        if (!animAsset ||
-            animAsset.mode !== "sequence" ||
-            !imgRef.current ||
-            !state.motion)
+        if (!animAsset || animAsset.mode !== 'sequence' || !imgRef.current || !state.motion)
             return;
         const frames = animAsset.frames;
         if (frames.length === 0)
@@ -258,15 +257,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
             tl.kill();
             timelineManager.unregister(atomKey, tl);
         };
-    }, [
-        animAsset,
-        state.motion,
-        state.animLoop,
-        state.animReverse,
-        state.animSpeed,
-        atomKey,
-        name,
-    ]);
+    }, [animAsset, state.motion, state.animLoop, state.animReverse, state.animSpeed, atomKey, name]);
     // #anim(single方式): webm動画を<video>で再生する。順再生・ループ・速度は
     // ネイティブのvideo要素のAPI(loop/playbackRate)に任せる方が、GSAPで毎
     // フレームcurrentTimeを進めるより軽くて滑らか。<video>がネイティブに
@@ -279,11 +270,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
             reverseTlRef.current = null;
         }
         const video = videoRef.current;
-        if (!animAsset ||
-            animAsset.mode !== "single" ||
-            !animAsset.src ||
-            !video ||
-            !state.motion)
+        if (!animAsset || animAsset.mode !== 'single' || !animAsset.src || !video || !state.motion)
             return;
         const speed = Math.max(0.05, Math.abs(state.animSpeed ?? 1));
         const applyPlayback = () => {
@@ -298,7 +285,7 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
                 tl.fromTo(video, { currentTime: duration }, {
                     currentTime: 0,
                     duration: duration / speed,
-                    ease: "none",
+                    ease: 'none',
                     onRepeat: () => {
                         video.currentTime = video.duration || 0;
                     },
@@ -317,24 +304,16 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
             applyPlayback();
         }
         else {
-            video.addEventListener("loadedmetadata", applyPlayback, { once: true });
+            video.addEventListener('loadedmetadata', applyPlayback, { once: true });
         }
         return () => {
             if (reverseTlRef.current) {
                 reverseTlRef.current.kill();
                 timelineManager.unregister(atomKey, reverseTlRef.current);
             }
-            video.removeEventListener("loadedmetadata", applyPlayback);
+            video.removeEventListener('loadedmetadata', applyPlayback);
         };
-    }, [
-        animAsset,
-        state.motion,
-        state.animLoop,
-        state.animReverse,
-        state.animSpeed,
-        atomKey,
-        name,
-    ]);
+    }, [animAsset, state.motion, state.animLoop, state.animReverse, state.animSpeed, atomKey, name]);
     if (!hasRealAsset && !allowMock) {
         // fallbackToMockがoffで、素材も見つからない: 何も描画しない
         // (AssetErrorは resolveSpriteSrc/shouldFallbackForSprite 経由で既に
@@ -342,70 +321,56 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
         // フックの並び自体はここより前に維持し、描画だけスキップする。
         return null;
     }
-    return (_jsxs(_Fragment, { children: [_jsxs("div", { ref: rootRef, onClick: onClick, style: {
-                    position: "absolute",
+    return (_jsxs(_Fragment, { children: [_jsxs("div", { ref: rootRef, onClick: onClick, "data-vn-key": `sprite:${name}`, style: {
+                    position: 'absolute',
                     // left/topはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
                     // 唯一の主体。上のコメント参照)。
-                    transform: "translate(-50%, -50%)",
+                    transform: 'translate(-50%, -50%)',
                     width: 80,
                     height: 140,
                     borderRadius: 6,
-                    overflow: "hidden",
-                    background: hasRealAsset ? "transparent" : "#8a8a8a",
+                    overflow: 'hidden',
+                    background: hasRealAsset ? 'transparent' : '#8a8a8a',
                     opacity: hasSpeaker ? (isFocused ? 1 : 0.35) : 1,
-                    transition: "opacity 300ms ease",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    color: "#fff",
+                    transition: 'opacity 300ms ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    color: '#fff',
                     fontSize: 12,
                     paddingBottom: 4,
                     // 親のステージ全体はoverlayモードでpointerEvents:'none'になっている
                     // ことがあるが、キャラ個別のクリックはoverlay/full どちらでも
                     // 拾えてほしいので、onClickがある時は自分自身だけ'auto'に戻す。
-                    pointerEvents: onClick ? "auto" : undefined,
-                    cursor: onClick ? "pointer" : undefined,
-                }, children: [animAsset?.mode === "sequence" && (_jsx("img", { ref: imgRef, alt: name, style: {
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                        } })), animAsset?.mode === "single" && animAsset.src && (_jsx("video", { ref: videoRef, src: animAsset.src, muted: true, playsInline: true, style: {
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                        } })), !animAsset && spriteSrc && !imageFailed && (_jsx("img", { src: spriteSrc, alt: name, onError: (e) => {
-                            e.currentTarget.style.display = "none";
+                    pointerEvents: onClick ? 'auto' : undefined,
+                    cursor: onClick ? 'pointer' : undefined,
+                }, children: [animAsset?.mode === 'sequence' && (_jsx("img", { ref: imgRef, alt: name, style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' } })), animAsset?.mode === 'single' && animAsset.src && (_jsx("video", { ref: videoRef, src: animAsset.src, muted: true, playsInline: true, style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' } })), !animAsset && spriteSrc && !imageFailed && (_jsx("img", { src: spriteSrc, alt: name, onError: (e) => {
+                            e.currentTarget.style.display = 'none';
                             setImageFailed(true);
                         }, style: {
-                            position: "absolute",
+                            position: 'absolute',
                             inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                        } })), !hasRealAsset && (_jsxs(_Fragment, { children: [_jsx("div", { children: name }), _jsxs("div", { style: { fontSize: 10, opacity: 0.8 }, children: [state.expression, state.motion ? ` / ${state.motion}` : "", state.animLoop ? " 🔁" : "", state.animReverse ? " ⏪" : "", state.animSpeed !== undefined && state.animSpeed !== 1
-                                        ? ` x${state.animSpeed}`
-                                        : ""] })] }))] }), gazeAngle !== null && (_jsx("div", { ref: arrowRef, style: {
-                    position: "absolute",
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                        } })), !hasRealAsset && (_jsxs(_Fragment, { children: [_jsx("div", { children: name }), _jsxs("div", { style: { fontSize: 10, opacity: 0.8 }, children: [state.expression, state.motion ? ` / ${state.motion}` : '', state.animLoop ? ' 🔁' : '', state.animReverse ? ' ⏪' : '', state.animSpeed !== undefined && state.animSpeed !== 1 ? ` x${state.animSpeed}` : ''] })] }))] }), gazeAngle !== null && (_jsx("div", { ref: arrowRef, style: {
+                    position: 'absolute',
                     left: `${slot.originX}%`,
                     top: `${slot.originY}%`,
-                    transform: "translate(-50%, -50%) translateY(-84px)",
+                    transform: 'translate(-50%, -50%) translateY(-84px)',
                     // rotateはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
                     // 唯一の主体。上のコメント参照)。
                     width: 0,
                     height: 0,
-                    borderTop: "6px solid transparent",
-                    borderBottom: "6px solid transparent",
-                    borderLeft: "14px solid #ffd54a",
-                    pointerEvents: "none",
+                    borderTop: '6px solid transparent',
+                    borderBottom: '6px solid transparent',
+                    borderLeft: '14px solid #ffd54a',
+                    pointerEvents: 'none',
                     zIndex: 6,
                 } }))] }));
 }
-function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx, offsetPx, atomKey, }) {
+function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick, fontFamily, fontSizePx, offsetPx, atomKey }) {
     const rootRef = useRef(null);
     const positionTlRef = useRef(null);
     const hasPositionedRef = useRef(false);
@@ -425,18 +390,15 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
         timelineManager.register(atomKey, `bubble:${speaker}`, tl);
         if (!hasPositionedRef.current) {
             hasPositionedRef.current = true;
-            tl.set(rootRef.current, {
-                left: `${slot.originX}%`,
-                top: `calc(${slot.originY}% - ${offsetPx}px)`,
-            });
+            tl.set(rootRef.current, { left: `${slot.originX}%`, top: `calc(${slot.originY}% - ${offsetPx}px)` });
         }
         else {
             tl.to(rootRef.current, {
                 left: `${slot.originX}%`,
                 top: `calc(${slot.originY}% - ${offsetPx}px)`,
                 duration: (slot.durationMs ?? 500) / 1000,
-                ease: "power2.out",
-                overwrite: "auto",
+                ease: 'power2.out',
+                overwrite: 'auto',
             });
         }
         return () => {
@@ -453,69 +415,69 @@ function MessageBubble({ speaker, content, slot, revealedCount, visible, onClick
         .vnlayer-scroll-hidden::-webkit-scrollbar {
           display: none; /* Chrome/Safari */
         }
-      ` }), _jsxs("div", { ref: rootRef, onClick: onClick, className: "vnlayer-scroll-hidden", style: {
-                    position: "absolute",
+      ` }), _jsxs("div", { ref: rootRef, onClick: onClick, className: "vnlayer-scroll-hidden", "data-vn-key": `message:${speaker || 'narrator'}`, style: {
+                    position: 'absolute',
                     // left/topはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
                     // 唯一の主体。CharacterSprite側のコメント参照)。
-                    transform: "translate(-50%, -100%)",
+                    transform: 'translate(-50%, -100%)',
                     maxWidth: 220,
-                    maxHeight: "70%",
-                    overflowY: "auto",
-                    background: "rgba(255,255,255,0.95)",
-                    color: "#111",
+                    maxHeight: '70%',
+                    overflowY: 'auto',
+                    background: 'rgba(255,255,255,0.95)',
+                    color: '#111',
                     borderRadius: 12,
-                    padding: "10px 14px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                    padding: '10px 14px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                     fontSize: fontSizePx ?? 13,
                     fontFamily,
                     lineHeight: 1.5,
-                    cursor: revealedCount < content.length ? "pointer" : "default",
+                    cursor: revealedCount < content.length ? 'pointer' : 'default',
                     opacity: visible ? 1 : 0,
-                    transition: "opacity 800ms ease",
+                    transition: 'opacity 800ms ease',
                     zIndex: 5,
-                }, children: [speaker && (_jsx("div", { style: { fontSize: 11, opacity: 0.6, marginBottom: 2 }, children: speaker })), _jsx("div", { style: { whiteSpace: "pre-wrap" }, children: content.slice(0, revealedCount) }), _jsx("div", { style: {
-                            position: "absolute",
-                            left: "50%",
+                }, children: [speaker && _jsx("div", { style: { fontSize: 11, opacity: 0.6, marginBottom: 2 }, children: speaker }), _jsx("div", { style: { whiteSpace: 'pre-wrap' }, children: content.slice(0, revealedCount) }), _jsx("div", { style: {
+                            position: 'absolute',
+                            left: '50%',
                             bottom: -8,
-                            transform: "translateX(-50%)",
+                            transform: 'translateX(-50%)',
                             width: 0,
                             height: 0,
-                            borderLeft: "8px solid transparent",
-                            borderRight: "8px solid transparent",
-                            borderTop: "8px solid rgba(255,255,255,0.95)",
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderTop: '8px solid rgba(255,255,255,0.95)',
                         } })] })] }));
 }
-function NarratorCaption({ content, revealedCount, visible, onClick, fontFamily, fontSizePx, }) {
-    return (_jsx("div", { onClick: onClick, style: {
-            position: "absolute",
-            left: "50%",
+function NarratorCaption({ content, revealedCount, visible, onClick, fontFamily, fontSizePx }) {
+    return (_jsx("div", { onClick: onClick, "data-vn-key": "message:narrator", style: {
+            position: 'absolute',
+            left: '50%',
             top: 14,
-            transform: "translateX(-50%)",
+            transform: 'translateX(-50%)',
             maxWidth: 280,
-            background: "rgba(0,0,0,0.6)",
-            color: "#fff",
+            background: 'rgba(0,0,0,0.6)',
+            color: '#fff',
             borderRadius: 8,
-            padding: "8px 16px",
+            padding: '8px 16px',
             fontSize: fontSizePx ?? 13,
             fontFamily,
             lineHeight: 1.5,
-            textAlign: "center",
-            cursor: revealedCount < content.length ? "pointer" : "default",
+            textAlign: 'center',
+            cursor: revealedCount < content.length ? 'pointer' : 'default',
             opacity: visible ? 1 : 0,
-            transition: "opacity 800ms ease",
+            transition: 'opacity 800ms ease',
             zIndex: 5,
         }, children: content.slice(0, revealedCount) }));
 }
-function ChoiceButton({ text, onClick, disabled, fontFamily, fontSizePx, }) {
-    return (_jsx("button", { onClick: onClick, disabled: disabled, style: {
-            padding: "10px 14px",
+function ChoiceButton({ text, onClick, disabled, fontFamily, fontSizePx, index }) {
+    return (_jsx("button", { onClick: onClick, disabled: disabled, "data-vn-key": `choice:${index}`, style: {
+            padding: '10px 14px',
             borderRadius: 6,
-            border: "1px solid #ccc",
-            background: disabled ? "#eee" : "#fff",
-            color: "#111",
-            cursor: disabled ? "not-allowed" : "pointer",
-            textAlign: "left",
-            width: "100%",
+            border: '1px solid #ccc',
+            background: disabled ? '#eee' : '#fff',
+            color: '#111',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            textAlign: 'left',
+            width: '100%',
             fontSize: fontSizePx,
             fontFamily,
         }, children: text }));
@@ -532,18 +494,18 @@ function FlashOverlay({ color, durationMs, atomKey }) {
             return;
         const tl = gsap.timeline();
         tlRef.current = tl;
-        timelineManager.register(atomKey, "flash", tl);
-        tl.fromTo(ref.current, { opacity: 1 }, { opacity: 0, duration: durationMs / 1000, ease: "power1.out" });
+        timelineManager.register(atomKey, 'flash', tl);
+        tl.fromTo(ref.current, { opacity: 1 }, { opacity: 0, duration: durationMs / 1000, ease: 'power1.out' });
         return () => {
             tl.kill();
             timelineManager.unregister(atomKey, tl);
         };
     }, [color, durationMs, atomKey]);
     return (_jsx("div", { ref: ref, style: {
-            position: "absolute",
+            position: 'absolute',
             inset: 0,
             backgroundColor: color,
-            pointerEvents: "none",
+            pointerEvents: 'none',
             zIndex: 10,
             opacity: 1,
         } }));

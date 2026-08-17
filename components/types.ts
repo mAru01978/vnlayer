@@ -67,14 +67,15 @@ export type NarratorCaptionProps = {
   fontFamily?: string;
   fontSizePx?: number;
 };
-
 export type ChoiceButtonProps = {
+  index: number;
   text: string;
   onClick: () => void;
   disabled: boolean;
   fontFamily?: string;
   fontSizePx?: number;
 };
+
 
 export type FlashOverlayProps = {
   color: string;

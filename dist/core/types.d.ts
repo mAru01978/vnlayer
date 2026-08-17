@@ -26,11 +26,11 @@ export type ShakeState = {
     duration: number;
 };
 export type LineEntry = {
-    kind: "line";
+    kind: 'line';
     speaker: string;
     content: string;
 } | {
-    kind: "choice";
+    kind: 'choice';
     number: number;
     text: string;
 };

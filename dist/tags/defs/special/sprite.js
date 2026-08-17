@@ -76,9 +76,7 @@ registerTag({
                 return;
             const [colorMode, colorValue] = rest;
             if (colorMode === "color" && colorValue) {
-                setSpriteAssets({
-                    [BG_PSEUDO_NAME]: { variants: { [bgName]: { color: colorValue } } },
-                });
+                setSpriteAssets({ [BG_PSEUDO_NAME]: { variants: { [bgName]: { color: colorValue } } } });
             }
             backgroundManager.setBackground(atomKey, instanceId, bgName);
             return;

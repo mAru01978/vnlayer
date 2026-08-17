@@ -1,13 +1,13 @@
-import { type DependencyList, type RefObject } from "react";
-import { type VNLayerMode } from "./components/VNLayerOverlay";
-import type { UiAnchor } from "./components/StageView";
-import { type UiConfigPatch } from "./tags/index";
-import { type AnimAssetConfig } from "./tags/animAssets";
-import { type SpriteCharacterConfig } from "./tags/spriteAssets";
-import { type AssetsGlobalConfig } from "./tags/assetsConfig";
-import type { StepProvider } from "./core/StepProvider";
-import type { SaveProvider } from "./core/SaveProvider";
-import type { SetContextOptions } from "./core/types";
+import { type DependencyList, type RefObject } from 'react';
+import { type VNLayerMode } from './components/VNLayerOverlay';
+import type { UiAnchor } from './components/StageView';
+import { type UiConfigPatch } from './tags/index';
+import { type AnimAssetConfig } from './tags/animAssets';
+import { type SpriteCharacterConfig } from './tags/spriteAssets';
+import { type AssetsGlobalConfig } from './tags/assetsConfig';
+import type { StepProvider } from './core/StepProvider';
+import type { SaveProvider } from './core/SaveProvider';
+import type { SetContextOptions } from './core/types';
 export type VNLayerProps = {
     clip?: string;
     mode?: VNLayerMode;
@@ -38,12 +38,18 @@ export type ConfigureVNLayerOptions = {
 };
 export declare function configureVNLayer(options: ConfigureVNLayerOptions): void;
 export declare function useVNLayerContext(vnRef: RefObject<VNLayerRef | null>, vars: Record<string, unknown>, deps: DependencyList, options?: SetContextOptions): void;
-export { createStaticStepProvider } from "./core/staticStepProvider";
-export { serverStepProvider, createServerStepProvider, } from "./core/serverStepProvider";
-export { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
-export { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
-export { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
-export type { StepProvider } from "./core/StepProvider";
-export type { SaveProvider, SaveData } from "./core/SaveProvider";
-export type { VNLayerHandle, SetContextOptions } from "./core/types";
+export type VNLayerDataElement = {
+    key: string;
+    type: string;
+    element: HTMLElement;
+};
+export declare function getDataElements(name?: string, root?: Element | Document): VNLayerDataElement[];
+export { createStaticStepProvider } from './core/staticStepProvider';
+export { serverStepProvider, createServerStepProvider } from './core/serverStepProvider';
+export { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
+export { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
+export { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
+export type { StepProvider } from './core/StepProvider';
+export type { SaveProvider, SaveData } from './core/SaveProvider';
+export type { VNLayerHandle, SetContextOptions } from './core/types';
 //# sourceMappingURL=react.d.ts.map

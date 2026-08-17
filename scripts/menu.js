@@ -37,6 +37,21 @@ const VENDOR_MENU_ITEMS = [
   },
 ];
 
+ const CHARACTER_FILE_MENU_ITEMS = [
+      {
+        label: "data/spriteAssets.json",
+        value: path.join("data", "spriteAssets.json"),
+      },
+      {
+        label: "ファイル名を直接入力",
+        value: "__CUSTOM__",
+      },
+      {
+        label: "戻る",
+        value: null,
+      },
+    ];
+
 // メニューに出す項目一覧。スクリプトパスは絶対パスで安全に指定。
 const MENU_ITEMS = [
   {
@@ -49,31 +64,58 @@ const MENU_ITEMS = [
       runDirect(["node", path.join(__dirname, "watch-ink.js"), targetDataDir]);
     },
   },
-
-  {
-    label: "新しいシーンを追加(new-scene.js)",
-    run: () =>
-      runWithPrompt("シーン名を入力してください(例: sceneD): ", (name) => [
-        "node",
-        path.join(__dirname, "new-scene.js"),
-        name,
-      ]),
-  },
   {
     label: "新しいキャラクターを追加(new-character.js)",
-    run: () =>
-      runWithPrompts(
-        [
-          { question: "キャラ名を入力してください(例: mika): " },
-          { question: "立ち位置 originX(0-100の数値): " },
-          { question: "立ち位置 originY(0-100の数値): " },
-        ],
-        (answers) => [
-          "node",
-          path.join(__dirname, "new-character.js"),
-          ...answers,
-        ],
-      ),
+     run: async () => {
+
+    const fileItem = await showMenu(
+      CHARACTER_FILE_MENU_ITEMS,
+      "キャラクター保存先を選択",
+    );
+
+    if (fileItem.value === null) {
+      return;
+    }
+
+    let targetFile = fileItem.value;
+
+    if (targetFile === "__CUSTOM__") {
+      targetFile = await askQuestion(
+        "JSONファイルのパスを入力してください: ",
+      );
+
+      if (!targetFile) {
+        console.log("入力が空だったので中断しました。");
+        return;
+      }
+    }
+
+    const answers = [];
+
+    const questions = [
+      "キャラ名を入力してください(例: mika): ",
+      "立ち位置 originX(0-100の数値): ",
+      "立ち位置 originY(0-100の数値): ",
+    ];
+
+    for (const question of questions) {
+      const answer = await askQuestion(question);
+
+      if (!answer) {
+        console.log("入力が空だったので中断しました。");
+        return;
+      }
+
+      answers.push(answer);
+    }
+
+    runDirect([
+      "node",
+      path.join(__dirname, "new-character.js"),
+      ...answers,
+      targetFile,
+    ]);
+  },
   },
   {
     label: "新しいタグの雛形を追加(new-tag.js)",

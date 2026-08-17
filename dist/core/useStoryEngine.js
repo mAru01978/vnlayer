@@ -1,29 +1,29 @@
-"use client";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useAtomValue } from "jotai";
-import { dispatchTag } from "../tags/index";
-import { getUiConfig, getAllUiConfigPatches, restoreUiConfigPatches, } from "../tags/uiConfig";
-import { getAllCharacterSlots, getAllBackgroundSlots, setSpriteAssets, } from "../tags/spriteAssets";
-import { getDefaultStepProvider } from "./defaultStepProvider";
-import { registerInstance, unregisterInstance, registerSelf, unregisterSelf, } from "./instanceRegistry";
-import { getStore } from "./store";
-import { camAtomFamily, shakeAtomFamily, flashAtomFamily, typeSpeedAtomFamily, disposeBasicAtoms, } from "./atoms";
-import * as backgroundManager from "./managers/backgroundManager";
-import * as characterManager from "./managers/characterManager";
-import * as speakerManager from "./managers/speakerManager";
-import * as positionManager from "./managers/positionManager";
-import * as messageManager from "./managers/messageManager";
-import * as choiceManager from "./managers/choiceManager";
-import * as backlogManager from "./managers/backlogManager";
-import * as windowVisibilityManager from "./managers/windowVisibilityManager";
-import * as typeManager from "./managers/typeManager";
-import * as navigationManager from "./managers/navigationManager";
-import * as waitManager from "./managers/waitManager";
-import * as contextManager from "./managers/contextManager";
-import * as timelineManager from "./managers/timelineManager";
-import * as interruptManager from "./managers/interruptManager";
-import { TagDispatchError, StoryRuntimeError, reportError } from "./errors";
-import { getDefaultSaveProvider } from "./defaultSaveProvider";
+'use client';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useAtomValue } from 'jotai';
+import { dispatchTag } from '../tags/index';
+import { getUiConfig, getAllUiConfigPatches, restoreUiConfigPatches } from '../tags/uiConfig';
+import { getAllCharacterSlots, getAllBackgroundSlots, setSpriteAssets } from '../tags/spriteAssets';
+import { getDefaultStepProvider } from './defaultStepProvider';
+import { registerInstance, unregisterInstance, registerSelf, unregisterSelf } from './instanceRegistry';
+import { getStore } from './store';
+import { camAtomFamily, shakeAtomFamily, flashAtomFamily, typeSpeedAtomFamily, disposeBasicAtoms } from './atoms';
+import * as backgroundManager from './managers/backgroundManager';
+import * as characterManager from './managers/characterManager';
+import * as speakerManager from './managers/speakerManager';
+import * as positionManager from './managers/positionManager';
+import * as messageManager from './managers/messageManager';
+import * as choiceManager from './managers/choiceManager';
+import * as backlogManager from './managers/backlogManager';
+import * as windowVisibilityManager from './managers/windowVisibilityManager';
+import * as typeManager from './managers/typeManager';
+import * as navigationManager from './managers/navigationManager';
+import * as waitManager from './managers/waitManager';
+import * as contextManager from './managers/contextManager';
+import * as timelineManager from './managers/timelineManager';
+import * as interruptManager from './managers/interruptManager';
+import { TagDispatchError, StoryRuntimeError, reportError } from './errors';
+import { getDefaultSaveProvider } from './defaultSaveProvider';
 // タグシステム大改修フェーズ3: 「useStoryEngine.tsの責務過多を解消し、タグ
 // 追加のたびにここを改修しなくて済むようにする」という狙いで全面的に
 // 書き直した。
@@ -59,9 +59,7 @@ import { getDefaultSaveProvider } from "./defaultSaveProvider";
 //                意味を持つ場面で使う(atomKeyとは別物)。
 export function useStoryEngine(clip, options = {}) {
     const stepProvider = options.stepProvider ?? getDefaultStepProvider();
-    const saveProvider = options.saveProvider === null
-        ? null
-        : (options.saveProvider ?? getDefaultSaveProvider());
+    const saveProvider = options.saveProvider === null ? null : (options.saveProvider ?? getDefaultSaveProvider());
     const onNavigate = options.onNavigate;
     const instanceId = options.instanceId;
     const fallbackAtomKey = useId();
@@ -145,7 +143,7 @@ export function useStoryEngine(clip, options = {}) {
                 onNavigate(pendingGoto);
             }
             else {
-                console.warn("[useStoryEngine] goto tag encountered but no onNavigate handler was provided:", pendingGoto);
+                console.warn('[useStoryEngine] goto tag encountered but no onNavigate handler was provided:', pendingGoto);
             }
         }
         if (result.visual) {
@@ -184,19 +182,14 @@ export function useStoryEngine(clip, options = {}) {
                         // 「保存時点で表示完了していた」とみなす。type:wait:offの
                         // 場合はプレイヤーが実際どこまで読み終えていたか分からない
                         // ため、安全側(最初からタイプさせ直す)に倒す。
-                        return {
-                            ...current,
-                            startRevealed: typeManager.isTypeWaitEnabled(atomKey),
-                        };
+                        return { ...current, startRevealed: typeManager.isTypeWaitEnabled(atomKey) };
                     })(),
                     backlogLines: backlogManager.getLines(atomKey),
                     savedAt: Date.now(),
                 });
             })
                 .catch((e) => {
-                reportError(new StoryRuntimeError("failed to persist save data", {
-                    cause: e,
-                }));
+                reportError(new StoryRuntimeError('failed to persist save data', { cause: e }));
             });
         }
     }, [atomKey, instanceId, onNavigate, clip, stepProvider, saveProvider]);
@@ -246,7 +239,7 @@ export function useStoryEngine(clip, options = {}) {
                 }
             }
             catch (e) {
-                reportError(new StoryRuntimeError("failed to restore from save data, starting fresh instead", { cause: e }));
+                reportError(new StoryRuntimeError('failed to restore from save data, starting fresh instead', { cause: e }));
                 result = null;
                 restoredMessage = undefined;
             }
@@ -297,7 +290,7 @@ export function useStoryEngine(clip, options = {}) {
         if (isProcessingRef.current) {
             const isAmbient = choices
                 .find((c) => c.index === index)
-                ?.tags?.some((t) => t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt");
+                ?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
             if (!isAmbient) {
                 console.warn(`[VNLayer] choose(${index}) ignored: a previous advance() is still in progress.`);
             }
@@ -307,9 +300,9 @@ export function useStoryEngine(clip, options = {}) {
             choiceManager.setChoices(atomKey, []);
         }
         const chosen = choices.find((c) => c.index === index);
-        const isAmbientChoice = chosen?.tags?.some((t) => t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt");
+        const isAmbientChoice = chosen?.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt');
         if (chosen && !isAmbientChoice) {
-            const visibleAtChoiceTime = choices.filter((c) => !c.tags?.some((t) => t.split(":")[0] === "tick" || t.split(":")[0] === "interrupt"));
+            const visibleAtChoiceTime = choices.filter((c) => !c.tags?.some((t) => t.split(':')[0] === 'tick' || t.split(':')[0] === 'interrupt'));
             const number = visibleAtChoiceTime.findIndex((c) => c.index === index) + 1;
             backlogManager.pushChoice(atomKey, instanceId, number > 0 ? number : 1, chosen.text);
         }
@@ -322,7 +315,7 @@ export function useStoryEngine(clip, options = {}) {
         // 選択肢が更新されるたび無条件に消費/破棄する(waitManager.
         // consumePendingInterrupt()自体が読み取りと同時にfalseへ戻す)。
         const hadPendingInterrupt = waitManager.consumePendingInterrupt(atomKey);
-        const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(":")[0] === "interrupt"));
+        const interruptChoice = choices.find((c) => c.tags?.some((t) => t.split(':')[0] === 'interrupt'));
         if (interruptChoice && hadPendingInterrupt) {
             // 実際に#interrupt付き選択肢へ割り込む、この瞬間だけ演出中の全
             // GSAP timelineを一時停止する(notify:trueの全呼び出しで毎回pauseする
@@ -336,13 +329,13 @@ export function useStoryEngine(clip, options = {}) {
             });
             return;
         }
-        const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(":")[0] === "tick"));
+        const tickChoices = choices.filter((c) => c.tags?.some((t) => t.split(':')[0] === 'tick'));
         if (tickChoices.length === 0)
             return;
         const timers = [];
         for (const tickChoice of tickChoices) {
-            const tickTag = tickChoice.tags.find((t) => t.split(":")[0] === "tick");
-            const seconds = tickTag ? Number(tickTag.split(":")[1]) : NaN;
+            const tickTag = tickChoice.tags.find((t) => t.split(':')[0] === 'tick');
+            const seconds = tickTag ? Number(tickTag.split(':')[1]) : NaN;
             if (!Number.isFinite(seconds) || seconds <= 0)
                 continue;
             timers.push(setTimeout(() => {
@@ -371,12 +364,7 @@ export function useStoryEngine(clip, options = {}) {
         // 元々存在しない)ため、ここでも同じ範囲(cam/positionOverrides/
         // activeMessage/messageWindowHidden/contextStore)だけをリセットし、
         // 挙動を変えないようにしている。
-        getStore().set(camAtomFamily(atomKey), {
-            target: "",
-            scale: 1,
-            originX: 50,
-            originY: 50,
-        });
+        getStore().set(camAtomFamily(atomKey), { target: '', scale: 1, originX: 50, originY: 50 });
         positionManager.reset(atomKey);
         messageManager.reset(atomKey);
         windowVisibilityManager.reset(atomKey);

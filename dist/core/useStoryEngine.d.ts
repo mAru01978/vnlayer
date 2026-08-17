@@ -1,6 +1,6 @@
-import type { StepProvider } from "./StepProvider";
-import type { SaveProvider } from "./SaveProvider";
-import type { StoryEngine } from "./types";
+import type { StepProvider } from './StepProvider';
+import type { SaveProvider } from './SaveProvider';
+import type { StoryEngine } from './types';
 export declare function useStoryEngine(clip: string, options?: {
     stepProvider?: StepProvider;
     saveProvider?: SaveProvider | null;

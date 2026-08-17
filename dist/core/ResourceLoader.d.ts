@@ -1,4 +1,4 @@
-export type ResourceSource = "local" | "fetch";
+export type ResourceSource = 'local' | 'fetch';
 export type ResourceLoaderOptions = {
     source?: ResourceSource;
     basePath?: string;

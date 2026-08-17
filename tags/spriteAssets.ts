@@ -17,12 +17,8 @@
 // (${basePath}/sprite/${name}/${variant}.${spriteExtension}) →
 // (3)fallbackToMockがtrueならモック表示、falseならAssetErrorを報告して
 // 何も描画しない(components/Renderer.tsx参照)。
-import {
-  getAssetsConfig,
-  shouldFallbackToMock,
-  getAssetsConfigVersion,
-} from "./assetsConfig";
-import { resolveUrlCached, type ResourceSource } from "../core/ResourceLoader";
+import { getAssetsConfig, shouldFallbackToMock, getAssetsConfigVersion } from './assetsConfig';
+import { resolveUrlCached, type ResourceSource } from '../core/ResourceLoader';
 
 export type SpriteVariantConfig = {
   src?: string;
@@ -38,7 +34,7 @@ export type SpriteCharacterConfig = {
   variants?: Record<string, SpriteVariantConfig>;
 };
 
-const BG_PSEUDO_NAME = "bg";
+const BG_PSEUDO_NAME = 'bg';
 
 const registry = new Map<string, SpriteCharacterConfig>();
 
@@ -61,9 +57,7 @@ export function getSpriteAssetsVersion(): number {
 
 // VNLayer.configure({ assets: { sprite: {...} } }) / # s:name:initPos:... /
 // # s:bg:name:color:... から呼ばれる。深いマージ(variants同士も合成)。
-export function setSpriteAssets(
-  patch: Record<string, SpriteCharacterConfig>,
-): void {
+export function setSpriteAssets(patch: Record<string, SpriteCharacterConfig>): void {
   for (const [name, cfg] of Object.entries(patch)) {
     const existing = registry.get(name) ?? {};
     registry.set(name, {
@@ -75,19 +69,13 @@ export function setSpriteAssets(
   bumpVersion();
 }
 
-export function getCharacterSlot(
-  name: string,
-): { originX: number; originY: number } | undefined {
+export function getCharacterSlot(name: string): { originX: number; originY: number } | undefined {
   const cfg = registry.get(name);
-  if (!cfg || cfg.originX === undefined || cfg.originY === undefined)
-    return undefined;
+  if (!cfg || cfg.originX === undefined || cfg.originY === undefined) return undefined;
   return { originX: cfg.originX, originY: cfg.originY };
 }
 
-export function getAllCharacterSlots(): Record<
-  string,
-  { originX: number; originY: number }
-> {
+export function getAllCharacterSlots(): Record<string, { originX: number; originY: number }> {
   const result: Record<string, { originX: number; originY: number }> = {};
   for (const [name, cfg] of registry.entries()) {
     if (name === BG_PSEUDO_NAME) continue;
@@ -98,21 +86,13 @@ export function getAllCharacterSlots(): Record<
   return result;
 }
 
-export function getBackgroundSlot(
-  bgName: string,
-): { color?: string; image?: string } | undefined {
+export function getBackgroundSlot(bgName: string): { color?: string; image?: string } | undefined {
   const variant = registry.get(BG_PSEUDO_NAME)?.variants?.[bgName];
   if (!variant) return undefined;
-  return {
-    color: variant.color,
-    image: resolveSpriteSrc(BG_PSEUDO_NAME, bgName) ?? variant.src,
-  };
+  return { color: variant.color, image: resolveSpriteSrc(BG_PSEUDO_NAME, bgName) ?? variant.src };
 }
 
-export function getAllBackgroundSlots(): Record<
-  string,
-  { color?: string; image?: string }
-> {
+export function getAllBackgroundSlots(): Record<string, { color?: string; image?: string }> {
   const variants = registry.get(BG_PSEUDO_NAME)?.variants ?? {};
   const result: Record<string, { color?: string; image?: string }> = {};
   for (const [bgName, v] of Object.entries(variants)) {
@@ -128,8 +108,8 @@ export function getAllBackgroundSlots(): Record<
 // 指定することを推奨する — 非同期解決が必要なため)。
 function conventionSpritePath(name: string, variant: string): string {
   const { basePath, spriteExtension } = getAssetsConfig();
-  const base = (basePath ?? "./assets").replace(/\/+$/, "");
-  return `${base}/sprite/${name}/${variant}.${spriteExtension ?? "png"}`;
+  const base = (basePath ?? './assets').replace(/\/+$/, '');
+  return `${base}/sprite/${name}/${variant}.${spriteExtension ?? 'png'}`;
 }
 
 // 表情/背景画像の解決(手動指定優先 → フォルダ規約)。
@@ -145,15 +125,19 @@ function conventionSpritePath(name: string, variant: string): string {
 //                              フォルダ規約フォールバックはsource:'local'
 //                              では使わない(非同期解決が前提のため、
 //                              未登録の場合は手動でsrcを指定すること)。
-export function resolveSpriteSrc(
-  name: string,
-  variant: string,
-): string | undefined {
+export function resolveSpriteSrc(name: string, variant: string): string | undefined {
   const entry = registry.get(name)?.variants?.[variant];
   const manual = entry?.src;
   const globalCfg = getAssetsConfig();
-  const source = entry?.source ?? globalCfg.source ?? "fetch";
+  const source = entry?.source ?? globalCfg.source ?? 'fetch';
   const resolveLocal = entry?.resolveLocal ?? globalCfg.resolveLocal;
+
+  if (manual) {
+    if (source === 'local') {
+      return resolveUrlCached(`sprite:${name}:${variant}`, manual, { source, resolveLocal }, bumpVersion);
+    }
+    return manual;
+  }
 
   // 修正メモ(2026-08-13、「モックが出ず壊れた画像が出る」不具合の修正):
   // nameそのものが一度も登録されていない(=このキャラ/背景を
@@ -165,27 +149,13 @@ export function resolveSpriteSrc(
   // を設定していても常に「壊れた画像」が優先されてしまっていた。
   const characterCfg = registry.get(name);
   if (!characterCfg) return undefined;
-  if (manual) {
-    if (source === "local") {
-      return resolveUrlCached(
-        `sprite:${name}:${variant}`,
-        manual,
-        { source, resolveLocal },
-        bumpVersion,
-      );
-    }
-    return manual;
-  }
 
-  if (source === "local") return undefined;
+  if (source === 'local') return undefined;
   return conventionSpritePath(name, variant);
 }
 
 // components/Renderer.tsx用: 表情画像が実在しない場合にモックへ
 // フォールバックしてよいかどうか。
-export function shouldFallbackForSprite(
-  name: string,
-  variant: string,
-): boolean {
+export function shouldFallbackForSprite(name: string, variant: string): boolean {
   return shouldFallbackToMock(`sprite "${name}:${variant}"`);
 }

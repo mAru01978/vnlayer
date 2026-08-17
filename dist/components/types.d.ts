@@ -49,6 +49,7 @@ export type NarratorCaptionProps = {
     fontSizePx?: number;
 };
 export type ChoiceButtonProps = {
+    index: number;
     text: string;
     onClick: () => void;
     disabled: boolean;

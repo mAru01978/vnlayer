@@ -1,6 +1,6 @@
 /// <reference types="react" />
-export type StageMode = "full" | "overlay";
-export type UiAnchor = "left" | "right";
+export type StageMode = 'full' | 'overlay';
+export type UiAnchor = 'left' | 'right';
 export type UiVisibility = {
     backlogButton?: boolean;
     choices?: boolean;

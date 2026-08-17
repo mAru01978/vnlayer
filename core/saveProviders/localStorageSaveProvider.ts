@@ -1,4 +1,4 @@
-import type { SaveProvider, SaveData } from "../SaveProvider";
+import type { SaveProvider, SaveData } from '../SaveProvider';
 
 // 既定のSaveProvider。VNLayer.mount()/<VNLayer>で明示的にsaveProviderを
 // 指定しなかった場合、core/defaultSaveProvider.ts経由でこれが使われる
@@ -13,7 +13,7 @@ export type LocalStorageSaveProviderOptions = {
 export function createLocalStorageSaveProvider(
   options: LocalStorageSaveProviderOptions = {},
 ): SaveProvider {
-  const prefix = options.keyPrefix ?? "vnlayer:save:";
+  const prefix = options.keyPrefix ?? 'vnlayer:save:';
 
   function storageKey(key: string): string {
     return `${prefix}${key}`;
@@ -21,10 +21,7 @@ export function createLocalStorageSaveProvider(
 
   function hasStorage(): boolean {
     try {
-      return (
-        typeof window !== "undefined" &&
-        typeof window.localStorage !== "undefined"
-      );
+      return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
     } catch {
       // Safariのプライベートブラウズ等、localStorageへのアクセス自体が
       // 例外を投げる環境がある。
@@ -38,10 +35,7 @@ export function createLocalStorageSaveProvider(
       try {
         window.localStorage.setItem(storageKey(key), JSON.stringify(data));
       } catch (e) {
-        console.warn(
-          "[VNLayer] localStorage save failed (quota exceeded, or private mode?):",
-          e,
-        );
+        console.warn('[VNLayer] localStorage save failed (quota exceeded, or private mode?):', e);
       }
     },
     async load(key) {
@@ -51,10 +45,7 @@ export function createLocalStorageSaveProvider(
       try {
         return JSON.parse(raw) as SaveData;
       } catch (e) {
-        console.warn(
-          "[VNLayer] localStorage save data corrupted, ignoring:",
-          e,
-        );
+        console.warn('[VNLayer] localStorage save data corrupted, ignoring:', e);
         return null;
       }
     },

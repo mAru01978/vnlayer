@@ -36,7 +36,6 @@ export class AssetError extends VNLayerError {
 export class ResourceLoadError extends VNLayerError {
 }
 const listeners = new Set();
-const reportedAssetErrors = new Set();
 // 開発者側(ホストページ)がエラーを横断的に監視したい場合用の購読口。
 // 現状api.ts側からは未公開だが、将来 VNLayer.onError(fn) のような形で
 // そのまま繋げられるようにしてある。
@@ -47,13 +46,6 @@ export function onVNLayerError(listener) {
 // 全エラー経路(story.onError/fetch失敗/タグ実行失敗/interrupt失敗等)を
 // 集約するための共通口。既定ではconsole.warnに出す(以前からの挙動を維持)。
 export function reportError(error) {
-    if (error instanceof AssetError) {
-        const key = error.message;
-        if (reportedAssetErrors.has(key)) {
-            return;
-        }
-        reportedAssetErrors.add(key);
-    }
     if (error.cause !== undefined) {
         console.warn(`[VNLayer] ${error.name}: ${error.message}`, error.cause);
     }

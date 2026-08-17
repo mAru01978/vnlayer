@@ -1,17 +1,17 @@
-import { type VNLayerMode } from "./components/VNLayerOverlay";
-import type { UiAnchor } from "./components/StageView";
-import { type SpriteCharacterConfig } from "./tags/spriteAssets";
-import { type UiConfigPatch } from "./tags/index";
-import { type AnimAssetConfig } from "./tags/animAssets";
-import { type AssetsGlobalConfig } from "./tags/assetsConfig";
-import type { SetContextOptions } from "./core/types";
-import type { StepProvider } from "./core/StepProvider";
-import type { SaveProvider } from "./core/SaveProvider";
-import { createServerStepProvider } from "./core/serverStepProvider";
-import { createStaticStepProvider } from "./core/staticStepProvider";
-import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
-import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
-import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+import { type VNLayerMode } from './components/VNLayerOverlay';
+import type { UiAnchor } from './components/StageView';
+import { type SpriteCharacterConfig } from './tags/spriteAssets';
+import { type UiConfigPatch } from './tags/index';
+import { type AnimAssetConfig } from './tags/animAssets';
+import { type AssetsGlobalConfig } from './tags/assetsConfig';
+import type { SetContextOptions } from './core/types';
+import type { StepProvider } from './core/StepProvider';
+import type { SaveProvider } from './core/SaveProvider';
+import { createServerStepProvider } from './core/serverStepProvider';
+import { createStaticStepProvider } from './core/staticStepProvider';
+import { createLocalStorageSaveProvider } from './core/saveProviders/localStorageSaveProvider';
+import { createCookieSaveProvider } from './core/saveProviders/cookieSaveProvider';
+import { createServerSaveProvider } from './core/saveProviders/serverSaveProvider';
 type MountOptions = {
     clip?: string;
     mode?: VNLayerMode;
@@ -36,6 +36,12 @@ type ConfigureOptions = {
 };
 declare function reset(selector?: string): Promise<void>;
 declare function configure(options: ConfigureOptions, selector?: string): Promise<void>;
+export type VNLayerDataElement = {
+    key: string;
+    type: string;
+    element: HTMLElement;
+};
+declare function getDataElements(name?: string, selector?: string): VNLayerDataElement[];
 export declare const VNLayer: {
     mount: typeof mount;
     unmount: typeof unmount;
@@ -43,6 +49,7 @@ export declare const VNLayer: {
     getContext: typeof getContext;
     reset: typeof reset;
     configure: typeof configure;
+    getDataElements: typeof getDataElements;
     serverStepProvider: StepProvider;
     createServerStepProvider: typeof createServerStepProvider;
     createStaticStepProvider: typeof createStaticStepProvider;
