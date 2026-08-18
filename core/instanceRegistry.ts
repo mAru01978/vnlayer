@@ -70,10 +70,8 @@ export async function emitToInstance(
 ): Promise<void> {
   const target = registry.get(normalizeSelector(selector));
   if (!target) {
-    reportError(
-      new TagDispatchError(
-        `emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`,
-      ),
+    throw new TagDispatchError(
+      `emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`,
     );
     return;
   }
@@ -97,10 +95,8 @@ export async function emitToSelf(
 ): Promise<void> {
   const target = selfRegistry.get(atomKey);
   if (!target) {
-    reportError(
-      new TagDispatchError(
-        `emit: instance not ready yet (atomKey "${atomKey}")`,
-      ),
+    throw new TagDispatchError(
+      `emit: instance not ready yet (atomKey "${atomKey}")`,
     );
     return;
   }

@@ -98,7 +98,7 @@ export function resolveUrlCached(cacheKey, path, options, onResolved) {
     }
     return undefined;
 }
-// 素材レジストリのclear/リセット等で古いキャッシュを捨てたい場合用
+// 素材レジストリのclear/リセット等で古いキャッシュを捨てたい場合用。
 // (通常は不要 — 同じcacheKeyなら同じ結果になるはずなので、基本的には
 // 溜まったままで問題ない)。
 export function clearResolvedUrlCache(cacheKeyPrefix) {

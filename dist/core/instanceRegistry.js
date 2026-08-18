@@ -38,7 +38,7 @@
 // とは別のMap(selfRegistry、atomKeyキー)で持つ — instanceId(公開スコープ
 // 識別子、mount()時に省略されうる)とは値空間が別物なので、混ざらないように
 // 完全に分離してある。
-import { reportError, TagDispatchError } from "./errors";
+import { TagDispatchError } from "./errors";
 function normalizeSelector(selector) {
     return selector.replace(/^[#.@]/, "");
 }
@@ -54,7 +54,7 @@ export function unregisterInstance(selector) {
 export async function emitToInstance(selector, vars, options) {
     const target = registry.get(normalizeSelector(selector));
     if (!target) {
-        reportError(new TagDispatchError(`emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`));
+        throw new TagDispatchError(`emit: no mounted instance found for selector "${selector}" (is it mounted yet?)`);
         return;
     }
     await target.setContextVars(vars, options);
@@ -70,7 +70,7 @@ export function unregisterSelf(atomKey) {
 export async function emitToSelf(atomKey, vars, options) {
     const target = selfRegistry.get(atomKey);
     if (!target) {
-        reportError(new TagDispatchError(`emit: instance not ready yet (atomKey "${atomKey}")`));
+        throw new TagDispatchError(`emit: instance not ready yet (atomKey "${atomKey}")`);
         return;
     }
     await target.setContextVars(vars, options);

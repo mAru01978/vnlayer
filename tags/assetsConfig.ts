@@ -9,7 +9,7 @@
 // VNLayer.configure({ assets: { fallbackToMock: true } }) で明示的にonにする。
 import { reportError, AssetError } from "../core/errors";
 import type { ResourceSource } from "../core/ResourceLoader";
-
+const reportedMissingAssets = new Set<string>();
 export type AssetsGlobalConfig = {
   // 素材配信のベースパス(story.jsonのdataBaseUrlとは別物)。
   // 例: "/assets" なら "/assets/sprite/alice/happy.png" のように解決する。
@@ -63,8 +63,14 @@ export function getAssetsConfig(): AssetsGlobalConfig {
 // (呼び出し側=components/Renderer.tsxはこのfalseを見て何も描画しない)。
 export function shouldFallbackToMock(context: string): boolean {
   if (current.fallbackToMock) return true;
-  reportError(
-    new AssetError(`asset not found and fallbackToMock is off: ${context}`),
-  );
+
+  if (!reportedMissingAssets.has(context)) {
+    reportedMissingAssets.add(context);
+
+    reportError(
+      new AssetError(`asset not found and fallbackToMock is off: ${context}`),
+    );
+  }
+
   return false;
 }

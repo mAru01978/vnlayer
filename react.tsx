@@ -53,6 +53,10 @@ import { setAssetsConfig, type AssetsGlobalConfig } from "./tags/assetsConfig";
 import type { StepProvider } from "./core/StepProvider";
 import type { SaveProvider } from "./core/SaveProvider";
 import type { SetContextOptions, VNLayerHandle } from "./core/types";
+import {
+  setReservedVariablesConfig,
+  type ReservedVariablesConfig,
+} from "./core/reservedVariablesConfig";
 
 export type VNLayerProps = {
   clip?: string;
@@ -181,6 +185,7 @@ export type ConfigureVNLayerOptions = {
   tags?: Record<string, Record<string, unknown>>;
   ui?: UiConfigPatch;
   webLinks?: Record<string, string>;
+  reservedVariables?: ReservedVariablesConfig;
 };
 
 export function configureVNLayer(options: ConfigureVNLayerOptions): void {
@@ -198,6 +203,7 @@ export function configureVNLayer(options: ConfigureVNLayerOptions): void {
   }
   if (options.ui) setUiConfig(options.ui);
   if (options.webLinks) setWebLinks(options.webLinks);
+  if (options.reservedVariables) setReservedVariablesConfig(options.reservedVariables);
 }
 
 // refを持ちたくない場合向けの薄いhook(アイデア段階の案、シンプルな実装に

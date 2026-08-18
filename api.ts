@@ -29,6 +29,10 @@ import { createStaticStepProvider } from "./core/staticStepProvider";
 import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
 import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
 import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+import {
+  setReservedVariablesConfig,
+  type ReservedVariablesConfig,
+} from "./core/reservedVariablesConfig";
 
 // フェーズ1のゴール: 「VNLayer.mount("#vn", {clip, mode})」のような
 // 命令的APIを、既存のReactコンポーネント(VNLayerOverlay)の上に薄く被せて提供する。
@@ -269,6 +273,7 @@ type ConfigureOptions = {
   tags?: Record<string, Record<string, unknown>>;
   ui?: UiConfigPatch;
   webLinks?: Record<string, string>;
+  reservedVariables?: ReservedVariablesConfig;
 };
 
 // VNLayer.reset(selector?)
@@ -326,6 +331,7 @@ async function configure(
   }
   if (options.ui) setUiConfig(options.ui, selector);
   if (options.webLinks) setWebLinks(options.webLinks);
+  if (options.reservedVariables)setReservedVariablesConfig(options.reservedVariables);
 }
 
 // VNLayer.getDataElements(name?, selector?)

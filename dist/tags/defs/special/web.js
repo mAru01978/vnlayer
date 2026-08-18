@@ -3,7 +3,7 @@ import { getWebLink } from "../../webLinks";
 import { isNumeric, parseOnOff } from "../../numericOrLabel";
 import * as navigationManager from "../../../core/managers/navigationManager";
 import * as webManager from "../../../core/managers/webManager";
-import { reportError, TagDispatchError } from "../../../core/errors";
+import { TagDispatchError } from "../../../core/errors";
 // #web はWeb接続系(ページ遷移/新規タブ/スクロール/VN間イベント連携)をまとめた統合タグ。
 // 以前は「意図的にこの3つ以上は増やさない方針」としていたが、それは絶対的な
 // ルールではなくあくまで方針だったため、VN間イベント連携(emit)もここに含める
@@ -75,7 +75,7 @@ registerTag({
                 // args = ['emit', eventName, value]
                 const [, eventName, rawValue] = args;
                 if (!eventName) {
-                    reportError(new TagDispatchError(`web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`));
+                    throw new TagDispatchError(`web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`);
                     break;
                 }
                 let value = rawValue;

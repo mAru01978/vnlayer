@@ -31,6 +31,7 @@ import { setUiConfig, setTagConfig, setWebLinks, } from "./tags/index";
 import { setAnimAssets } from "./tags/animAssets";
 import { setSpriteAssets, } from "./tags/spriteAssets";
 import { setAssetsConfig } from "./tags/assetsConfig";
+import { setReservedVariablesConfig, } from "./core/reservedVariablesConfig";
 // <VNLayer ref={vnRef} clip="Alice" mode="overlay" ui={{...}} onReady={...} />
 export const VNLayer = forwardRef(function VNLayer({ clip, mode, uiAnchor, showUi, stepProvider, saveProvider, onNavigate, ui, instanceId, onReady, }, ref) {
     const generatedId = useId();
@@ -92,6 +93,8 @@ export function configureVNLayer(options) {
         setUiConfig(options.ui);
     if (options.webLinks)
         setWebLinks(options.webLinks);
+    if (options.reservedVariables)
+        setReservedVariablesConfig(options.reservedVariables);
 }
 // refを持ちたくない場合向けの薄いhook(アイデア段階の案、シンプルな実装に
 // 留めている)。depsが変わるたびに自動でsetContext(vars, options)する。

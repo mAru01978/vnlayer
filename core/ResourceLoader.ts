@@ -17,7 +17,6 @@ import { ResourceLoadError, reportError } from "./errors";
 // ink(StaticStepProviderOptions)側・素材(assets設定)側、どちらも同じ
 // この関数を経由するので、取得方法の切り替えロジックが重複しない。
 export type ResourceSource = "local" | "fetch";
-
 export type ResourceLoaderOptions = {
   source?: ResourceSource;
   // 素材/story.jsonの配信ベースパス。指定した場合、pathの前に
@@ -126,7 +125,6 @@ export function resolveUrlCached(
 ): string | undefined {
   const cached = resolvedUrlCache.get(cacheKey);
   if (cached !== undefined) return cached;
-
   if (!pendingResolutions.has(cacheKey)) {
     const pending = resolveUrl(path, options)
       .then((url) => {
@@ -150,7 +148,7 @@ export function resolveUrlCached(
   return undefined;
 }
 
-// 素材レジストリのclear/リセット等で古いキャッシュを捨てたい場合用
+// 素材レジストリのclear/リセット等で古いキャッシュを捨てたい場合用。
 // (通常は不要 — 同じcacheKeyなら同じ結果になるはずなので、基本的には
 // 溜まったままで問題ない)。
 export function clearResolvedUrlCache(cacheKeyPrefix?: string): void {

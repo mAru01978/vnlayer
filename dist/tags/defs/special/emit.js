@@ -1,7 +1,7 @@
 import { registerTag } from "../../registry";
 import { isNumeric, parseOnOff } from "../../numericOrLabel";
 import { emitToInstance, emitToSelf } from "../../../core/instanceRegistry";
-import { reportError, TagDispatchError } from "../../../core/errors";
+import { TagDispatchError } from "../../../core/errors";
 // #emit はVN間イベント連携、および同一Ink(自分自身)への通知を行うタグ。
 // 他の「このVNインスタンス自身」を操作する各種タグ(#s, #bg, #cam等)と違い、
 // #emitだけは書式(引数の数)で送信先が切り替わる:
@@ -54,7 +54,7 @@ registerTag({
             // # emit:<selector>:<varName>:<value> (別VNインスタンスへ)
             const [selector, varName, rawValue] = args;
             if (!selector || !varName) {
-                reportError(new TagDispatchError(`emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`));
+                throw new TagDispatchError(`emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`);
                 return;
             }
             emitToInstance(selector, { [varName]: resolveValue(rawValue) }, { notify: true, expose: false });
@@ -63,7 +63,7 @@ registerTag({
         // # emit:<varName>:<value> (同一Ink=自分自身へ)
         const [varName, rawValue] = args;
         if (!varName) {
-            reportError(new TagDispatchError(`emit の書式が不正です(# emit:<varName>:<value> または # emit:<selector>:<varName>:<value>): ${args.join(":")}`));
+            throw new TagDispatchError(`emit の書式が不正です(# emit:<varName>:<value> または # emit:<selector>:<varName>:<value>): ${args.join(":")}`);
             return;
         }
         emitToSelf(handlers.atomKey, { [varName]: resolveValue(rawValue) }, { notify: true, expose: false });

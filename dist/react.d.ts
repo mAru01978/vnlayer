@@ -8,6 +8,7 @@ import { type AssetsGlobalConfig } from "./tags/assetsConfig";
 import type { StepProvider } from "./core/StepProvider";
 import type { SaveProvider } from "./core/SaveProvider";
 import type { SetContextOptions } from "./core/types";
+import { type ReservedVariablesConfig } from "./core/reservedVariablesConfig";
 export type VNLayerProps = {
     clip?: string;
     mode?: VNLayerMode;
@@ -35,6 +36,7 @@ export type ConfigureVNLayerOptions = {
     tags?: Record<string, Record<string, unknown>>;
     ui?: UiConfigPatch;
     webLinks?: Record<string, string>;
+    reservedVariables?: ReservedVariablesConfig;
 };
 export declare function configureVNLayer(options: ConfigureVNLayerOptions): void;
 export declare function useVNLayerContext(vnRef: RefObject<VNLayerRef | null>, vars: Record<string, unknown>, deps: DependencyList, options?: SetContextOptions): void;

@@ -12,6 +12,7 @@ import { createStaticStepProvider } from "./core/staticStepProvider";
 import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
 import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
 import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+import { type ReservedVariablesConfig } from "./core/reservedVariablesConfig";
 type MountOptions = {
     clip?: string;
     mode?: VNLayerMode;
@@ -33,6 +34,7 @@ type ConfigureOptions = {
     tags?: Record<string, Record<string, unknown>>;
     ui?: UiConfigPatch;
     webLinks?: Record<string, string>;
+    reservedVariables?: ReservedVariablesConfig;
 };
 declare function reset(selector?: string): Promise<void>;
 declare function configure(options: ConfigureOptions, selector?: string): Promise<void>;

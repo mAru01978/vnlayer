@@ -1,6 +1,6 @@
 import { getStore } from "../core/store";
 import * as waitManager from "../core/managers/waitManager";
-import { reportError, TagDispatchError } from "../core/errors";
+import { TagDispatchError } from "../core/errors";
 const registry = new Map();
 export function registerTag(def) {
     registry.set(def.key, {
@@ -49,7 +49,7 @@ export function getTagConfig(key) {
 // 経由して不正な引数を報告しているため、ここを直すだけで横断的に
 // 「タグの引数エラー」がVNLayerError系として一貫した形で報告されるようになる。
 export function warnUnknownTag(tag) {
-    reportError(new TagDispatchError(`unknown tag or invalid arguments: ${tag}`));
+    throw new TagDispatchError(`unknown tag or invalid arguments: ${tag}`);
 }
 export async function runTag(key, args, handlers) {
     const entry = registry.get(key);

@@ -80,10 +80,8 @@ registerTag({
         // args = ['emit', eventName, value]
         const [, eventName, rawValue] = args;
         if (!eventName) {
-          reportError(
-            new TagDispatchError(
-              `web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`,
-            ),
+          throw new TagDispatchError(
+            `web:emit の書式が不正です(# web:emit:<eventName>:<value>): ${args.join(":")}`,
           );
           break;
         }
