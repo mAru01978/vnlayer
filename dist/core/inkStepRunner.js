@@ -75,7 +75,7 @@ export function continueUntilChoice(story, initialVisual) {
                 if (key === "s") {
                     // # s:name / # s:name:hide / # s:name:pos:... / # s:name:<表情>
                     // # s:bg:<背景名> (#bg統合分岐、疑似キャラ名)
-                    const [name, mode] = rest;
+                    const [name, mode, value] = rest;
                     if (!name || mode === undefined)
                         continue; // 話者だけの指定は見た目に影響しない
                     if (name === "bg") {
@@ -96,6 +96,17 @@ export function continueUntilChoice(story, initialVisual) {
                     else if (mode === "pos") {
                         // 位置はStageView側がpositionOverrides経由で別管理してるので、
                         // このvisualスナップショット(bg/表情/モーション用)には含めない。
+                    }
+                    else if (mode === "z") {
+                        const zIndex = Number(value);
+                        if (!Number.isFinite(zIndex))
+                            continue;
+                        visual.characters[name] = {
+                            ...visual.characters[name],
+                            expression: visual.characters[name]?.expression ?? "normal",
+                            motion: visual.characters[name]?.motion,
+                            zIndex,
+                        };
                     }
                     else {
                         // hide/pos以外 = 表情指定

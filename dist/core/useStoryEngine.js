@@ -215,7 +215,15 @@ export function useStoryEngine(clip, options = {}) {
                 }));
             });
         }
-    }, [atomKey, instanceId, onNavigate, clip, stepProvider, saveProvider, reportStoryError]);
+    }, [
+        atomKey,
+        instanceId,
+        onNavigate,
+        clip,
+        stepProvider,
+        saveProvider,
+        reportStoryError,
+    ]);
     const init = useCallback(async () => {
         if (isProcessingRef.current)
             return;
