@@ -34,10 +34,8 @@ registerTag({
         break;
       case "kill":
         if (!name) {
-          reportError(
-            new TagDispatchError(
-              `timeline:kill の書式が不正です(# timeline:kill:<name>): ${args.join(":")}`,
-            ),
+          throw new TagDispatchError(
+            `timeline:kill の書式が不正です(# timeline:kill:<name>): ${args.join(":")}`,
           );
           break;
         }

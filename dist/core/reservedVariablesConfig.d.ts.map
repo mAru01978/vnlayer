@@ -1,0 +1,1 @@
+{"version":3,"file":"reservedVariablesConfig.d.ts","sourceRoot":"","sources":["../../core/reservedVariablesConfig.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,uBAAuB,GAAG;IACpC,cAAc,CAAC,EAAE,OAAO,CAAC;IACzB,MAAM,CAAC,EAAE,OAAO,CAAC;CAClB,CAAC;AASF,wBAAgB,0BAA0B,CACxC,KAAK,EAAE,uBAAuB,GAC7B,IAAI,CAKN;AAED,wBAAgB,0BAA0B;;;EAEzC;AAED,wBAAgB,wBAAwB,IAAI,GAAG,CAAC,MAAM,CAAC,CAYtD"}

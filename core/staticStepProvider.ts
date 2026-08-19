@@ -294,11 +294,29 @@ export function createStaticStepProvider(
         if (!handle.story.currentFlowIsDefaultFlow) {
           return null;
         }
+        // 選択肢が無い（END/DONE 直後など）は保存しない
+        //    復元しても「待ち状態」として意味が薄い／壊れやすい
+        if (handle.story.currentChoices.length === 0) {
+          return null;
+        }
 
-        return {
-          inkStateJson: handle.story.state.ToJson(),
-          visual: handle.visual,
-        };
+        // 3) ToJson 自体を try/catch
+        //    previousPointer 等が無効な瞬間はスキップ
+        try {
+          const inkStateJson = handle.story.state.ToJson();
+          return {
+            inkStateJson,
+            visual: handle.visual,
+          };
+        } catch (e) {
+          reportError(
+            new StoryRuntimeError(
+              "failed to persist save data (story state not serializable at this moment; skipped)",
+              { cause: e },
+            ),
+          );
+          return null;
+        }
       });
     },
     async restore(clip, save, atomKey): Promise<RunResult> {

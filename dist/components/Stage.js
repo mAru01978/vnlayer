@@ -5,6 +5,6 @@ import StageView from "./StageView";
 // StoryProviderをlayout.tsxに1つだけ置く方式と組み合わせて使う
 // (このコンポーネント自体はProviderを持たず、上位のcontextを見るだけ)。
 export default function Stage() {
-    return _jsx(StageView, { mode: "full" });
+    return _jsx(StageView, { mode: "inline" });
 }
 //# sourceMappingURL=Stage.js.map

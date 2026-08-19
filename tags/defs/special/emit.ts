@@ -55,10 +55,8 @@ registerTag({
       // # emit:<selector>:<varName>:<value> (別VNインスタンスへ)
       const [selector, varName, rawValue] = args;
       if (!selector || !varName) {
-        reportError(
-          new TagDispatchError(
-            `emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`,
-          ),
+        throw new TagDispatchError(
+          `emit の書式が不正です(# emit:<selector>:<varName>:<value>): ${args.join(":")}`,
         );
         return;
       }
@@ -73,10 +71,8 @@ registerTag({
     // # emit:<varName>:<value> (同一Ink=自分自身へ)
     const [varName, rawValue] = args;
     if (!varName) {
-      reportError(
-        new TagDispatchError(
-          `emit の書式が不正です(# emit:<varName>:<value> または # emit:<selector>:<varName>:<value>): ${args.join(":")}`,
-        ),
+      throw new TagDispatchError(
+        `emit の書式が不正です(# emit:<varName>:<value> または # emit:<selector>:<varName>:<value>): ${args.join(":")}`,
       );
       return;
     }

@@ -41,7 +41,12 @@ import * as waitManager from "./managers/waitManager";
 import * as contextManager from "./managers/contextManager";
 import * as timelineManager from "./managers/timelineManager";
 import * as interruptManager from "./managers/interruptManager";
-import { TagDispatchError, StoryRuntimeError, reportError } from "./errors";
+import {
+  TagDispatchError,
+  StoryRuntimeError,
+  reportError,
+  VNLayerError,
+} from "./errors";
 import { getDefaultSaveProvider } from "./defaultSaveProvider";
 import type { StepProvider } from "./StepProvider";
 import type { SaveProvider } from "./SaveProvider";
@@ -113,6 +118,7 @@ export function useStoryEngine(
   // 書き込みはタグ(basic/special問わず)か、このフック自身(ink進行に
   // 伴う同期処理)がマネージャー関数を呼んで行う。
   const bg = useAtomValue(backgroundManager.bgAtomFamily(atomKey));
+  const bgZIndex = useAtomValue(backgroundManager.bgZIndexAtomFamily(atomKey));
   const characters = useAtomValue(
     characterManager.charactersAtomFamily(atomKey),
   );
@@ -147,6 +153,33 @@ export function useStoryEngine(
   // 画面表示(ボタンのdisabled等)用の見た目の値として残す。
   const isProcessingRef = useRef(false);
 
+  const setContextVars = useCallback(
+    async (vars: Record<string, unknown>, options?: SetContextOptions) => {
+      const toWrite = contextManager.prepareWrite(atomKey, vars, options);
+      for (const [varName, value] of Object.entries(toWrite)) {
+        await stepProvider.idle(clip, varName, value, atomKey);
+      }
+    },
+    [atomKey, clip, stepProvider],
+  );
+
+  const getContextVars = useCallback(
+    async (varNames?: string[]): Promise<Record<string, unknown>> => {
+      return contextManager.getContextVars(atomKey, varNames);
+    },
+    [atomKey],
+  );
+
+  const reportStoryError = useCallback(
+    async (error: VNLayerError) => {
+      reportError(error);
+
+      await setContextVars({
+        vn_error: error.message,
+      });
+    },
+    [setContextVars],
+  );
   const advance = useCallback(
     async (result: RunResult) => {
       // バッチの世代管理・中断可能な待ちは全部core/managers/waitManager.tsに
@@ -176,7 +209,7 @@ export function useStoryEngine(
             // setIsProcessing(false)に到達しないまま止まる → 以後choose()が
             // 「処理中」判定でずっと弾かれ続け、クリックしても一切反応しなく
             // なる。1タグ失敗しても残りの処理は続行する。
-            reportError(
+            await reportStoryError(
               new TagDispatchError(
                 `tag dispatch failed, skipping this tag and continuing: "${tag}"`,
                 { cause: e },
@@ -227,9 +260,12 @@ export function useStoryEngine(
           );
         }
       }
-
       if (result.visual) {
-        backgroundManager.restoreBackground(atomKey, result.visual.bg);
+        backgroundManager.restoreBackground(
+          atomKey,
+          result.visual.bg,
+          result.visual.bgZIndex,
+        );
         characterManager.mergeVisualSnapshot(atomKey, result.visual.characters);
         speakerManager.setSpeaker(atomKey, result.visual.speaker);
       }
@@ -273,8 +309,8 @@ export function useStoryEngine(
               savedAt: Date.now(),
             });
           })
-          .catch((e) => {
-            reportError(
+          .catch(async (e) => {
+            await reportStoryError(
               new StoryRuntimeError("failed to persist save data", {
                 cause: e,
               }),
@@ -282,7 +318,15 @@ export function useStoryEngine(
           });
       }
     },
-    [atomKey, instanceId, onNavigate, clip, stepProvider, saveProvider],
+    [
+      atomKey,
+      instanceId,
+      onNavigate,
+      clip,
+      stepProvider,
+      saveProvider,
+      reportStoryError,
+    ],
   );
 
   const init = useCallback(async () => {
@@ -334,7 +378,7 @@ export function useStoryEngine(
           restoredMessage = saved.activeMessage ?? null;
         }
       } catch (e) {
-        reportError(
+        await reportStoryError(
           new StoryRuntimeError(
             "failed to restore from save data, starting fresh instead",
             { cause: e },
@@ -527,23 +571,6 @@ export function useStoryEngine(
     await advance(result);
   }, [advance, clip, stepProvider, atomKey, saveProvider]);
 
-  const setContextVars = useCallback(
-    async (vars: Record<string, unknown>, options?: SetContextOptions) => {
-      const toWrite = contextManager.prepareWrite(atomKey, vars, options);
-      for (const [varName, value] of Object.entries(toWrite)) {
-        await stepProvider.idle(clip, varName, value, atomKey);
-      }
-    },
-    [atomKey, clip, stepProvider],
-  );
-
-  const getContextVars = useCallback(
-    async (varNames?: string[]): Promise<Record<string, unknown>> => {
-      return contextManager.getContextVars(atomKey, varNames);
-    },
-    [atomKey],
-  );
-
   // #emit(他VN宛、3引数形)用の自己登録: このVNインスタンスが自分の
   // instanceId(=mount時のselector)でcore/instanceRegistry.tsに自己登録
   // しておくことで、他のVNインスタンスの#emit:<このinstanceId>:...タグから
@@ -592,6 +619,7 @@ export function useStoryEngine(
     lines,
     choices,
     bg,
+    bgZIndex,
     characters,
     speaker,
     cam,

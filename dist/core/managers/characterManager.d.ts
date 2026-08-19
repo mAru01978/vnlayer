@@ -17,4 +17,5 @@ export declare function getCharacters(atomKey: string): Record<string, Character
 export declare function mergeVisualSnapshot(atomKey: string, visualCharacters: Record<string, CharacterState>): void;
 export declare function reset(atomKey: string): void;
 export declare function dispose(atomKey: string): void;
+export declare function setZIndex(atomKey: string, name: string, zIndex: number): void;
 //# sourceMappingURL=characterManager.d.ts.map

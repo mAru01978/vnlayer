@@ -11,6 +11,7 @@ import { createStaticStepProvider } from "./core/staticStepProvider";
 import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
 import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
 import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+import { setReservedVariablesConfig, } from "./core/reservedVariablesConfig";
 const instances = new Map();
 function resolveElement(selector) {
     const el = document.querySelector(selector);
@@ -182,6 +183,24 @@ async function configure(options, selector) {
         setUiConfig(options.ui, selector);
     if (options.webLinks)
         setWebLinks(options.webLinks);
+    if (options.reservedVariables)
+        setReservedVariablesConfig(options.reservedVariables);
+}
+function getDataElements(name, selector) {
+    const root = selector
+        ? (instances.get(selector)?.container ?? document.querySelector(selector))
+        : document;
+    if (!root)
+        return [];
+    const nodeList = root.querySelectorAll("[data-vn-key]");
+    const results = [];
+    nodeList.forEach((el) => {
+        const key = el.getAttribute("data-vn-key") ?? "";
+        if (name && key !== name && !key.startsWith(`${name}:`))
+            return;
+        results.push({ key, type: el.constructor.name, element: el });
+    });
+    return results;
 }
 export const VNLayer = {
     mount,
@@ -190,6 +209,7 @@ export const VNLayer = {
     getContext,
     reset,
     configure,
+    getDataElements,
     // 修正: 以前はこの2つを「モジュールの名前付きexport」としてだけ公開していたが、
     // window.VNLayer = VNLayer で公開されるのはこのオブジェクトの中身だけなので、
     // <script>から VNLayer.createStaticStepProvider(...) と呼んでも見えず

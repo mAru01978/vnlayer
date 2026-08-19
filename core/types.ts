@@ -16,6 +16,7 @@ export type CharacterState = {
   // gaze:で設定する「視線の先」の座標(originX/originY、%、ステージ全体基準)。
   // 素材のキャラ絵が入るまでのモック段階で、視線の向き(矢印)を確認するためのもの。
   gaze?: { x: number; y: number };
+  zIndex?: number;
 };
 export type CamState = {
   target: string;
@@ -55,6 +56,7 @@ export type ActiveMessage = {
 export type StepEntry = { speaker: string; content: string; tags: string[] };
 export type VisualState = {
   bg: string;
+  bgZIndex?: number;
   characters: Record<string, CharacterState>;
   speaker: string;
 };
@@ -112,6 +114,7 @@ export type StoryEngine = {
   lines: LineEntry[];
   choices: Choice[];
   bg: string;
+  bgZIndex?: number;
   characters: Record<string, CharacterState>;
   speaker: string;
   cam: CamState;

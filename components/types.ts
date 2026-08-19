@@ -11,6 +11,7 @@ export type CharacterState = {
   animSpeed?: number;
   animReverse?: boolean;
   gaze?: { x: number; y: number };
+  zIndex?: number;
 };
 export type Slot = { originX: number; originY: number; durationMs?: number };
 
@@ -21,6 +22,7 @@ export type BackgroundProps = {
   // 登録する際のキーとして使う(#timeline:pause等が「このインスタンスの
   // 演出だけ」を対象にできるようにするため)。
   atomKey: string;
+  zIndex?: number;
 };
 
 export type CharacterSpriteProps = {
@@ -67,8 +69,8 @@ export type NarratorCaptionProps = {
   fontFamily?: string;
   fontSizePx?: number;
 };
-
 export type ChoiceButtonProps = {
+  index: number;
   text: string;
   onClick: () => void;
   disabled: boolean;

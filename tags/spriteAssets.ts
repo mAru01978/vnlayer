@@ -155,16 +155,6 @@ export function resolveSpriteSrc(
   const source = entry?.source ?? globalCfg.source ?? "fetch";
   const resolveLocal = entry?.resolveLocal ?? globalCfg.resolveLocal;
 
-  // 修正メモ(2026-08-13、「モックが出ず壊れた画像が出る」不具合の修正):
-  // nameそのものが一度も登録されていない(=このキャラ/背景を
-  // VNLayer.configure()等で一度も設定していない)場合は、規約パスを
-  // 推測せずundefinedを返す。以前はここで無条件にconventionSpritePath()
-  // を返していたため、一度も登録していない未知の名前に対しても推測URLが
-  // 生成され、components/Renderer.tsx側の`hasRealAsset`判定が常にtrueに
-  // なり(3)のfallbackToMock判定に一切到達しない結果、fallbackToMock:true
-  // を設定していても常に「壊れた画像」が優先されてしまっていた。
-  const characterCfg = registry.get(name);
-  if (!characterCfg) return undefined;
   if (manual) {
     if (source === "local") {
       return resolveUrlCached(
@@ -176,6 +166,17 @@ export function resolveSpriteSrc(
     }
     return manual;
   }
+
+  // 修正メモ(2026-08-13、「モックが出ず壊れた画像が出る」不具合の修正):
+  // nameそのものが一度も登録されていない(=このキャラ/背景を
+  // VNLayer.configure()等で一度も設定していない)場合は、規約パスを
+  // 推測せずundefinedを返す。以前はここで無条件にconventionSpritePath()
+  // を返していたため、一度も登録していない未知の名前に対しても推測URLが
+  // 生成され、components/Renderer.tsx側の`hasRealAsset`判定が常にtrueに
+  // なり(3)のfallbackToMock判定に一切到達しない結果、fallbackToMock:true
+  // を設定していても常に「壊れた画像」が優先されてしまっていた。
+  const characterCfg = registry.get(name);
+  if (!characterCfg) return undefined;
 
   if (source === "local") return undefined;
   return conventionSpritePath(name, variant);

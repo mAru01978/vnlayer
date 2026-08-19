@@ -13,6 +13,7 @@ export type CharacterState = {
         x: number;
         y: number;
     };
+    zIndex?: number;
 };
 export type CamState = {
     target: string;
@@ -53,6 +54,7 @@ export type StepEntry = {
 };
 export type VisualState = {
     bg: string;
+    bgZIndex?: number;
     characters: Record<string, CharacterState>;
     speaker: string;
 };
@@ -78,6 +80,7 @@ export type StoryEngine = {
     lines: LineEntry[];
     choices: Choice[];
     bg: string;
+    bgZIndex?: number;
     characters: Record<string, CharacterState>;
     speaker: string;
     cam: CamState;

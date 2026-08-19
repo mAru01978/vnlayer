@@ -12,6 +12,7 @@ import { createStaticStepProvider } from "./core/staticStepProvider";
 import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
 import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
 import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+import { type ReservedVariablesConfig } from "./core/reservedVariablesConfig";
 type MountOptions = {
     clip?: string;
     mode?: VNLayerMode;
@@ -33,9 +34,16 @@ type ConfigureOptions = {
     tags?: Record<string, Record<string, unknown>>;
     ui?: UiConfigPatch;
     webLinks?: Record<string, string>;
+    reservedVariables?: ReservedVariablesConfig;
 };
 declare function reset(selector?: string): Promise<void>;
 declare function configure(options: ConfigureOptions, selector?: string): Promise<void>;
+export type VNLayerDataElement = {
+    key: string;
+    type: string;
+    element: HTMLElement;
+};
+declare function getDataElements(name?: string, selector?: string): VNLayerDataElement[];
 export declare const VNLayer: {
     mount: typeof mount;
     unmount: typeof unmount;
@@ -43,6 +51,7 @@ export declare const VNLayer: {
     getContext: typeof getContext;
     reset: typeof reset;
     configure: typeof configure;
+    getDataElements: typeof getDataElements;
     serverStepProvider: StepProvider;
     createServerStepProvider: typeof createServerStepProvider;
     createStaticStepProvider: typeof createStaticStepProvider;

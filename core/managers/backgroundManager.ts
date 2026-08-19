@@ -1,6 +1,6 @@
-// 背景(#bg)を管理するマネージャー。
+// 背景(#s:bg)を管理するマネージャー。
 //
-// setBackground()は#bgタグから呼ばれる「本来の」書き込み経路で、
+// setBackground()は#s:bgタグから呼ばれる「本来の」書き込み経路で、
 // autoHideOnBgChange(場面転換時に吹き出しを自動で消す設定)の判定込み。
 // この判定はtags/uiConfig.tsの実効設定(instanceIdスコープ、未指定=グローバル)
 // を見るため、atomKey(状態の隔離キー)とは別にinstanceId(公開スコープ
@@ -20,6 +20,10 @@ import * as messageManager from "./messageManager";
 
 export const bgAtomFamily = atomFamily((_atomKey: string) => atom(""));
 
+export const bgZIndexAtomFamily = atomFamily((_atomKey: string) =>
+  atom(undefined as number | undefined),
+);
+
 export function setBackground(
   atomKey: string,
   instanceId: string | undefined,
@@ -36,8 +40,17 @@ export function setBackground(
 
 // core/useStoryEngine.tsのadvance()末尾、ink側の蓄積スナップショットとの
 // 同期専用。autoHideOnBgChangeの判定はしない(上記コメント参照)。
-export function restoreBackground(atomKey: string, name: string): void {
+// zIndexは省略可: undefinedの場合は「今回のバッチではzIndex変更が無かった」
+// という意味なので、既存のbgZIndexAtomFamilyの値を維持する(クリアしない)。
+export function restoreBackground(
+  atomKey: string,
+  name: string,
+  zIndex?: number,
+): void {
   getStore().set(bgAtomFamily(atomKey), name);
+  if (zIndex !== undefined) {
+    getStore().set(bgZIndexAtomFamily(atomKey), zIndex);
+  }
 }
 
 export function getBackground(atomKey: string): string {
@@ -46,8 +59,18 @@ export function getBackground(atomKey: string): string {
 
 export function reset(atomKey: string): void {
   getStore().set(bgAtomFamily(atomKey), "");
+  getStore().set(bgZIndexAtomFamily(atomKey), undefined);
 }
 
 export function dispose(atomKey: string): void {
   bgAtomFamily.remove(atomKey);
+  bgZIndexAtomFamily.remove(atomKey);
+}
+
+export function setBackgroundZIndex(atomKey: string, zIndex: number): void {
+  getStore().set(bgZIndexAtomFamily(atomKey), zIndex);
+}
+
+export function getBackgroundZIndex(atomKey: string): number | undefined {
+  return getStore().get(bgZIndexAtomFamily(atomKey));
 }

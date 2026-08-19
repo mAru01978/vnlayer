@@ -28,7 +28,7 @@ gsap.registerPlugin(useGSAP);
 const renderer = Renderer;
 const BUBBLE_FADE_MS = 800;
 
-export type StageMode = "full" | "overlay";
+export type StageMode = "inline" | "overlay";
 export type UiAnchor = "left" | "right";
 
 export type UiVisibility = {
@@ -38,7 +38,7 @@ export type UiVisibility = {
 };
 
 export default function StageView({
-  mode = "full",
+  mode = "overlay",
   uiAnchor = "right",
   showUi = true,
 }: {
@@ -419,8 +419,10 @@ export default function StageView({
         fontSize: uiConfig.font.sizePx,
       }
     : {
-        maxWidth: 640,
-        margin: "0 auto",
+        // inline: 親ボックスに完全委譲
+        position: "relative",
+        width: "100%",
+        height: "100%",
         fontFamily: uiConfig.font.family ?? "sans-serif",
         fontSize: uiConfig.font.sizePx,
       };
@@ -428,10 +430,8 @@ export default function StageView({
   const stageStyle: CSSProperties = isOverlay
     ? { position: "absolute", inset: 0 }
     : {
-        position: "relative",
-        height: 360,
-        overflow: "hidden",
-        borderRadius: 8,
+        position: "absolute",
+        inset: 0, // 親(outer)の 100% 領域いっぱいに載せる
       };
 
   return (
@@ -457,15 +457,18 @@ export default function StageView({
                     zIndex: 51,
                   }
                 : {
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 6,
-                    marginBottom: 6,
+                    // inline: 親(outer)内の右下に固定
+                    position: "absolute",
+                    ...anchorSide,
+                    bottom: uiConfig.backlog.offset ?? 12,
+                    pointerEvents: "auto",
+                    zIndex: 51,
                   }
           }
         >
           <button
             onClick={() => setBacklogOpen((v) => !v)}
+            data-vn-key="backlog-button"
             style={{
               padding: "4px 10px",
               borderRadius: 6,
@@ -482,7 +485,11 @@ export default function StageView({
       )}
 
       <div ref={shakeRef} style={stageStyle}>
-        <renderer.Background bg={bg} atomKey={story.atomKey} />
+        <renderer.Background
+          bg={bg}
+          atomKey={story.atomKey}
+          zIndex={story.bgZIndex}
+        />
         <div
           ref={camRef}
           style={{
@@ -577,6 +584,7 @@ export default function StageView({
       {uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (
         <div
           className="vnlayer-scroll-hidden"
+          data-vn-key="backlog-panel"
           style={
             backlogAnchorSlot
               ? {
@@ -673,16 +681,16 @@ export default function StageView({
                   zIndex: 51,
                 }
               : {
-                  position: isOverlay ? overlayPosition : "static",
-                  ...(isOverlay ? anchorSide : {}),
+                  position: isOverlay ? overlayPosition : "absolute",
+                  ...(isOverlay ? anchorSide : anchorSide),
                   bottom: isOverlay
                     ? (uiConfig.choice.offset ?? 130)
-                    : undefined,
-                  width: isOverlay ? 280 : undefined,
-                  maxHeight: isOverlay ? "60vh" : 220,
+                    : (uiConfig.choice.offset ?? 80),
+                  width: isOverlay ? 280 : 220,
+                  maxHeight: isOverlay ? "60vh" : "50%",
                   overflowY: "auto",
                   pointerEvents: "auto",
-                  marginTop: isOverlay ? 0 : 10,
+                  marginTop: 0,
                   zIndex: 51,
                 }
           }
@@ -697,6 +705,7 @@ export default function StageView({
             {visibleChoices.map((c: any) => (
               <renderer.ChoiceButton
                 key={c.index}
+                index={c.index}
                 text={c.text}
                 onClick={() => choose(c.index)}
                 disabled={isProcessing || !uiConfig.choice.interactive}

@@ -8,6 +8,7 @@
 // ための既定値)。開発中に見た目を仮確認したい場合だけ、
 // VNLayer.configure({ assets: { fallbackToMock: true } }) で明示的にonにする。
 import { reportError, AssetError } from "../core/errors";
+const reportedMissingAssets = new Set();
 const defaultConfig = {
     basePath: "./assets",
     source: "fetch",
@@ -42,7 +43,10 @@ export function getAssetsConfig() {
 export function shouldFallbackToMock(context) {
     if (current.fallbackToMock)
         return true;
-    reportError(new AssetError(`asset not found and fallbackToMock is off: ${context}`));
+    if (!reportedMissingAssets.has(context)) {
+        reportedMissingAssets.add(context);
+        reportError(new AssetError(`asset not found and fallbackToMock is off: ${context}`));
+    }
     return false;
 }
 //# sourceMappingURL=assetsConfig.js.map

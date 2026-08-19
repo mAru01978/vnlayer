@@ -110,7 +110,7 @@ export function getTagConfig<T = any>(key: string): T | undefined {
 // 経由して不正な引数を報告しているため、ここを直すだけで横断的に
 // 「タグの引数エラー」がVNLayerError系として一貫した形で報告されるようになる。
 export function warnUnknownTag(tag: string): void {
-  reportError(new TagDispatchError(`unknown tag or invalid arguments: ${tag}`));
+  throw new TagDispatchError(`unknown tag or invalid arguments: ${tag}`);
 }
 
 export async function runTag(

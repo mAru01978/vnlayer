@@ -1,1 +1,1 @@
-{"version":3,"file":"Stage.js","sourceRoot":"","sources":["../../components/Stage.tsx"],"names":[],"mappings":"AAAA,YAAY,CAAC;;AACb,OAAO,SAAS,MAAM,aAAa,CAAC;AAEpC,2CAA2C;AAC3C,6CAA6C;AAC7C,8CAA8C;AAC9C,MAAM,CAAC,OAAO,UAAU,KAAK;IAC3B,OAAO,KAAC,SAAS,IAAC,IAAI,EAAC,MAAM,GAAG,CAAC;AACnC,CAAC"}
+{"version":3,"file":"Stage.js","sourceRoot":"","sources":["../../components/Stage.tsx"],"names":[],"mappings":"AAAA,YAAY,CAAC;;AACb,OAAO,SAAS,MAAM,aAAa,CAAC;AAEpC,2CAA2C;AAC3C,6CAA6C;AAC7C,8CAA8C;AAC9C,MAAM,CAAC,OAAO,UAAU,KAAK;IAC3B,OAAO,KAAC,SAAS,IAAC,IAAI,EAAC,QAAQ,GAAG,CAAC;AACrC,CAAC"}

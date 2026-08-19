@@ -29,6 +29,10 @@ import { createStaticStepProvider } from "./core/staticStepProvider";
 import { createLocalStorageSaveProvider } from "./core/saveProviders/localStorageSaveProvider";
 import { createCookieSaveProvider } from "./core/saveProviders/cookieSaveProvider";
 import { createServerSaveProvider } from "./core/saveProviders/serverSaveProvider";
+import {
+  setReservedVariablesConfig,
+  type ReservedVariablesConfig,
+} from "./core/reservedVariablesConfig";
 
 // フェーズ1のゴール: 「VNLayer.mount("#vn", {clip, mode})」のような
 // 命令的APIを、既存のReactコンポーネント(VNLayerOverlay)の上に薄く被せて提供する。
@@ -269,6 +273,7 @@ type ConfigureOptions = {
   tags?: Record<string, Record<string, unknown>>;
   ui?: UiConfigPatch;
   webLinks?: Record<string, string>;
+  reservedVariables?: ReservedVariablesConfig;
 };
 
 // VNLayer.reset(selector?)
@@ -326,6 +331,57 @@ async function configure(
   }
   if (options.ui) setUiConfig(options.ui, selector);
   if (options.webLinks) setWebLinks(options.webLinks);
+  if (options.reservedVariables)setReservedVariablesConfig(options.reservedVariables);
+}
+
+// VNLayer.getDataElements(name?, selector?)
+// VNLayer自身がレンダリングしているDOM要素(sprite/background/message/
+// choice/backlog等のUI)のうち、data-vn-key属性を振ってあるものだけを
+// 取得できる公開API。core/(inkjs実行やStory操作等の内部状態)には一切
+// 触れない — data-vn-key属性自体がcomponents/Renderer.tsx・
+// components/StageView.tsxのJSXにしか付与されていないため、そもそも
+// core側のものは対象になりようがない、という構造でこれを保証している。
+//
+//   VNLayer.getDataElements()                 → mount中の全VNインスタンス
+//                                                横断で、data-vn-key付きの
+//                                                要素を全部返す
+//   VNLayer.getDataElements("sprite")          → キー名が"sprite"、または
+//                                                "sprite:"で始まる要素だけ
+//                                                (例: "sprite:alice")
+//   VNLayer.getDataElements("sprite", "#vn")   → さらに"#vn"インスタンスの
+//                                                中だけに絞る
+//
+// 戻り値の各要素: { key: string(data-vn-keyの値そのもの),
+//                   type: string(要素のDOM型名、例: "HTMLDivElement"),
+//                   element: HTMLElement(実DOM要素) }
+//
+// 用途例: ink側で # web:emit:input_event:true し、ホスト側が
+// VNLayer.getDataElements("sprite","#vn")でキャラの実DOM位置を取得して
+// 入力欄をそこに追随させる、といった連携(#interruptと組み合わせて
+// 入力結果をink側へ戻すことも可能)。
+export type VNLayerDataElement = {
+  key: string;
+  type: string;
+  element: HTMLElement;
+};
+
+function getDataElements(
+  name?: string,
+  selector?: string,
+): VNLayerDataElement[] {
+  const root: ParentNode | null = selector
+    ? (instances.get(selector)?.container ?? document.querySelector(selector))
+    : document;
+  if (!root) return [];
+
+  const nodeList = root.querySelectorAll<HTMLElement>("[data-vn-key]");
+  const results: VNLayerDataElement[] = [];
+  nodeList.forEach((el) => {
+    const key = el.getAttribute("data-vn-key") ?? "";
+    if (name && key !== name && !key.startsWith(`${name}:`)) return;
+    results.push({ key, type: el.constructor.name, element: el });
+  });
+  return results;
 }
 
 export const VNLayer = {
@@ -335,6 +391,7 @@ export const VNLayer = {
   getContext,
   reset,
   configure,
+  getDataElements,
   // 修正: 以前はこの2つを「モジュールの名前付きexport」としてだけ公開していたが、
   // window.VNLayer = VNLayer で公開されるのはこのオブジェクトの中身だけなので、
   // <script>から VNLayer.createStaticStepProvider(...) と呼んでも見えず

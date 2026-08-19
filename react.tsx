@@ -53,6 +53,10 @@ import { setAssetsConfig, type AssetsGlobalConfig } from "./tags/assetsConfig";
 import type { StepProvider } from "./core/StepProvider";
 import type { SaveProvider } from "./core/SaveProvider";
 import type { SetContextOptions, VNLayerHandle } from "./core/types";
+import {
+  setReservedVariablesConfig,
+  type ReservedVariablesConfig,
+} from "./core/reservedVariablesConfig";
 
 export type VNLayerProps = {
   clip?: string;
@@ -181,6 +185,7 @@ export type ConfigureVNLayerOptions = {
   tags?: Record<string, Record<string, unknown>>;
   ui?: UiConfigPatch;
   webLinks?: Record<string, string>;
+  reservedVariables?: ReservedVariablesConfig;
 };
 
 export function configureVNLayer(options: ConfigureVNLayerOptions): void {
@@ -198,6 +203,7 @@ export function configureVNLayer(options: ConfigureVNLayerOptions): void {
   }
   if (options.ui) setUiConfig(options.ui);
   if (options.webLinks) setWebLinks(options.webLinks);
+  if (options.reservedVariables) setReservedVariablesConfig(options.reservedVariables);
 }
 
 // refを持ちたくない場合向けの薄いhook(アイデア段階の案、シンプルな実装に
@@ -214,6 +220,35 @@ export function useVNLayerContext(
     vnRef.current?.setContext(vars, options);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+}
+
+// vanilla版api.tsのVNLayer.getDataElements(name?, selector?)のReact版。
+// Reactにはmount()時のCSSセレクタという概念が無いため、代わりに任意の
+// スコープ用DOM要素(root)を受け取る形にしている(<VNLayer>を包む親要素の
+// refを渡せば、そのインスタンスの中だけに絞り込める。省略時はdocument
+// 全体からmount中の全VNインスタンス横断で検索する)。
+// vanilla版と同じくdata-vn-key属性(components/Renderer.tsx・
+// components/StageView.tsxがJSXに付与しているもの)だけが対象で、
+// core/(inkjs実行やStory操作等の内部状態)には一切触れない。
+export type VNLayerDataElement = {
+  key: string;
+  type: string;
+  element: HTMLElement;
+};
+
+export function getDataElements(
+  name?: string,
+  root?: Element | Document,
+): VNLayerDataElement[] {
+  const scope: ParentNode = root ?? document;
+  const nodeList = scope.querySelectorAll<HTMLElement>("[data-vn-key]");
+  const results: VNLayerDataElement[] = [];
+  nodeList.forEach((el) => {
+    const key = el.getAttribute("data-vn-key") ?? "";
+    if (name && key !== name && !key.startsWith(`${name}:`)) return;
+    results.push({ key, type: el.constructor.name, element: el });
+  });
+  return results;
 }
 
 // StepProvider/SaveProviderのfactory類もvnlayer/react側から使えるよう

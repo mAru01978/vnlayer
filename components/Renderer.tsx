@@ -92,9 +92,15 @@ type BgVisual =
   | { kind: "none" };
 const MOCK_BG_COLOR = "#333";
 function resolveBgVisual(bg: string): BgVisual {
+  // 修正メモ(2026-08-13): ストーリー開始直後等、まだ一度も# s:bg:...が
+  // 来ていない間はbgアトムの初期値が空文字列のまま。これは「背景未設定」
+  // という正常な状態であり、素材が見つからない異常系ではないため、
+  // AssetErrorを報告せず静かに何も描画しない(shouldFallbackForSprite等の
+  // 呼び出し自体をスキップする)。
   if (!bg) {
     return { kind: "none" };
   }
+
   // 登録済みの背景素材を最優先する。
   const slot = getBackgroundSlot(bg);
 
@@ -116,7 +122,7 @@ function resolveBgVisual(bg: string): BgVisual {
   return { kind: "color", color: MOCK_BG_COLOR };
 }
 
-function Background({ bg, atomKey }: BackgroundProps) {
+function Background({ bg, atomKey, zIndex }: BackgroundProps) {
   useAssetsVersion();
   const ref = useRef<HTMLDivElement>(null);
   const tlRef = useRef<gsap.core.Timeline | null>(null);
@@ -149,6 +155,7 @@ function Background({ bg, atomKey }: BackgroundProps) {
   return (
     <div
       ref={ref}
+      data-vn-key="background"
       style={{
         position: "absolute",
         inset: 0,
@@ -157,6 +164,7 @@ function Background({ bg, atomKey }: BackgroundProps) {
           visual.kind === "image" ? `url(${visual.src})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        zIndex: zIndex,
       }}
     />
   );
@@ -200,11 +208,19 @@ function CharacterSprite({
     setImageFailed(false);
   }, [name, state.expression, spriteSrc]);
 
+  // 修正メモ(2026-08-13): shouldFallbackForSprite/shouldFallbackForAnimは
+  // 呼ばれるたびに「fallbackToMockがoffならAssetErrorを報告する」副作用を
+  // 持つ。hasRealAsset(=素材が実際に解決できている)の場合はそもそも
+  // フォールバック要否を判定する必要が無い(=呼んではいけない)。
+  // このガードが抜けていたため、画像が正常に解決・表示できているケースでも
+  // 毎回shouldFallbackForXxxが呼ばれ、「見つかっているのに見つからない」
+  // という誤ったAssetErrorが報告され続けていた。
   const allowMock =
-  hasRealAsset ||
-  (state.motion
-    ? shouldFallbackForAnim(name, state.motion)
-    : shouldFallbackForSprite(name, state.expression));
+    hasRealAsset ||
+    (state.motion
+      ? shouldFallbackForAnim(name, state.motion)
+      : shouldFallbackForSprite(name, state.expression));
+
   const gazeAngle = state.gaze
     ? computeGazeAngleDeg(
         slot.originX,
@@ -441,6 +457,7 @@ function CharacterSprite({
       <div
         ref={rootRef}
         onClick={onClick}
+        data-vn-key={`sprite:${name}`}
         style={{
           position: "absolute",
           // left/topはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
@@ -465,6 +482,7 @@ function CharacterSprite({
           // 拾えてほしいので、onClickがある時は自分自身だけ'auto'に戻す。
           pointerEvents: onClick ? "auto" : undefined,
           cursor: onClick ? "pointer" : undefined,
+          zIndex: state.zIndex,
         }}
       >
         {animAsset?.mode === "sequence" && (
@@ -549,7 +567,7 @@ function CharacterSprite({
             borderBottom: "6px solid transparent",
             borderLeft: "14px solid #ffd54a",
             pointerEvents: "none",
-            zIndex: 6,
+            zIndex: state.zIndex !== undefined ? state.zIndex + 1 : 6,
           }}
         />
       )}
@@ -624,6 +642,7 @@ function MessageBubble({
         ref={rootRef}
         onClick={onClick}
         className="vnlayer-scroll-hidden"
+        data-vn-key={`message:${speaker || "narrator"}`}
         style={{
           position: "absolute",
           // left/topはここでは指定しない(GSAPのgsap.set/.toだけが書き込む
@@ -683,6 +702,7 @@ function NarratorCaption({
   return (
     <div
       onClick={onClick}
+      data-vn-key="message:narrator"
       style={{
         position: "absolute",
         left: "50%",
@@ -714,11 +734,13 @@ function ChoiceButton({
   disabled,
   fontFamily,
   fontSizePx,
+  index,
 }: ChoiceButtonProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      data-vn-key={`choice:${index}`}
       style={{
         padding: "10px 14px",
         borderRadius: 6,

@@ -113,6 +113,12 @@ export function resolveSpriteSrc(name, variant) {
     const globalCfg = getAssetsConfig();
     const source = entry?.source ?? globalCfg.source ?? "fetch";
     const resolveLocal = entry?.resolveLocal ?? globalCfg.resolveLocal;
+    if (manual) {
+        if (source === "local") {
+            return resolveUrlCached(`sprite:${name}:${variant}`, manual, { source, resolveLocal }, bumpVersion);
+        }
+        return manual;
+    }
     // 修正メモ(2026-08-13、「モックが出ず壊れた画像が出る」不具合の修正):
     // nameそのものが一度も登録されていない(=このキャラ/背景を
     // VNLayer.configure()等で一度も設定していない)場合は、規約パスを
@@ -124,12 +130,6 @@ export function resolveSpriteSrc(name, variant) {
     const characterCfg = registry.get(name);
     if (!characterCfg)
         return undefined;
-    if (manual) {
-        if (source === "local") {
-            return resolveUrlCached(`sprite:${name}:${variant}`, manual, { source, resolveLocal }, bumpVersion);
-        }
-        return manual;
-    }
     if (source === "local")
         return undefined;
     return conventionSpritePath(name, variant);

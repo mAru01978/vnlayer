@@ -1,14 +1,10 @@
 // VNLayer.setContext()/getContext() (core/useStoryEngine.tsのsetContextVars/
-// getContextVars)が書き込む値のローカルの写しと、notify:true時の
-// "${key}_seq"自動採番・wake(interrupt)処理、およびネストしたオブジェクトの
-// フラット化(下記)をまとめたマネージャー。
-//
+// getContextVars)が書き込む値のローカルの写しと、notify:true時のwake(interrupt)処理
 // 実際にink変数へ反映する処理(stepProvider.idle(clip, varName, value)の
 // 呼び出しループ)は、そのVNインスタンスが使っているStepProvider/clipに
 // 依存するため、こちらには持たせず core/useStoryEngine.ts 側に残している
 // (prepareWrite()が返す「書き込むべきvars」を使って、呼び出し側がidle()
 // ループを回す、という役割分担)。
-//
 // オブジェクトのフラット化: ink変数はJSのオブジェクトを直接保持できない
 // ため、setContext({ weather: { temp: 22.2, text: "晴れ" } }) のような
 // ネストしたオブジェクトは、既定で "weather_temp" / "weather_text" の
@@ -20,8 +16,8 @@
 // 扱える値ではないため、フラット化の対象にはせず、そのまま1つの値として
 // 渡す(呼び出し側で意図的にJSON文字列化する等は別途行う必要がある)。
 import * as waitManager from "./waitManager";
+import { getReservedVariableNames } from "../reservedVariablesConfig";
 const contextStore = new Map();
-const contextSeq = new Map();
 const lastWakeAt = new Map();
 const WAKE_THROTTLE_MS = 50;
 function getStoreRecord(atomKey) {
@@ -29,14 +25,6 @@ function getStoreRecord(atomKey) {
     if (!record) {
         record = {};
         contextStore.set(atomKey, record);
-    }
-    return record;
-}
-function getSeqRecord(atomKey) {
-    let record = contextSeq.get(atomKey);
-    if (!record) {
-        record = {};
-        contextSeq.set(atomKey, record);
     }
     return record;
 }
@@ -92,23 +80,17 @@ function wake(atomKey) {
 }
 // setContextVars(vars, options?)の下ごしらえ。
 //   1. varsをkeyNamesに従ってフラット化する(上記flattenVars参照)。
-//   2. options.notify: true → 各キーに"${key}_seq"を自動生成・
-//      インクリメントして一緒に書き込み、wake()する。
-//   3. options.expose: false → ローカルストア(getContextVars()から
+//   2. notifyならwake()する。
+//   3. exposeならlocal storeへ反映
+//   4. options.expose: false → ローカルストア(getContextVars()から
 //      見える値)への反映をスキップする。
-// 戻り値は「実際にink変数へ書き込むべき(フラット化・_seq込みの)vars」。
+// 戻り値は「実際にink変数へ書き込むべき値」。
 export function prepareWrite(atomKey, vars, options) {
     let toWrite = flattenVars(vars, options?.keyNames);
+    const reserved = getReservedVariableNames();
+    toWrite = Object.fromEntries(Object.entries(toWrite).filter(([key]) => !reserved.has(key)));
     if (options?.notify) {
         wake(atomKey);
-        const seqRecord = getSeqRecord(atomKey);
-        const withSeq = { ...toWrite };
-        for (const key of Object.keys(toWrite)) {
-            const nextSeq = (seqRecord[key] ?? 0) + 1;
-            seqRecord[key] = nextSeq;
-            withSeq[`${key}_seq`] = nextSeq;
-        }
-        toWrite = withSeq;
     }
     if (options?.expose !== false) {
         const store = getStoreRecord(atomKey);
@@ -127,21 +109,15 @@ export function getContextVars(atomKey, varNames) {
     }
     return result;
 }
-// 簡易セーブ機能(core/SaveProvider.ts)の復元専用。notify/_seq処理を一切
-// 行わず、exposeされた値の写しをそのまま置き換える(story.state.LoadJson()
-// と対になる「JS側の記憶」の復元)。_seqカウンタ自体はリセットする
-// (復元後最初のnotify:true書き込みから1振り直しでよい — 復元前のseq値と
-// 厳密に連番させる必要は無いため)。
+// 簡易セーブ機能(core/SaveProvider.ts)の復元専用。exposeされた値の写しをそのまま置き換える(story.state.LoadJson()
 export function hydrate(atomKey, vars) {
     contextStore.set(atomKey, { ...vars });
-    contextSeq.set(atomKey, {});
 }
 export function reset(atomKey) {
     contextStore.set(atomKey, {});
 }
 export function dispose(atomKey) {
     contextStore.delete(atomKey);
-    contextSeq.delete(atomKey);
     lastWakeAt.delete(atomKey);
 }
 //# sourceMappingURL=contextManager.js.map

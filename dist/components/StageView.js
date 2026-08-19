@@ -12,7 +12,7 @@ import { Renderer } from "./Renderer";
 gsap.registerPlugin(useGSAP);
 const renderer = Renderer;
 const BUBBLE_FADE_MS = 800;
-export default function StageView({ mode = "full", uiAnchor = "right", showUi = true, }) {
+export default function StageView({ mode = "overlay", uiAnchor = "right", showUi = true, }) {
     const story = useStory();
     const [backlogOpen, setBacklogOpen] = useState(false);
     const globalBacklogEntries = useSyncExternalStore(subscribeGlobalBacklog, getGlobalBacklogEntries, getGlobalBacklogEntries);
@@ -317,18 +317,18 @@ export default function StageView({ mode = "full", uiAnchor = "right", showUi = 
             fontSize: uiConfig.font.sizePx,
         }
         : {
-            maxWidth: 640,
-            margin: "0 auto",
+            // inline: 親ボックスに完全委譲
+            position: "relative",
+            width: "100%",
+            height: "100%",
             fontFamily: uiConfig.font.family ?? "sans-serif",
             fontSize: uiConfig.font.sizePx,
         };
     const stageStyle = isOverlay
         ? { position: "absolute", inset: 0 }
         : {
-            position: "relative",
-            height: 360,
-            overflow: "hidden",
-            borderRadius: 8,
+            position: "absolute",
+            inset: 0, // 親(outer)の 100% 領域いっぱいに載せる
         };
     return (_jsxs("div", { ref: outerRef, style: outerStyle, children: [uiVis.backlogButton && uiConfig.backlog.show && (_jsx("div", { style: backlogAnchorSlot
                     ? {
@@ -348,11 +348,13 @@ export default function StageView({ mode = "full", uiAnchor = "right", showUi = 
                             zIndex: 51,
                         }
                         : {
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 6,
-                            marginBottom: 6,
-                        }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), style: {
+                            // inline: 親(outer)内の右下に固定
+                            position: "absolute",
+                            ...anchorSide,
+                            bottom: uiConfig.backlog.offset ?? 12,
+                            pointerEvents: "auto",
+                            zIndex: 51,
+                        }, children: _jsx("button", { onClick: () => setBacklogOpen((v) => !v), "data-vn-key": "backlog-button", style: {
                         padding: "4px 10px",
                         borderRadius: 6,
                         border: "1px solid #999",
@@ -360,7 +362,7 @@ export default function StageView({ mode = "full", uiAnchor = "right", showUi = 
                         color: "#111",
                         fontSize: 12,
                         cursor: "pointer",
-                    }, children: backlogOpen ? "バックログを閉じる" : "バックログ" }) })), _jsxs("div", { ref: shakeRef, style: stageStyle, children: [_jsx(renderer.Background, { bg: bg, atomKey: story.atomKey }), _jsxs("div", { ref: camRef, style: {
+                    }, children: backlogOpen ? "バックログを閉じる" : "バックログ" }) })), _jsxs("div", { ref: shakeRef, style: stageStyle, children: [_jsx(renderer.Background, { bg: bg, atomKey: story.atomKey, zIndex: story.bgZIndex }), _jsxs("div", { ref: camRef, style: {
                             position: "absolute",
                             inset: 0,
                             pointerEvents: isOverlay ? "none" : undefined,
@@ -381,7 +383,7 @@ export default function StageView({ mode = "full", uiAnchor = "right", showUi = 
                             return (_jsx("div", { style: isOverlay ? { pointerEvents: "auto" } : undefined, children: _jsx(renderer.MessageBubble, { speaker: name, content: entry.content, slot: slot, revealedCount: entry.revealedCount, visible: entry.visible, onClick: uiConfig.messageWindow.interactive
                                         ? skipTyping
                                         : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx, offsetPx: uiConfig.messageWindow.offset, atomKey: story.atomKey }) }, name));
-                        }), uiVis.messageWindow && !messageWindowHidden && bubbles.narrator && (_jsx("div", { style: isOverlay ? { pointerEvents: "auto" } : undefined, children: _jsx(renderer.NarratorCaption, { content: bubbles.narrator.content, revealedCount: bubbles.narrator.revealedCount, visible: bubbles.narrator.visible, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", style: backlogAnchorSlot
+                        }), uiVis.messageWindow && !messageWindowHidden && bubbles.narrator && (_jsx("div", { style: isOverlay ? { pointerEvents: "auto" } : undefined, children: _jsx(renderer.NarratorCaption, { content: bubbles.narrator.content, revealedCount: bubbles.narrator.revealedCount, visible: bubbles.narrator.visible, onClick: uiConfig.messageWindow.interactive ? skipTyping : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }) }))] }), uiVis.backlogButton && uiConfig.backlog.show && backlogOpen && (_jsxs("div", { className: "vnlayer-scroll-hidden", "data-vn-key": "backlog-panel", style: backlogAnchorSlot
                     ? {
                         position: "absolute",
                         left: `${backlogAnchorSlot.originX}%`,
@@ -439,21 +441,21 @@ export default function StageView({ mode = "full", uiAnchor = "right", showUi = 
                         zIndex: 51,
                     }
                     : {
-                        position: isOverlay ? overlayPosition : "static",
-                        ...(isOverlay ? anchorSide : {}),
+                        position: isOverlay ? overlayPosition : "absolute",
+                        ...(isOverlay ? anchorSide : anchorSide),
                         bottom: isOverlay
                             ? (uiConfig.choice.offset ?? 130)
-                            : undefined,
-                        width: isOverlay ? 280 : undefined,
-                        maxHeight: isOverlay ? "60vh" : 220,
+                            : (uiConfig.choice.offset ?? 80),
+                        width: isOverlay ? 280 : 220,
+                        maxHeight: isOverlay ? "60vh" : "50%",
                         overflowY: "auto",
                         pointerEvents: "auto",
-                        marginTop: isOverlay ? 0 : 10,
+                        marginTop: 0,
                         zIndex: 51,
                     }, children: _jsx("div", { style: {
                         display: "flex",
                         flexDirection: "column",
                         gap: uiConfig.choice.spacing ?? 8,
-                    }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }, c.index))) }) }))] }));
+                    }, children: visibleChoices.map((c) => (_jsx(renderer.ChoiceButton, { index: c.index, text: c.text, onClick: () => choose(c.index), disabled: isProcessing || !uiConfig.choice.interactive, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx }, c.index))) }) }))] }));
 }
 //# sourceMappingURL=StageView.js.map
