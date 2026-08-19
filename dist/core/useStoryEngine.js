@@ -165,7 +165,7 @@ export function useStoryEngine(clip, options = {}) {
             }
         }
         if (result.visual) {
-            backgroundManager.restoreBackground(atomKey, result.visual.bg);
+            backgroundManager.restoreBackground(atomKey, result.visual.bg, result.visual.bgZIndex);
             characterManager.mergeVisualSnapshot(atomKey, result.visual.characters);
             speakerManager.setSpeaker(atomKey, result.visual.speaker);
         }

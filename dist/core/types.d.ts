@@ -54,6 +54,7 @@ export type StepEntry = {
 };
 export type VisualState = {
     bg: string;
+    bgZIndex?: number;
     characters: Record<string, CharacterState>;
     speaker: string;
 };

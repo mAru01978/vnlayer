@@ -16,7 +16,7 @@
 // 扱える値ではないため、フラット化の対象にはせず、そのまま1つの値として
 // 渡す(呼び出し側で意図的にJSON文字列化する等は別途行う必要がある)。
 import * as waitManager from "./waitManager";
-import { getReservedVariableNames, } from "../reservedVariablesConfig";
+import { getReservedVariableNames } from "../reservedVariablesConfig";
 const contextStore = new Map();
 const lastWakeAt = new Map();
 const WAKE_THROTTLE_MS = 50;

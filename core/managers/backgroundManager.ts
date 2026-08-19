@@ -40,8 +40,17 @@ export function setBackground(
 
 // core/useStoryEngine.tsのadvance()末尾、ink側の蓄積スナップショットとの
 // 同期専用。autoHideOnBgChangeの判定はしない(上記コメント参照)。
-export function restoreBackground(atomKey: string, name: string): void {
+// zIndexは省略可: undefinedの場合は「今回のバッチではzIndex変更が無かった」
+// という意味なので、既存のbgZIndexAtomFamilyの値を維持する(クリアしない)。
+export function restoreBackground(
+  atomKey: string,
+  name: string,
+  zIndex?: number,
+): void {
   getStore().set(bgAtomFamily(atomKey), name);
+  if (zIndex !== undefined) {
+    getStore().set(bgZIndexAtomFamily(atomKey), zIndex);
+  }
 }
 
 export function getBackground(atomKey: string): string {

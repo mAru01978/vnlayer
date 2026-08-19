@@ -20,6 +20,7 @@ export function continueUntilChoice(story, initialVisual) {
     let currentSpeakerForLine = initialVisual.speaker;
     const visual = {
         bg: initialVisual.bg,
+        bgZIndex: initialVisual.bgZIndex,
         characters: { ...initialVisual.characters },
         speaker: initialVisual.speaker,
     };
@@ -73,21 +74,39 @@ export function continueUntilChoice(story, initialVisual) {
             for (const tag of remainingTags) {
                 const [key, ...rest] = tag.split(":");
                 if (key === "s") {
-                    // # s:name / # s:name:hide / # s:name:pos:... / # s:name:<表情>
-                    // # s:bg:<背景名> (#bg統合分岐、疑似キャラ名)
-                    const [name, mode, value] = rest;
+                    // # s:name / # s:name:hide / # s:name:pos:... / # s:name:z:... / # s:name:<表情>
+                    // # s:bg:<背景名> / # s:bg:z:<value> / # s:bg:<背景名>:z:<value> /
+                    // # s:bg:<背景名>:color:...(:z:<value>)  (#bg統合分岐、疑似キャラ名)
+                    const [name, mode, ...tagRest] = rest;
                     if (!name || mode === undefined)
                         continue; // 話者だけの指定は見た目に影響しない
                     if (name === "bg") {
-                        // 修正メモ(2026-08-13): 以前は `[mode, ...args].join(":")` として
-                        // いたため、# s:bg:aiueo:color:test1 のようなタグで
-                        // visual.bg が "aiueo:color:test1" という不正な結合文字列に
-                        // なってしまっていた。実際に背景を切り替える
-                        // tags/defs/special/sprite.ts側は bgName = mode (例: "aiueo")
-                        // だけを使っているため、ここでも背景名はmodeだけを使う
-                        // (color:test1のような付随引数はここでのスナップショット
-                        // 復元には無関係)。
-                        visual.bg = mode;
+                        const bgName = mode;
+                        // # s:bg:z:5 … 現在背景のz-indexのみ変更(背景名は変えない)。
+                        // sprite.ts(tags/defs/special/sprite.ts)の同分岐と揃える。以前はここに
+                        // このガードが無く、bgName==="z"のケースでvisual.bgが誤って"z"という
+                        // 文字列で上書きされ、リロード復元時に存在しない背景へ切り替わる
+                        // 不具合があった。
+                        if (bgName === "z") {
+                            const z = Number(tagRest[0]);
+                            if (Number.isFinite(z))
+                                visual.bgZIndex = z;
+                            continue;
+                        }
+                        visual.bg = bgName;
+                        // # s:bg:name:z:5 / # s:bg:name:color:...:z:5 のzIndex部分も拾う
+                        // (sprite.tsのconst [a, b, c, d] = rest; と同じ位置関係)。
+                        const [a, b, , d] = tagRest;
+                        if (a === "z") {
+                            const z = Number(b);
+                            if (Number.isFinite(z))
+                                visual.bgZIndex = z;
+                        }
+                        else if (a === "color" && tagRest[2] === "z") {
+                            const z = Number(d);
+                            if (Number.isFinite(z))
+                                visual.bgZIndex = z;
+                        }
                         continue;
                     }
                     if (mode === "hide") {
@@ -98,7 +117,7 @@ export function continueUntilChoice(story, initialVisual) {
                         // このvisualスナップショット(bg/表情/モーション用)には含めない。
                     }
                     else if (mode === "z") {
-                        const zIndex = Number(value);
+                        const zIndex = Number(tagRest[0]);
                         if (!Number.isFinite(zIndex))
                             continue;
                         visual.characters[name] = {
@@ -109,7 +128,7 @@ export function continueUntilChoice(story, initialVisual) {
                         };
                     }
                     else {
-                        // hide/pos以外 = 表情指定
+                        // hide/pos/z以外 = 表情指定
                         visual.characters[name] = {
                             ...visual.characters[name],
                             expression: mode,

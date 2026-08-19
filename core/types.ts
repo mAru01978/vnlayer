@@ -56,6 +56,7 @@ export type ActiveMessage = {
 export type StepEntry = { speaker: string; content: string; tags: string[] };
 export type VisualState = {
   bg: string;
+  bgZIndex?: number;
   characters: Record<string, CharacterState>;
   speaker: string;
 };

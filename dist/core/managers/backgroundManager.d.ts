@@ -5,7 +5,7 @@ export declare const bgZIndexAtomFamily: import("jotai-family").AtomFamily<strin
     init: number;
 }>;
 export declare function setBackground(atomKey: string, instanceId: string | undefined, name: string): void;
-export declare function restoreBackground(atomKey: string, name: string): void;
+export declare function restoreBackground(atomKey: string, name: string, zIndex?: number): void;
 export declare function getBackground(atomKey: string): string;
 export declare function reset(atomKey: string): void;
 export declare function dispose(atomKey: string): void;
