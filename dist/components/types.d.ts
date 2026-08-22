@@ -20,6 +20,7 @@ export type BackgroundProps = {
     bg: string;
     atomKey: string;
     zIndex?: number;
+    instanceId?: string;
 };
 export type CharacterSpriteProps = {
     name: string;
@@ -29,6 +30,7 @@ export type CharacterSpriteProps = {
     hasSpeaker: boolean;
     onClick?: () => void;
     atomKey: string;
+    instanceId?: string;
 };
 export type MessageBubbleProps = {
     speaker: string;

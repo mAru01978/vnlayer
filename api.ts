@@ -147,16 +147,22 @@ function unmount(selector: string): Promise<void> {
 // api-refactor-1/2(真の統合版): 第3引数optionsで挙動を制御する。
 //   options.notify: true
 //     → 渡した各キーに対して"${key}_seq"という単調増加カウンタを自動生成・
-//       インクリメントし、値と一緒に書き込む(呼び出し側はseqを一切
+//       インクリメントして値と一緒に書き込む(呼び出し側はseqを一切
 //       意識しなくてよい)。同時に実行中の#wait:/type_wait待ちを即座に
 //       打ち切り、event_loop等の#interrupt付き選択肢に辿り着き次第それを
 //       自動選択する。
-//   options.expose: false (既定はtrue)
-//     → 書き込んだ値をVNLayer.getContext()から見えないようにする。
-//       既定(true)の間はgetContext()で読み返せる。将来追加予定の#emit
-//       特殊タグ等、内部的な書き込みを外部に露出させたくない場合に使う想定。
+//   options.sync: false (既定はtrue)
+//     → 既定(true)では、ink側でその変数が後から変わった時(素のink代入
+//       ~ hp = hp - 10 等でも)、VNLayer.getContext()の値にも自動で
+//       反映される(ObserveVariable経由)。falseにすると、この呼び出しで
+//       書いた値は「書いた瞬間のスナップショット」のまま固定される。
 // これにより、以前は別APIだったVNLayer.notify(eventName, payload, selector)は
 // 完全に不要になったため廃止した(seqの面倒もこちら側が見てくれるため)。
+//
+// 2.15(sync/notify見直し、2026-08-19): 以前あったoptions.expose(既定true、
+// falseでgetContext()から見えなくする)は廃止した。setContextで書いた値は
+// 常にgetContext()から見える(以前のexpose:falseは「非公開のつもりで
+// 実質どこからでも読めてしまう」抜け穴でしかなかったため)。
 //
 //   旧: VNLayer.notify("blink", true);
 //   新: VNLayer.setContext({ vn_event_blink: true }, undefined, { notify: true });
@@ -238,7 +244,8 @@ async function getContext(
 
 // VNLayer.configure({ characterSlots: {...}, tags: { cam: {...}, wait: {...} },
 //                      ui: { choice: { spacing: 16 } }, webLinks: { blogHome: "https://..." },
-//                      animAssets: { alice: { walk: { mode: 'single', src: '/assets/anim/alice_walk.webm' } } } })
+//                      animAssets: { alice: { walk: { mode: 'single', src: '/assets/anim/alice_walk.webm' } } } },
+//                    selector?)
 // Next.js運用ではcontext/StoryContext.tsxが自動でcharacterSlotsを注入するので
 // 通常は呼ばなくてよいが、静的運用(vnlayer.js)や、タグの挙動を実行時に
 // 上書きしたい場合(例: 演出のテンポ調整)に使う。
@@ -263,6 +270,16 @@ async function getContext(
 //     (表情画像)を統合したもの(tags/spriteAssets.ts参照)。
 //   assets.anim … モーション(連番画像/単一動画)。旧animAssetsのまま
 //     (tags/animAssets.ts参照)、ただし素材ごとのsource上書きにも対応。
+//
+// scope統一(2.1: configureスコープ統一、2026-08-19): 以前はuiだけが
+// selector(第2引数)でVNインスタンス単位に上書きできた。assets/tags/
+// webLinksは常にグローバル共有だったが、これらも全てselectorを渡せる
+// ように揃えた(渡さなければ以前と同じくグローバル)。例:
+//   VNLayer.configure({ assets: { sprite: { alice: {...} } } }, "#vn2")
+//     → "#vn2"だけに登録される特別なalice定義(他のVNには影響しない)
+// 実際にこのscope指定を読み出し側(StageView.tsx/Renderer.tsx)が使うには、
+// 各コンポーネントにinstanceIdを配線する必要がある(現状は未配線、次の
+// 変更で対応予定 — tags/spriteAssets.ts等のコメント参照)。
 type ConfigureAssetsOptions = AssetsGlobalConfig & {
   sprite?: Record<string, SpriteCharacterConfig>;
   anim?: Record<string, Record<string, AnimAssetConfig>>;
@@ -309,8 +326,8 @@ async function reset(selector?: string): Promise<void> {
 }
 
 // VNLayer.configure(options, selector?)
-// characterSlots/tags/webLinks/animAssetsは常に全VN共通(グローバル)。
-// uiだけは notify/setContext と同じ考え方でselectorを渡せる:
+// 2.1(configureスコープ統一)により、assets/tags/webLinks/uiの全項目が
+// selectorを受け付ける。selector省略時は今まで通り全VN共通(グローバル)。
 //   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
 //   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
 async function configure(
@@ -320,18 +337,18 @@ async function configure(
   if (options.assets) {
     const { sprite, anim, ...globalAssetsConfig } = options.assets;
     if (Object.keys(globalAssetsConfig).length > 0)
-      setAssetsConfig(globalAssetsConfig);
-    if (sprite) setSpriteAssets(sprite);
-    if (anim) setAnimAssets(anim);
+      setAssetsConfig(globalAssetsConfig, selector);
+    if (sprite) setSpriteAssets(sprite, selector);
+    if (anim) setAnimAssets(anim, selector);
   }
   if (options.tags) {
     for (const [key, partial] of Object.entries(options.tags)) {
-      setTagConfig(key, partial);
+      setTagConfig(key, partial, selector);
     }
   }
   if (options.ui) setUiConfig(options.ui, selector);
-  if (options.webLinks) setWebLinks(options.webLinks);
-  if (options.reservedVariables)setReservedVariablesConfig(options.reservedVariables);
+  if (options.webLinks) setWebLinks(options.webLinks, selector);
+  if (options.reservedVariables) setReservedVariablesConfig(options.reservedVariables);
 }
 
 // VNLayer.getDataElements(name?, selector?)

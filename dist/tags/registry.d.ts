@@ -16,8 +16,8 @@ export type TagDefinition<TConfig = any> = {
 };
 export declare function registerTag<TConfig>(def: TagDefinition<TConfig>): void;
 export declare function registerAlias(alias: string, canonicalKey: string): void;
-export declare function setTagConfig(key: string, partial: Record<string, unknown>): void;
-export declare function getTagConfig<T = any>(key: string): T | undefined;
+export declare function setTagConfig(key: string, partial: Record<string, unknown>, scope?: string): void;
+export declare function getTagConfig<T = any>(key: string, scope?: string): T | undefined;
 export declare function warnUnknownTag(tag: string): void;
 export declare function runTag(key: string, args: string[], handlers: TagHandlers): Promise<void>;
 export type BasicTagRunHelpers = {

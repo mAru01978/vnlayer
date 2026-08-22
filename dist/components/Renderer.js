@@ -50,7 +50,7 @@ function shortestRotationTo(prevDeg, rawTargetDeg) {
     return prevDeg + delta;
 }
 const MOCK_BG_COLOR = "#333";
-function resolveBgVisual(bg) {
+function resolveBgVisual(bg, scope) {
     // 修正メモ(2026-08-13): ストーリー開始直後等、まだ一度も# s:bg:...が
     // 来ていない間はbgアトムの初期値が空文字列のまま。これは「背景未設定」
     // という正常な状態であり、素材が見つからない異常系ではないため、
@@ -59,8 +59,10 @@ function resolveBgVisual(bg) {
     if (!bg) {
         return { kind: "none" };
     }
-    // 登録済みの背景素材を最優先する。
-    const slot = getBackgroundSlot(bg);
+    // 登録済みの背景素材を最優先する(2.1配線対応: scopeを渡すと、まず
+    // そのVN専用の登録を見て、無ければグローバル登録にフォールバックする。
+    // tags/spriteAssets.tsのgetBackgroundSlot参照)。
+    const slot = getBackgroundSlot(bg, scope);
     if (slot?.image) {
         return { kind: "image", src: slot.image };
     }
@@ -70,16 +72,16 @@ function resolveBgVisual(bg) {
     // 未登録時:
     // fallbackToMock=true なら汎用モック背景、
     // falseならAssetErrorを報告して何も描画しない。
-    if (!shouldFallbackForSprite("bg", bg)) {
+    if (!shouldFallbackForSprite("bg", bg, scope)) {
         return { kind: "none" };
     }
     return { kind: "color", color: MOCK_BG_COLOR };
 }
-function Background({ bg, atomKey, zIndex }) {
+function Background({ bg, atomKey, zIndex, instanceId }) {
     useAssetsVersion();
     const ref = useRef(null);
     const tlRef = useRef(null);
-    const visual = resolveBgVisual(bg);
+    const visual = resolveBgVisual(bg, instanceId);
     // 場面転換のたびに一瞬フェードインさせる(以前は一切トランジション無しの
     // 瞬時切り替えだった)。
     useGSAP(() => {
@@ -110,7 +112,7 @@ function Background({ bg, atomKey, zIndex }) {
             zIndex: zIndex,
         } }));
 }
-function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, atomKey, }) {
+function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, atomKey, instanceId, }) {
     useAssetsVersion();
     const rootRef = useRef(null);
     const arrowRef = useRef(null);
@@ -127,10 +129,12 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
     // 表示する見た目の解決優先順位: #anim中の素材(動いている最中) >
     // #sで登録された表情ごとの静止画(手動指定 → フォルダ規約) >
     // フォールバック可否に応じたモック(色付き四角+ラベル)。
-    const animAsset = getAnimAsset(name, state.expression, state.motion);
+    // 2.1配線対応: instanceIdをscopeとして渡し、まずそのVN専用の登録を見て、
+    // 無ければグローバル登録にフォールバックする。
+    const animAsset = getAnimAsset(name, state.expression, state.motion, instanceId);
     const [imageFailed, setImageFailed] = useState(false);
     const spriteSrc = !animAsset
-        ? resolveSpriteSrc(name, state.expression)
+        ? resolveSpriteSrc(name, state.expression, instanceId)
         : undefined;
     const hasRealAsset = Boolean(animAsset || (spriteSrc && !imageFailed));
     useEffect(() => {
@@ -145,8 +149,8 @@ function CharacterSprite({ name, state, slot, isFocused, hasSpeaker, onClick, at
     // という誤ったAssetErrorが報告され続けていた。
     const allowMock = hasRealAsset ||
         (state.motion
-            ? shouldFallbackForAnim(name, state.motion)
-            : shouldFallbackForSprite(name, state.expression));
+            ? shouldFallbackForAnim(name, state.motion, instanceId)
+            : shouldFallbackForSprite(name, state.expression, instanceId));
     const gazeAngle = state.gaze
         ? computeGazeAngleDeg(slot.originX, slot.originY, state.gaze.x, state.gaze.y)
         : null;

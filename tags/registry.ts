@@ -1,16 +1,16 @@
 // タグごとに「設定値(config)」と「処理内容(run)」を1ファイルにまとめて登録する仕組み。
 // scripts/new-tag.js が今後 tags/defs/special/<タグ名>.ts を1個生成するだけで済むようにする狙い。
 //
-// VNLayer.configure({ tags: { cam: { scales: {...} } } }) のように、Next.js側からも
-// vnlayer.js(静的バンドル)側からも同じ setTagConfig 経由で上書きできる。
+// VNLayer.configure({ tags: { cam: { scales: {...} } } }, selector?) のように、
+// Next.js側からもvnlayer.js(静的バンドル)側からも同じsetTagConfig経由で
+// 上書きできる。
 //
-// 設計方針(タグシステム大改修フェーズ3): タグのrun()に渡ってくる`handlers`は
-// 「このタグがどのVNインスタンス向けかを示す識別子」だけを持つ薄いもの。
-// 以前のように「状態を書き換えるための25個のメソッドを持つ巨大なオブジェクト」
-// ではない — 実際の状態変更は、各タグ定義ファイルがcore/managers/以下の
-// マネージャーを直接importして呼ぶことで行う。core/useStoryEngine.tsを
-// 経由しないので、新しいタグを追加するたびにuseStoryEngine.tsを改修する
-// 必要が無くなる。
+// scope対応(2.1: configureスコープ統一): 以前はレジストリ全体で1つのconfig
+// オブジェクトを共有していた(常にグローバル)。今はdefaultConfigを持つタグ
+// だけ、tags/scopedStore.tsのScopedStoreを持ち、setTagConfig(key, partial,
+// scope?)でVNインスタンス単位に上書きできる。config自体の解決(getTagConfig
+// 相当)はruntTag()実行のたびにhandlers.instanceId(公開スコープ識別子)を
+// 見て都度行う(以前は登録時に固定した1個のオブジェクトを全VNで共有していた)。
 //
 // 識別子が2種類あることに注意:
 //   atomKey    … Jotaiのatom隔離用キー。instanceId未指定時はcore/
@@ -20,10 +20,10 @@
 //                関数は、ほぼ全てこちらを使う。
 //   instanceId … mount()時に渡した公開スコープ識別子(選択セレクタ)。
 //                未指定(undefined)は「グローバル/全VN共通」という意味を
-//                持つ場面(tags/uiConfig.tsのスコープ判定、全VN共通
-//                バックログのmode判定、#emit/#web:emitの宛先・送信元表示)
-//                で使う。atomKeyと違い、名無しインスタンス同士が同じ
-//                undefinedを共有するのが意図通り。
+//                持つ場面(tags/uiConfig.tsのスコープ判定、タグconfigの
+//                スコープ判定、全VN共通バックログのmode判定、#emit/
+//                #web:emitの宛先・送信元表示)で使う。atomKeyと違い、
+//                名無しインスタンス同士が同じundefinedを共有するのが意図通り。
 export type TagHandlers = {
   atomKey: string;
   instanceId?: string;
@@ -33,6 +33,7 @@ import type { PrimitiveAtom } from "jotai";
 import { getStore } from "../core/store";
 import * as waitManager from "../core/managers/waitManager";
 import { reportError, TagDispatchError } from "../core/errors";
+import { createScopedStore, type ScopedStore } from "./scopedStore";
 
 export type TagRunContext<TConfig> = {
   args: string[];
@@ -47,16 +48,26 @@ export type TagDefinition<TConfig = any> = {
   run: (ctx: TagRunContext<TConfig>) => Promise<void> | void;
 };
 
-type RegistryEntry = { def: TagDefinition; config: unknown };
+type RegistryEntry = {
+  def: TagDefinition;
+  // defaultConfigを持つタグだけ非null。configStore.get(scope)がその都度
+  // 実効値を返す(scope省略時はグローバルのみ)。
+  configStore: ScopedStore<Record<string, unknown>, unknown> | null;
+};
 
 const registry = new Map<string, RegistryEntry>();
 
 export function registerTag<TConfig>(def: TagDefinition<TConfig>): void {
-  registry.set(def.key, {
-    def,
-    config:
-      def.defaultConfig !== undefined ? { ...def.defaultConfig } : undefined,
-  });
+  const configStore =
+    def.defaultConfig !== undefined
+      ? createScopedStore<Record<string, unknown>, unknown>({
+          defaultValue: { ...(def.defaultConfig as object) },
+          mergePatch: (base, patch) =>
+            patch ? { ...(base as object), ...patch } : base,
+          mergePatches: (prev, patch) => ({ ...(prev ?? {}), ...patch }),
+        })
+      : null;
+  registry.set(def.key, { def, configStore });
 }
 
 // タグの短縮エイリアスを登録する(例: registerAlias('c', 'cam'))。
@@ -81,24 +92,30 @@ export function registerAlias(alias: string, canonicalKey: string): void {
   registry.set(alias, entry);
 }
 
-// 既存タグの設定を部分的に上書きする(浅いマージ)。
+// 既存タグの設定を部分的に上書きする(浅いマージ)。scopeを省略すると今まで
+// 通り全VN共通(グローバル)、指定するとそのVNインスタンスだけの上書きになる
+// (グローバル設定はそのまま、他のVNには影響しない)。
 export function setTagConfig(
   key: string,
   partial: Record<string, unknown>,
+  scope?: string,
 ): void {
   const entry = registry.get(key);
   if (!entry) {
     console.warn(`[VNLayer] setTagConfig: unknown tag "${key}"`);
     return;
   }
-  entry.config = {
-    ...(entry.config as Record<string, unknown> | undefined),
-    ...partial,
-  };
+  if (!entry.configStore) {
+    console.warn(
+      `[VNLayer] setTagConfig: tag "${key}" has no defaultConfig, ignoring`,
+    );
+    return;
+  }
+  entry.configStore.set(partial, scope);
 }
 
-export function getTagConfig<T = any>(key: string): T | undefined {
-  return registry.get(key)?.config as T | undefined;
+export function getTagConfig<T = any>(key: string, scope?: string): T | undefined {
+  return registry.get(key)?.configStore?.get(scope) as T | undefined;
 }
 
 // 「認識できるキーだが引数が不正/未対応」の場合の共通警告。以前は各タグが
@@ -123,7 +140,13 @@ export async function runTag(
     warnUnknownTag(key);
     return;
   }
-  await entry.def.run({ args, handlers, config: entry.config });
+  // configはこの呼び出し時点で、handlers.instanceId(公開スコープ識別子)を
+  // 見て都度解決する(2.1: configureスコープ統一。以前は登録時に固定した
+  // 1個のオブジェクトを全VNで共有していた)。defaultConfigを持たないタグ
+  // (configStoreがnull)ではundefinedのまま(元々run()側の型もconfig省略可な
+  // 作りなので影響しない)。
+  const config = entry.configStore?.get(handlers.instanceId);
+  await entry.def.run({ args, handlers, config });
 }
 
 // --- タグシステム大改修(Jotai導入)フェーズ1〜3: basicタグ用の宣言的API ---

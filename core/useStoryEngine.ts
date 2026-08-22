@@ -260,12 +260,9 @@ export function useStoryEngine(
           );
         }
       }
+
       if (result.visual) {
-        backgroundManager.restoreBackground(
-          atomKey,
-          result.visual.bg,
-          result.visual.bgZIndex,
-        );
+        backgroundManager.restoreBackground(atomKey, result.visual.bg);
         characterManager.mergeVisualSnapshot(atomKey, result.visual.characters);
         speakerManager.setSpeaker(atomKey, result.visual.speaker);
       }
@@ -555,7 +552,7 @@ export function useStoryEngine(
     positionManager.reset(atomKey);
     messageManager.reset(atomKey);
     windowVisibilityManager.reset(atomKey);
-    // クリップを最初からやり直す以上、setContextで書き込んだ(exposeされた)
+    // クリップを最初からやり直す以上、setContextで書き込んだ値の写しも
     // 値の写しも古い情報になるためクリアする。
     contextManager.reset(atomKey);
 

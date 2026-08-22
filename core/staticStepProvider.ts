@@ -4,6 +4,7 @@ import type { StepProvider } from "./StepProvider";
 import type { RunResult, VisualState } from "./types";
 import { StoryLoadError, StoryRuntimeError, reportError } from "./errors";
 import * as interruptManager from "./managers/interruptManager";
+import * as contextManager from "./managers/contextManager";
 import type { SaveData, StorySaveData } from "./SaveProvider";
 import {
   loadJson,
@@ -127,6 +128,20 @@ async function createStoryHandle(
     },
     pushResult: (result) => {
       pushHandlers.get(key)?.forEach((cb) => cb(result));
+    },
+  });
+
+  // 2.15(sync/notify見直し)対応: setContextのsync:true(既定)な変数を
+  // 観測するための権限をcontextManagerへ渡す。同じStoryインスタンスに
+  // interruptManagerと重複してObserveVariableが乗ることになるが、
+  // inkjsのObserveVariableは変数ごとに複数のコールバックを積み重ねる
+  // 実装なので、目的の異なる監視同士(#interrupt起動用 / context同期用)が
+  // 競合することはない。
+  contextManager.attachStory(key, {
+    observeVariable: (varName, onChange) => {
+      story.ObserveVariable(varName, (_name: string, newValue: unknown) => {
+        onChange(newValue);
+      });
     },
   });
 

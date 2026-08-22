@@ -11,8 +11,12 @@ import { jsx as _jsx } from "react/jsx-runtime";
 //   setContext(vars, selector, opts)   → vnRef.current.setContext(vars, opts)
 //   getContext(names, selector)        → vnRef.current.getContext(names)
 //   reset(selector)                    → vnRef.current.reset()
-//   configure(opts, selector)          → グローバル部分は configureVNLayer(opts)、
-//                                          instance固有のui部分は <VNLayer ui={...} />
+//   configure(opts, selector)          → configureVNLayer(opts, selector)
+//                                          (2.1: configureスコープ統一により、
+//                                          こちらもselectorを渡せる。
+//                                          instance固有のui部分は<VNLayer
+//                                          ui={...} />でも上書きできる、
+//                                          どちらでも同じ実体に書き込む)
 //
 // 設計上の要石: ref経由で公開するメソッド(setContext/getContext/reset)の実体は
 // core/types.tsのVNLayerHandle型(setContextVars/getContextVars/resetStory)を
@@ -74,25 +78,30 @@ export const VNLayer = forwardRef(function VNLayer({ clip, mode, uiAnchor, showU
     }, [onReady]);
     return (_jsx(VNLayerOverlayInternal, { clip: clip, mode: mode, uiAnchor: uiAnchor, showUi: showUi, stepProvider: stepProvider, saveProvider: saveProvider, onNavigate: onNavigate, instanceId: effectiveInstanceId, onReady: handleReady }));
 });
-export function configureVNLayer(options) {
+// scope統一(2.1: configureスコープ統一、2026-08-19): 第2引数selectorを
+// 追加。省略時は今まで通り全VN共通(グローバル)。指定すると、そのVN
+// インスタンス(<VNLayer instanceId="..." />で渡したもの、または内部の
+// useId()由来の識別子)だけに適用される。api.ts側のconfigure(options,
+// selector)と同じ挙動に揃えている。
+export function configureVNLayer(options, selector) {
     if (options.assets) {
         const { sprite, anim, ...globalAssetsConfig } = options.assets;
         if (Object.keys(globalAssetsConfig).length > 0)
-            setAssetsConfig(globalAssetsConfig);
+            setAssetsConfig(globalAssetsConfig, selector);
         if (sprite)
-            setSpriteAssets(sprite);
+            setSpriteAssets(sprite, selector);
         if (anim)
-            setAnimAssets(anim);
+            setAnimAssets(anim, selector);
     }
     if (options.tags) {
         for (const [key, partial] of Object.entries(options.tags)) {
-            setTagConfig(key, partial);
+            setTagConfig(key, partial, selector);
         }
     }
     if (options.ui)
-        setUiConfig(options.ui);
+        setUiConfig(options.ui, selector);
     if (options.webLinks)
-        setWebLinks(options.webLinks);
+        setWebLinks(options.webLinks, selector);
     if (options.reservedVariables)
         setReservedVariablesConfig(options.reservedVariables);
 }

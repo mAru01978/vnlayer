@@ -9,7 +9,9 @@ export type AssetsGlobalConfig = {
 };
 export declare function subscribeAssetsConfig(listener: () => void): () => void;
 export declare function getAssetsConfigVersion(): number;
-export declare function setAssetsConfig(patch: AssetsGlobalConfig): void;
-export declare function getAssetsConfig(): AssetsGlobalConfig;
-export declare function shouldFallbackToMock(context: string): boolean;
+export declare function setAssetsConfig(patch: AssetsGlobalConfig, scope?: string): void;
+export declare function getAssetsConfig(scope?: string): AssetsGlobalConfig;
+export declare function getAllAssetsConfigPatches(): Record<string, AssetsGlobalConfig>;
+export declare function restoreAssetsConfigPatches(patches: Record<string, AssetsGlobalConfig> | undefined): void;
+export declare function shouldFallbackToMock(context: string, scope?: string): boolean;
 //# sourceMappingURL=assetsConfig.d.ts.map

@@ -165,7 +165,7 @@ export function useStoryEngine(clip, options = {}) {
             }
         }
         if (result.visual) {
-            backgroundManager.restoreBackground(atomKey, result.visual.bg, result.visual.bgZIndex);
+            backgroundManager.restoreBackground(atomKey, result.visual.bg);
             characterManager.mergeVisualSnapshot(atomKey, result.visual.characters);
             speakerManager.setSpeaker(atomKey, result.visual.speaker);
         }
@@ -404,7 +404,7 @@ export function useStoryEngine(clip, options = {}) {
         positionManager.reset(atomKey);
         messageManager.reset(atomKey);
         windowVisibilityManager.reset(atomKey);
-        // クリップを最初からやり直す以上、setContextで書き込んだ(exposeされた)
+        // クリップを最初からやり直す以上、setContextで書き込んだ値の写しも
         // 値の写しも古い情報になるためクリアする。
         contextManager.reset(atomKey);
         // 保存されている簡易セーブも古い情報になるため消す(次回ロード時に

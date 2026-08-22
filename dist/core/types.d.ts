@@ -68,7 +68,7 @@ export type SetContextKeyNames = {
 };
 export type SetContextOptions = {
     notify?: boolean;
-    expose?: boolean;
+    sync?: boolean;
     keyNames?: SetContextKeyNames;
 };
 export type VNLayerHandle = {

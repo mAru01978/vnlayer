@@ -23,6 +23,12 @@ export type BackgroundProps = {
   // 演出だけ」を対象にできるようにするため)。
   atomKey: string;
   zIndex?: number;
+  // 2.1(configureスコープ統一)配線対応: VNLayer.configure({assets:{sprite:
+  // {bg:{...}}}}, selector)でVN単位に登録された背景素材/fallbackToMock
+  // 設定を優先的に見るための公開スコープ識別子(mount()時のselector、
+  // またはstory.instanceId)。未指定ならグローバル登録のみを見る
+  // (以前と同じ挙動)。
+  instanceId?: string;
 };
 
 export type CharacterSpriteProps = {
@@ -39,6 +45,9 @@ export type CharacterSpriteProps = {
   onClick?: () => void;
   // BackgroundPropsのatomKeyと同じ(core/managers/timelineManager.ts登録用)。
   atomKey: string;
+  // BackgroundPropsのinstanceIdと同じ役割(2.1配線対応)。素材/anim/
+  // fallbackToMock設定のscope解決に使う。
+  instanceId?: string;
 };
 
 export type MessageBubbleProps = {

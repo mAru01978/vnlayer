@@ -1,12 +1,17 @@
 import { getStore } from "../core/store";
 import * as waitManager from "../core/managers/waitManager";
 import { TagDispatchError } from "../core/errors";
+import { createScopedStore } from "./scopedStore";
 const registry = new Map();
 export function registerTag(def) {
-    registry.set(def.key, {
-        def,
-        config: def.defaultConfig !== undefined ? { ...def.defaultConfig } : undefined,
-    });
+    const configStore = def.defaultConfig !== undefined
+        ? createScopedStore({
+            defaultValue: { ...def.defaultConfig },
+            mergePatch: (base, patch) => patch ? { ...base, ...patch } : base,
+            mergePatches: (prev, patch) => ({ ...(prev ?? {}), ...patch }),
+        })
+        : null;
+    registry.set(def.key, { def, configStore });
 }
 // タグの短縮エイリアスを登録する(例: registerAlias('c', 'cam'))。
 // エイリアス側もsetTagConfig/getTagConfigで同じ実体(RegistryEntry)を
@@ -25,20 +30,23 @@ export function registerAlias(alias, canonicalKey) {
     }
     registry.set(alias, entry);
 }
-// 既存タグの設定を部分的に上書きする(浅いマージ)。
-export function setTagConfig(key, partial) {
+// 既存タグの設定を部分的に上書きする(浅いマージ)。scopeを省略すると今まで
+// 通り全VN共通(グローバル)、指定するとそのVNインスタンスだけの上書きになる
+// (グローバル設定はそのまま、他のVNには影響しない)。
+export function setTagConfig(key, partial, scope) {
     const entry = registry.get(key);
     if (!entry) {
         console.warn(`[VNLayer] setTagConfig: unknown tag "${key}"`);
         return;
     }
-    entry.config = {
-        ...entry.config,
-        ...partial,
-    };
+    if (!entry.configStore) {
+        console.warn(`[VNLayer] setTagConfig: tag "${key}" has no defaultConfig, ignoring`);
+        return;
+    }
+    entry.configStore.set(partial, scope);
 }
-export function getTagConfig(key) {
-    return registry.get(key)?.config;
+export function getTagConfig(key, scope) {
+    return registry.get(key)?.configStore?.get(scope);
 }
 // 「認識できるキーだが引数が不正/未対応」の場合の共通警告。以前は各タグが
 // handlers.onUnknownTag?.(...)経由で呼んでいたが、これも「状態を書き換える」
@@ -57,7 +65,13 @@ export async function runTag(key, args, handlers) {
         warnUnknownTag(key);
         return;
     }
-    await entry.def.run({ args, handlers, config: entry.config });
+    // configはこの呼び出し時点で、handlers.instanceId(公開スコープ識別子)を
+    // 見て都度解決する(2.1: configureスコープ統一。以前は登録時に固定した
+    // 1個のオブジェクトを全VNで共有していた)。defaultConfigを持たないタグ
+    // (configStoreがnull)ではundefinedのまま(元々run()側の型もconfig省略可な
+    // 作りなので影響しない)。
+    const config = entry.configStore?.get(handlers.instanceId);
+    await entry.def.run({ args, handlers, config });
 }
 export function registerBasicTag(def) {
     registerTag({
