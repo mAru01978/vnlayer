@@ -374,14 +374,14 @@ export default function StageView({
   const choiceAnchorName = uiConfig.choice.anchor;
   const choiceAnchorSlot = choiceAnchorName
     ? (positionOverrides[choiceAnchorName] ??
-      getCharacterSlot(choiceAnchorName) ??
+      getCharacterSlot(choiceAnchorName, instanceId) ??
       null)
     : null;
 
   const backlogAnchorName = uiConfig.backlog.anchor;
   const backlogAnchorSlot = backlogAnchorName
     ? (positionOverrides[backlogAnchorName] ??
-      getCharacterSlot(backlogAnchorName) ??
+      getCharacterSlot(backlogAnchorName, instanceId) ??
       null)
     : null;
 
@@ -489,6 +489,7 @@ export default function StageView({
           bg={bg}
           atomKey={story.atomKey}
           zIndex={story.bgZIndex}
+          instanceId={instanceId}
         />
         <div
           ref={camRef}
@@ -500,7 +501,7 @@ export default function StageView({
         >
           {Object.entries(characters).map(([name, state]: any) => {
             const slot = positionOverrides[name] ??
-              getCharacterSlot(name) ?? { originX: 50, originY: 60 };
+              getCharacterSlot(name, instanceId) ?? { originX: 50, originY: 60 };
             const isFocused = speaker === name;
             return (
               <renderer.CharacterSprite
@@ -511,6 +512,7 @@ export default function StageView({
                 isFocused={isFocused}
                 hasSpeaker={!!speaker}
                 atomKey={story.atomKey}
+                instanceId={instanceId}
                 onClick={
                   uiConfig.character.clickable
                     ? () =>
@@ -539,7 +541,7 @@ export default function StageView({
             .filter(([name]) => name !== "narrator")
             .map(([name, entry]) => {
               const slot = positionOverrides[name] ??
-                getCharacterSlot(name) ?? { originX: 50, originY: 40 };
+                getCharacterSlot(name, instanceId) ?? { originX: 50, originY: 40 };
               return (
                 <div
                   key={name}

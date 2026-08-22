@@ -10,7 +10,9 @@
 //
 // #emit:<selector>:<varName>:<value> タグ(tags/defs/emit.ts)が、この
 // レジストリ経由で「他のVNインスタンス」のsetContextVarsを呼び出す
-// (expose:false, notify:trueで、そのインスタンスのink変数へ一方通行で書き込む)。
+// (notify:trueで、そのインスタンスのink変数へ一方通行で書き込む。2.15対応で
+// expose概念は廃止されたため、以前ここにあった「expose:false」の記述は
+// 削除した — 詳細は下記の追記コメント参照)。
 //
 // 注意: #web:emit(ink→ブラウザへの通知)はこれとは無関係。あちらはink変数/
 // VNインスタンスを一切経由せず、window.dispatchEvent(CustomEvent)で直接
@@ -38,6 +40,12 @@
 // とは別のMap(selfRegistry、atomKeyキー)で持つ — instanceId(公開スコープ
 // 識別子、mount()時に省略されうる)とは値空間が別物なので、混ざらないように
 // 完全に分離してある。
+//
+// 2.15(sync/notify見直し、2026-08-19): expose概念は廃止されたため、
+// emitToInstance/emitToSelfへ渡すoptionsも{notify:true, expose:false}から
+// {notify:true}に変わった(tags/defs/special/emit.ts参照)。#emit専用の
+// イベント変数も今後はVNLayer.getContext()から見えるようになる
+// (「非公開スコープ」という概念自体が無くなったため)。
 import { reportError, TagDispatchError } from "./errors";
 
 function normalizeSelector(selector: string): string {
@@ -47,7 +55,7 @@ function normalizeSelector(selector: string): string {
 export type EmitTarget = {
   setContextVars: (
     vars: Record<string, unknown>,
-    options?: { notify?: boolean; expose?: boolean },
+    options?: { notify?: boolean; sync?: boolean },
   ) => Promise<void>;
 };
 
@@ -66,7 +74,7 @@ export function unregisterInstance(selector: string): void {
 export async function emitToInstance(
   selector: string,
   vars: Record<string, unknown>,
-  options?: { notify?: boolean; expose?: boolean },
+  options?: { notify?: boolean; sync?: boolean },
 ): Promise<void> {
   const target = registry.get(normalizeSelector(selector));
   if (!target) {
@@ -91,7 +99,7 @@ export function unregisterSelf(atomKey: string): void {
 export async function emitToSelf(
   atomKey: string,
   vars: Record<string, unknown>,
-  options?: { notify?: boolean; expose?: boolean },
+  options?: { notify?: boolean; sync?: boolean },
 ): Promise<void> {
   const target = selfRegistry.get(atomKey);
   if (!target) {

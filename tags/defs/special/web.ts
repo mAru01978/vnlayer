@@ -32,6 +32,13 @@ import { reportError, TagDispatchError } from "../../../core/errors";
 // inkのソースファイルは "//" を行コメントの開始として扱うため、コンパイル時点で
 // //以降が消えてしまう(この問題を避けるための、上記のリンク名方式)。
 //
+// リンク解決のスコープ(2.1: configureスコープ統一): getWebLink()に
+// handlers.instanceId(公開スコープ識別子)を渡すようにした。
+// VNLayer.configure({ webLinks: {...} }, selector)でVN単位に登録された
+// リンク表があればそちらを優先的に見て、無ければグローバル登録
+// (selector省略で登録したもの)にフォールバックする(tags/webLinks.ts参照)。
+// instanceId未指定のVNは今まで通りグローバルのみを見る。
+//
 // 実装はcore/managers/{navigation,web}Managerに委譲。gotoは「バッチの
 // 終わりにまとめて遷移する」という進行制御が絡むため、navigationManagerに
 // 予約だけしておき、実際のonNavigate呼び出しはcore/useStoryEngine.tsの
@@ -49,7 +56,7 @@ registerTag({
       // "/"始まりは自サイト内のパスとみなし、無条件で許可する。
       if (raw.startsWith("/")) return raw;
       // それ以外は「登録済みリンク名」として解決する。未登録なら弾く。
-      const resolved = getWebLink(raw);
+      const resolved = getWebLink(raw, instanceId);
       if (!resolved) {
         console.warn(
           `[VNLayer] web:${action}:${raw} は許可済みリンクに登録されていません(ブロックしました)`,

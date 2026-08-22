@@ -23,8 +23,14 @@ import { reportError, TagDispatchError } from "../../../core/errors";
 //       経路(_seq自動採番/#wait・type_wait待ちの即時打ち切り/event_loopの
 //       #interrupt付き選択肢への自動遷移マーク)にも一緒に乗る点が異なる)。
 //
-// どちらの形も expose:false固定(VNLayer.getContext()からは見えない、
-// あくまで内部連携用)・notify:true固定。
+// どちらの形もnotify:true固定(#wait/type_wait待ちの即時打ち切り+
+// #interrupt起動用のイベントマーク)。
+// 2.15(sync/notify見直し、2026-08-19)により、以前ここにあった
+// 「expose:false固定(VNLayer.getContext()からは見えない)」という制約は
+// 無くなった(expose自体が廃止された)。#emit専用の変数も今後は
+// VNLayer.getContext()から見える。syncは既定(true)のまま変えていない
+// (#emitの値は通常ink側から書き換えられることは無いイベント変数のため、
+// sync:falseにする積極的な理由が無い)。
 //
 // 値はisNumeric()なら数値、on/offならbooleanとして解釈し、それ以外は
 // 文字列のまま渡す(他のタグと同じ変換ルール)。
@@ -63,7 +69,7 @@ registerTag({
       emitToInstance(
         selector,
         { [varName]: resolveValue(rawValue) },
-        { notify: true, expose: false },
+        { notify: true },
       );
       return;
     }
@@ -79,7 +85,7 @@ registerTag({
     emitToSelf(
       handlers.atomKey,
       { [varName]: resolveValue(rawValue) },
-      { notify: true, expose: false },
+      { notify: true },
     );
   },
 });

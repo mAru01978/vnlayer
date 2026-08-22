@@ -1,6 +1,13 @@
 // #anim(モーション再生)がキャラ+表情+モーション名から「実際に何を表示するか」
 // を解決するための素材レジストリ。
 //
+// scope対応(2.1: configureスコープ統一): tags/scopedStore.tsの共通パターンに
+// 乗せた。setAnimAssets(patch, scope?)でselectorを渡すと、そのVN
+// インスタンス専用の追加登録として扱われる(グローバル登録はそのまま、
+// 他のVNには影響しない)。setAnimAssetResolver()(命名規則から機械的に
+// パスを組み立てるカスタムresolver)は現状scope非対応のグローバル関数の
+// まま(低頻度APIのため、必要になったら追って対応する)。
+//
 // 2つの方式に対応する:
 //   sequence … 連番画像(webp等)をコマ送りする。手動指定(frames配列)のみ
 //              対応(連番の枚数をフォルダ規約から自動検出する仕組みは
@@ -42,6 +49,7 @@ import {
   getAssetsConfigVersion,
 } from "./assetsConfig";
 import { resolveUrlCached, type ResourceSource } from "../core/ResourceLoader";
+import { createScopedStore } from "./scopedStore";
 
 export type AnimAssetConfig =
   | {
@@ -58,8 +66,6 @@ export type AnimAssetConfig =
       resolveLocal?: (path: string) => Promise<unknown>;
     };
 
-const registry = new Map<string, AnimAssetConfig>();
-
 const EXPRESSION_WILDCARD = "*";
 
 function composeKey(
@@ -70,24 +76,29 @@ function composeKey(
   return `${characterName}:${expression}:${motion}`;
 }
 
-let version = 0;
-const listeners = new Set<() => void>();
-function bumpVersion(): void {
-  version += 1;
-  listeners.forEach((l) => l());
-}
+type AnimRegistry = Record<string, AnimAssetConfig>;
+
+const store = createScopedStore<AnimRegistry, AnimRegistry>({
+  defaultValue: {},
+  mergePatch: (base, patch) => (patch ? { ...base, ...patch } : base),
+  mergePatches: (prev, patch) => ({ ...prev, ...patch }),
+});
+
 export function subscribeAnimAssets(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  return store.subscribe(listener);
 }
 export function getAnimAssetsVersion(): number {
-  return version + getAssetsConfigVersion();
+  return store.getVersion() + getAssetsConfigVersion();
 }
 
+// scope省略時は今まで通りグローバル登録。ink側タグからの呼び出しは無い
+// (#animは既存表情/位置の切り替えのみで、素材テーブル自体はJS側からしか
+// 登録できない)。
 export function setAnimAssets(
   patch: Record<string, Record<string, AnimAssetConfig>>,
+  scope?: string,
 ): void {
-  const flat: Record<string, AnimAssetConfig> = {};
+  const flat: AnimRegistry = {};
   for (const [charName, motions] of Object.entries(patch)) {
     for (const [rawKey, config] of Object.entries(motions)) {
       const parts = rawKey.split(":");
@@ -98,13 +109,11 @@ export function setAnimAssets(
       flat[composeKey(charName, expression, motion)] = config;
     }
   }
-  for (const [key, value] of Object.entries(flat)) {
-    registry.set(key, value);
-  }
-  bumpVersion();
+  store.set(flat, scope);
 }
 
 // テーブル登録の代わりに、命名規則から機械的にパスを組み立てたい場合用。
+// (グローバルのみ。scope非対応 — ファイル冒頭コメント参照)。
 export function setAnimAssetResolver(
   fn: (
     characterName: string,
@@ -113,7 +122,7 @@ export function setAnimAssetResolver(
   ) => AnimAssetConfig | undefined,
 ): void {
   resolverFn = fn;
-  bumpVersion();
+  store.notifyChange();
 }
 let resolverFn:
   | ((
@@ -123,8 +132,12 @@ let resolverFn:
     ) => AnimAssetConfig | undefined)
   | undefined;
 
-function conventionAnimPath(name: string, motion: string): string {
-  const { basePath, animExtension } = getAssetsConfig();
+function conventionAnimPath(
+  name: string,
+  motion: string,
+  scope?: string,
+): string {
+  const { basePath, animExtension } = getAssetsConfig(scope);
   const base = (basePath ?? "./assets").replace(/\/+$/, "");
   return `${base}/anim/${name}/${motion}.${animExtension ?? "webm"}`;
 }
@@ -133,17 +146,19 @@ export function getAnimAsset(
   characterName: string,
   expression: string | undefined,
   motion: string | undefined,
+  scope?: string,
 ): AnimAssetConfig | undefined {
   if (!motion) return undefined;
   const exp = expression ?? "normal";
+  const registry = store.get(scope);
   const found =
-    registry.get(composeKey(characterName, exp, motion)) ??
-    registry.get(composeKey(characterName, EXPRESSION_WILDCARD, motion)) ??
+    registry[composeKey(characterName, exp, motion)] ??
+    registry[composeKey(characterName, EXPRESSION_WILDCARD, motion)] ??
     resolverFn?.(characterName, exp, motion);
 
   if (!found) return undefined;
 
-  const globalCfg = getAssetsConfig();
+  const globalCfg = getAssetsConfig(scope);
   const source = found.source ?? globalCfg.source ?? "fetch";
   const resolveLocal = found.resolveLocal ?? globalCfg.resolveLocal;
 
@@ -151,10 +166,10 @@ export function getAnimAsset(
     if (found.src) {
       if (source === "local") {
         const resolved = resolveUrlCached(
-          `anim:${characterName}:${motion}:single`,
+          `anim:${scope ?? ""}:${characterName}:${motion}:single`,
           found.src,
           { source, resolveLocal },
-          bumpVersion,
+          store.notifyChange,
         );
         return { mode: "single", src: resolved };
       }
@@ -163,7 +178,10 @@ export function getAnimAsset(
     // src未指定: source:'local'ではフォルダ規約フォールバックは使わない
     // (非同期解決の前提が崩れるため、手動指定を推奨)。
     if (source === "local") return { mode: "single", src: undefined };
-    return { mode: "single", src: conventionAnimPath(characterName, motion) };
+    return {
+      mode: "single",
+      src: conventionAnimPath(characterName, motion, scope),
+    };
   }
 
   // mode:'sequence'。各フレームがsource:'local'ならキャッシュ経由で解決する。
@@ -173,10 +191,10 @@ export function getAnimAsset(
   if (source === "local") {
     const resolvedFrames = found.frames.map((frame, i) =>
       resolveUrlCached(
-        `anim:${characterName}:${motion}:seq:${i}`,
+        `anim:${scope ?? ""}:${characterName}:${motion}:seq:${i}`,
         frame,
         { source, resolveLocal },
-        bumpVersion,
+        store.notifyChange,
       ),
     );
     if (resolvedFrames.some((f) => f === undefined)) {
@@ -198,10 +216,16 @@ export function getAnimAsset(
   return found;
 }
 
-export function getAllAnimAssets(): Record<string, AnimAssetConfig> {
-  return Object.fromEntries(registry);
+export function getAllAnimAssets(
+  scope?: string,
+): Record<string, AnimAssetConfig> {
+  return store.get(scope);
 }
 
-export function shouldFallbackForAnim(name: string, motion: string): boolean {
-  return shouldFallbackToMock(`anim "${name}:${motion}"`);
+export function shouldFallbackForAnim(
+  name: string,
+  motion: string,
+  scope?: string,
+): boolean {
+  return shouldFallbackToMock(`anim "${name}:${motion}"`, scope);
 }

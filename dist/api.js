@@ -65,16 +65,22 @@ function unmount(selector) {
 // api-refactor-1/2(真の統合版): 第3引数optionsで挙動を制御する。
 //   options.notify: true
 //     → 渡した各キーに対して"${key}_seq"という単調増加カウンタを自動生成・
-//       インクリメントし、値と一緒に書き込む(呼び出し側はseqを一切
+//       インクリメントして値と一緒に書き込む(呼び出し側はseqを一切
 //       意識しなくてよい)。同時に実行中の#wait:/type_wait待ちを即座に
 //       打ち切り、event_loop等の#interrupt付き選択肢に辿り着き次第それを
 //       自動選択する。
-//   options.expose: false (既定はtrue)
-//     → 書き込んだ値をVNLayer.getContext()から見えないようにする。
-//       既定(true)の間はgetContext()で読み返せる。将来追加予定の#emit
-//       特殊タグ等、内部的な書き込みを外部に露出させたくない場合に使う想定。
+//   options.sync: false (既定はtrue)
+//     → 既定(true)では、ink側でその変数が後から変わった時(素のink代入
+//       ~ hp = hp - 10 等でも)、VNLayer.getContext()の値にも自動で
+//       反映される(ObserveVariable経由)。falseにすると、この呼び出しで
+//       書いた値は「書いた瞬間のスナップショット」のまま固定される。
 // これにより、以前は別APIだったVNLayer.notify(eventName, payload, selector)は
 // 完全に不要になったため廃止した(seqの面倒もこちら側が見てくれるため)。
+//
+// 2.15(sync/notify見直し、2026-08-19): 以前あったoptions.expose(既定true、
+// falseでgetContext()から見えなくする)は廃止した。setContextで書いた値は
+// 常にgetContext()から見える(以前のexpose:falseは「非公開のつもりで
+// 実質どこからでも読めてしまう」抜け穴でしかなかったため)。
 //
 //   旧: VNLayer.notify("blink", true);
 //   新: VNLayer.setContext({ vn_event_blink: true }, undefined, { notify: true });
@@ -160,29 +166,29 @@ async function reset(selector) {
     }));
 }
 // VNLayer.configure(options, selector?)
-// characterSlots/tags/webLinks/animAssetsは常に全VN共通(グローバル)。
-// uiだけは notify/setContext と同じ考え方でselectorを渡せる:
+// 2.1(configureスコープ統一)により、assets/tags/webLinks/uiの全項目が
+// selectorを受け付ける。selector省略時は今まで通り全VN共通(グローバル)。
 //   VNLayer.configure({ ui: {...} })         → 全VN共通のUI設定として適用
 //   VNLayer.configure({ ui: {...} }, "#vn")  → "#vn"のVNだけに適用
 async function configure(options, selector) {
     if (options.assets) {
         const { sprite, anim, ...globalAssetsConfig } = options.assets;
         if (Object.keys(globalAssetsConfig).length > 0)
-            setAssetsConfig(globalAssetsConfig);
+            setAssetsConfig(globalAssetsConfig, selector);
         if (sprite)
-            setSpriteAssets(sprite);
+            setSpriteAssets(sprite, selector);
         if (anim)
-            setAnimAssets(anim);
+            setAnimAssets(anim, selector);
     }
     if (options.tags) {
         for (const [key, partial] of Object.entries(options.tags)) {
-            setTagConfig(key, partial);
+            setTagConfig(key, partial, selector);
         }
     }
     if (options.ui)
         setUiConfig(options.ui, selector);
     if (options.webLinks)
-        setWebLinks(options.webLinks);
+        setWebLinks(options.webLinks, selector);
     if (options.reservedVariables)
         setReservedVariablesConfig(options.reservedVariables);
 }

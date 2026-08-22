@@ -56,6 +56,12 @@ export type ActiveMessage = {
 export type StepEntry = { speaker: string; content: string; tags: string[] };
 export type VisualState = {
   bg: string;
+  // 2026-08-19修正: キャラのzIndex(# s:name:z:...)と同じく、背景の
+  // zIndex(# s:bg:z:.../# s:bg:name:z:...)もリロード復元の対象にするため
+  // 追加。core/inkStepRunner.tsが累積スナップショットとしてここに書き込み、
+  // core/managers/backgroundManager.tsのrestoreBackground()経由で
+  // bgZIndexAtomFamilyへ反映される。省略(undefined)の場合は「このバッチ
+  // ではzIndexの変更が無かった」という意味で、既存の値を維持する。
   bgZIndex?: number;
   characters: Record<string, CharacterState>;
   speaker: string;
@@ -67,12 +73,24 @@ export type RunResult = {
 };
 
 // setContextVars(vars, options?)の第2引数。
+//
+// 2.15(sync/notify見直し、2026-08-19): notify(値の同期に無関係、
+// #wait/#interrupt起動用のイベントマークだけを担当)とsync(ink側の変更を
+// vnlayer管理contextへ追従させるかどうか)を独立した軸に整理し、expose
+// (非公開スコープの概念)は廃止した。setContextで書いた値は常に
+// getContextVars()から見える(以前のexpose:falseは「非公開のつもりで
+// 実質どこからでも読めてしまう」抜け穴でしかなかったため)。
+//
 //   notify   … 各キーに"${key}_seq"を自動生成・インクリメントして一緒に
 //              書き込み、実行中の#wait:/type_wait待ちを即座に打ち切り、
 //              演出中の全GSAP timelineも一時停止する(core/managers/
 //              waitManager.ts参照)。event_loop等の#interrupt付き選択肢に
-//              辿り着き次第それを自動選択する。
-//   expose   … falseにするとgetContextVars()から見えなくなる(既定true)。
+//              辿り着き次第それを自動選択する。既定false。
+//   sync     … ink側でこの変数が変更された時(素のink代入 ~ hp = hp - 10
+//              等でも)、vnlayer管理のcontext(getContextVars()の値)にも
+//              自動で反映するかどうか。既定true。falseにすると、この
+//              呼び出しで書いた値は「書いた瞬間のスナップショット」の
+//              まま固定される(以後ink側で変わっても追従しない)。
 //   keyNames … vars内のネストしたオブジェクトを「${親キー}_${子キー}」の
 //              ようなink変数名にフラット化する際、既定の命名を上書きする
 //              ための対応表。varsと同じ構造で、上書きしたい葉の値だけ
@@ -86,7 +104,7 @@ export type RunResult = {
 export type SetContextKeyNames = { [key: string]: string | SetContextKeyNames };
 export type SetContextOptions = {
   notify?: boolean;
-  expose?: boolean;
+  sync?: boolean;
   keyNames?: SetContextKeyNames;
 };
 
@@ -138,9 +156,9 @@ export type StoryEngine = {
     vars: Record<string, unknown>,
     options?: SetContextOptions,
   ) => Promise<void>;
-  // api-refactor-2: setContextVarsの読み取り版。setContextVarsで(expose:false
-  // でなく)書き込まれた値の写しを返す。varNames省略時はexposeされている
-  // 値すべてを返す。ink本体には問い合わせない(サーバー往復が発生しない)。
+  // api-refactor-2: setContextVarsの読み取り版。setContextVarsで書き込まれた
+  // 値の写しを返す。varNames省略時は書き込まれている値すべてを返す。
+  // ink本体には問い合わせない(サーバー往復が発生しない)。
   getContextVars: (varNames?: string[]) => Promise<Record<string, unknown>>;
   // このVNインスタンス自身の識別子(通常はmount()時のselector)。
   // #ui:...タグの設定をこのインスタンスだけにスコープするために、

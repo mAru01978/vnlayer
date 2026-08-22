@@ -38,7 +38,7 @@ export type ConfigureVNLayerOptions = {
     webLinks?: Record<string, string>;
     reservedVariables?: ReservedVariablesConfig;
 };
-export declare function configureVNLayer(options: ConfigureVNLayerOptions): void;
+export declare function configureVNLayer(options: ConfigureVNLayerOptions, selector?: string): void;
 export declare function useVNLayerContext(vnRef: RefObject<VNLayerRef | null>, vars: Record<string, unknown>, deps: DependencyList, options?: SetContextOptions): void;
 export type VNLayerDataElement = {
     key: string;

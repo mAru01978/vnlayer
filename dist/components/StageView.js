@@ -278,13 +278,13 @@ export default function StageView({ mode = "overlay", uiAnchor = "right", showUi
     const choiceAnchorName = uiConfig.choice.anchor;
     const choiceAnchorSlot = choiceAnchorName
         ? (positionOverrides[choiceAnchorName] ??
-            getCharacterSlot(choiceAnchorName) ??
+            getCharacterSlot(choiceAnchorName, instanceId) ??
             null)
         : null;
     const backlogAnchorName = uiConfig.backlog.anchor;
     const backlogAnchorSlot = backlogAnchorName
         ? (positionOverrides[backlogAnchorName] ??
-            getCharacterSlot(backlogAnchorName) ??
+            getCharacterSlot(backlogAnchorName, instanceId) ??
             null)
         : null;
     const isGlobalBacklog = uiConfig.backlog.mode === "global";
@@ -362,15 +362,15 @@ export default function StageView({ mode = "overlay", uiAnchor = "right", showUi
                         color: "#111",
                         fontSize: 12,
                         cursor: "pointer",
-                    }, children: backlogOpen ? "バックログを閉じる" : "バックログ" }) })), _jsxs("div", { ref: shakeRef, style: stageStyle, children: [_jsx(renderer.Background, { bg: bg, atomKey: story.atomKey, zIndex: story.bgZIndex }), _jsxs("div", { ref: camRef, style: {
+                    }, children: backlogOpen ? "バックログを閉じる" : "バックログ" }) })), _jsxs("div", { ref: shakeRef, style: stageStyle, children: [_jsx(renderer.Background, { bg: bg, atomKey: story.atomKey, zIndex: story.bgZIndex, instanceId: instanceId }), _jsxs("div", { ref: camRef, style: {
                             position: "absolute",
                             inset: 0,
                             pointerEvents: isOverlay ? "none" : undefined,
                         }, children: [Object.entries(characters).map(([name, state]) => {
                                 const slot = positionOverrides[name] ??
-                                    getCharacterSlot(name) ?? { originX: 50, originY: 60 };
+                                    getCharacterSlot(name, instanceId) ?? { originX: 50, originY: 60 };
                                 const isFocused = speaker === name;
-                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, atomKey: story.atomKey, onClick: uiConfig.character.clickable
+                                return (_jsx(renderer.CharacterSprite, { name: name, state: state, slot: slot, isFocused: isFocused, hasSpeaker: !!speaker, atomKey: story.atomKey, instanceId: instanceId, onClick: uiConfig.character.clickable
                                         ? () => story.setContextVars({ vn_event_char_click: name }, { notify: true })
                                         : undefined }, name));
                             }), story.flash && (_jsx(renderer.FlashOverlay, { color: story.flash.color, durationMs: story.flash.durationMs, atomKey: story.atomKey }))] }), uiVis.messageWindow &&
@@ -379,7 +379,7 @@ export default function StageView({ mode = "overlay", uiAnchor = "right", showUi
                             .filter(([name]) => name !== "narrator")
                             .map(([name, entry]) => {
                             const slot = positionOverrides[name] ??
-                                getCharacterSlot(name) ?? { originX: 50, originY: 40 };
+                                getCharacterSlot(name, instanceId) ?? { originX: 50, originY: 40 };
                             return (_jsx("div", { style: isOverlay ? { pointerEvents: "auto" } : undefined, children: _jsx(renderer.MessageBubble, { speaker: name, content: entry.content, slot: slot, revealedCount: entry.revealedCount, visible: entry.visible, onClick: uiConfig.messageWindow.interactive
                                         ? skipTyping
                                         : undefined, fontFamily: uiConfig.font.family, fontSizePx: uiConfig.font.sizePx, offsetPx: uiConfig.messageWindow.offset, atomKey: story.atomKey }) }, name));

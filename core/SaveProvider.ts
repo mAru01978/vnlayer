@@ -27,7 +27,8 @@ type SavedBackgroundSlot = { color?: string; image?: string };
 // 再生し直すわけではないため)ため、以下のフィールドを別枠で保存/復元する
 // 必要がある:
 //   visual          … bg/characters/speakerの見た目スナップショット
-//   contextVars      … setContext()でexposeされた値の写し
+//   contextVars      … setContext()で書き込まれた値の写し(2.15対応、
+//                        expose概念廃止によりsetContextした値は常にここに載る)
 //   positionOverrides … # s:name:pos:...による一時的な立ち位置上書き
 //                        (atomKeyスコープなので、この1インスタンスの分だけ)
 //   uiConfigPatches  … #ui:.../VNLayer.configure({ui})が積み上げてきた設定
